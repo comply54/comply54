@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-schemas:
+    name: Schema Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml jsonschema
+
+      - name: Validate all policy packs
+        run: python tools/validate.py
+
+  opa-tests:
+    name: OPA Policy Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OPA
+        run: |
+          curl -L -o /usr/local/bin/opa \
+            https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+          chmod +x /usr/local/bin/opa
+          opa version
+
+      - name: Check OPA syntax (all .rego files)
+        run: |
+          find packages -name "*.rego" | while read f; do
+            opa check "$f" || exit 1
+          done
+
+      - name: Run OPA tests
+        run: |
+          find packages -name "policy.rego" | while read policy; do
+            dir=$(dirname "$policy")
+            testdir="$dir/tests"
+            if [ -d "$testdir" ]; then
+              echo "Testing $dir ..."
+              opa test "$policy" "$testdir/" -v || exit 1
+            fi
+          done
+
+  regal-lint:
+    name: Regal Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Regal
+        run: |
+          curl -L -o /usr/local/bin/regal \
+            https://github.com/StyraInc/regal/releases/latest/download/regal_Linux_x86_64
+          chmod +x /usr/local/bin/regal
+          regal version
+
+      - name: Lint all Rego policies
+        run: regal lint packages/
+
+  registry-sync:
+    name: Registry Sync Check
+    runs-on: ubuntu-latest
+    needs: [validate-schemas]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Regenerate registry and check for diff
+        run: |
+          python tools/generate_registry.py
+          git diff --exit-code registry.json || {
+            echo "registry.json is out of sync — run: python tools/generate_registry.py"
+            exit 1
+          }
+
+  meta-check:
+    name: meta.json Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify every pack has meta.json
+        run: |
+          FAIL=0
+          for policy_yaml in $(find packages -name "policy.yaml"); do
+            dir=$(dirname "$policy_yaml")
+            if [ ! -f "$dir/meta.json" ]; then
+              echo "MISSING meta.json: $dir"
+              FAIL=1
+            fi
+          done
+          exit $FAIL

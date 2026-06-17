@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://comply54.io/schema/policy.schema.json",
+  "title": "Comply54 Policy Document",
+  "description": "JSON Schema for comply54 policy.yaml files. Every policy pack must validate against this schema.",
+  "type": "object",
+  "required": ["version", "name", "description", "rules", "defaults"],
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "description": "Semver-style policy document version, e.g. '1.0' or '1.0.0'"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "description": "Kebab-case policy identifier, unique within its pack"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "description": "Human-readable description of what the policy enforces"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "source_regulation": { "type": "string" },
+        "jurisdiction": {
+          "type": "string",
+          "pattern": "^([A-Z]{2}|universal)$"
+        },
+        "enforcing_authority": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "tool_allowlist": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Explicit list of tool names this policy allows; empty = all blocked"
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "condition", "action"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,79}$"
+          },
+          "condition": {
+            "type": "object",
+            "required": ["field", "operator", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string",
+                "enum": ["action", "output", "input", "context", "tool", "model"]
+              },
+              "operator": {
+                "type": "string",
+                "enum": ["matches", "equals", "in", "not_in", "contains", "not_contains", "starts_with", "ends_with"]
+              },
+              "value": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } },
+                  { "type": "number" },
+                  { "type": "boolean" }
+                ]
+              }
+            }
+          },
+          "action": {
+            "type": "string",
+            "enum": ["allow", "deny", "audit", "block"]
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "message": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Explanation surfaced to callers when this rule fires"
+          }
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "required": ["action"],
+      "additionalProperties": true,
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["allow", "deny", "audit", "block"]
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_tool_calls": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

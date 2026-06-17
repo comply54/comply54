@@ -1,0 +1,174 @@
+{
+  "$schema": "https://comply54.io/schema/registry.schema.json",
+  "version": "1.0.0",
+  "last_updated": "2026-06-17",
+  "total_packs": 12,
+  "packs": [
+    {
+      "id": "comply54-nigeria-ndpa",
+      "path": "packages/nigeria/ndpa",
+      "jurisdiction": "NG",
+      "regulation": "Nigeria Data Protection Act 2023",
+      "short_name": "NDPA 2023",
+      "version": "1.0.0",
+      "enforcing_authority": "NDPC",
+      "tags": ["data-protection", "cross-border", "pii", "audit"],
+      "agt_compatible": true,
+      "rego_tests": 34
+    },
+    {
+      "id": "comply54-nigeria-cbn",
+      "path": "packages/nigeria/cbn",
+      "jurisdiction": "NG",
+      "regulation": "CBN Transaction Limits & Controls",
+      "short_name": "CBN FPR",
+      "version": "1.0.0",
+      "enforcing_authority": "CBN",
+      "tags": ["fintech", "transactions", "kyc", "limits", "maker-checker"],
+      "agt_compatible": true,
+      "rego_tests": 26
+    },
+    {
+      "id": "comply54-nigeria-bvn-nin",
+      "path": "packages/nigeria/bvn-nin",
+      "jurisdiction": "NG",
+      "regulation": "CBN BVN Framework & NIBSS BVN Scheme Rules",
+      "short_name": "BVN/NIN Protection",
+      "version": "1.0.0",
+      "enforcing_authority": "CBN / NIBSS",
+      "tags": ["identity", "bvn", "nin", "pii", "biometric"],
+      "agt_compatible": true,
+      "rego_tests": 28
+    },
+    {
+      "id": "comply54-nigeria-nfiu-aml",
+      "path": "packages/nigeria/nfiu-aml",
+      "jurisdiction": "NG",
+      "regulation": "Money Laundering (Prevention & Prohibition) Act 2022",
+      "short_name": "MLPPA 2022 / NFIU AML",
+      "version": "1.0.0",
+      "enforcing_authority": "NFIU",
+      "tags": ["aml", "cft", "str", "ctr", "structuring", "pep"],
+      "agt_compatible": true,
+      "rego_tests": 28
+    },
+    {
+      "id": "comply54-nigeria-pos-geofencing",
+      "path": "packages/nigeria/pos-geofencing",
+      "jurisdiction": "NG",
+      "regulation": "CBN Agent Banking Guidelines 2020",
+      "short_name": "CBN POS Geo-fencing",
+      "version": "1.0.0",
+      "enforcing_authority": "CBN",
+      "tags": ["pos", "geofencing", "agent-banking", "location"],
+      "agt_compatible": true,
+      "rego_tests": 0
+    },
+    {
+      "id": "comply54-kenya-kdpa",
+      "path": "packages/kenya/kdpa",
+      "jurisdiction": "KE",
+      "regulation": "Kenya Data Protection Act 2019",
+      "short_name": "Kenya DPA 2019",
+      "version": "1.0.0",
+      "enforcing_authority": "ODPC",
+      "tags": ["data-protection", "cross-border", "pii", "audit"],
+      "agt_compatible": true,
+      "rego_tests": 30
+    },
+    {
+      "id": "comply54-south-africa-popia",
+      "path": "packages/south-africa/popia",
+      "jurisdiction": "ZA",
+      "regulation": "Protection of Personal Information Act 4 of 2013",
+      "short_name": "POPIA",
+      "version": "1.0.0",
+      "enforcing_authority": "Information Regulator ZA",
+      "tags": ["data-protection", "pii", "sa-id", "cross-border", "biometric"],
+      "agt_compatible": true,
+      "rego_tests": 30
+    },
+    {
+      "id": "comply54-universal-prompt-injection",
+      "path": "packages/universal/prompt-injection",
+      "jurisdiction": "universal",
+      "regulation": "OWASP Agentic AI Top 10 — LLM01/ASI01",
+      "short_name": "Prompt Injection",
+      "version": "1.0.0",
+      "enforcing_authority": "OWASP",
+      "tags": ["security", "prompt-injection", "owasp", "universal"],
+      "agt_compatible": true,
+      "rego_tests": 22
+    },
+    {
+      "id": "comply54-universal-pii-leakage",
+      "path": "packages/universal/pii-leakage",
+      "jurisdiction": "universal",
+      "regulation": "OWASP Agentic AI Top 10 — LLM06",
+      "short_name": "PII Leakage Prevention",
+      "version": "1.0.0",
+      "enforcing_authority": "OWASP",
+      "tags": ["security", "pii", "owasp", "universal"],
+      "agt_compatible": true,
+      "rego_tests": 21
+    },
+    {
+      "id": "comply54-universal-tool-permissions",
+      "path": "packages/universal/tool-permissions",
+      "jurisdiction": "universal",
+      "regulation": "OWASP Agentic AI Top 10 — LLM08",
+      "short_name": "Tool Permissions",
+      "version": "1.0.0",
+      "enforcing_authority": "OWASP",
+      "tags": ["security", "tools", "permissions", "owasp", "universal"],
+      "agt_compatible": true,
+      "rego_tests": 20
+    },
+    {
+      "id": "comply54-universal-human-approval",
+      "path": "packages/universal/human-approval",
+      "jurisdiction": "universal",
+      "regulation": "OWASP Agentic AI Top 10 — LLM09",
+      "short_name": "Human Approval Gate",
+      "version": "1.0.0",
+      "enforcing_authority": "OWASP",
+      "tags": ["security", "human-in-the-loop", "hitl", "owasp", "universal"],
+      "agt_compatible": true,
+      "rego_tests": 21
+    },
+    {
+      "id": "comply54-universal-model-routing",
+      "path": "packages/universal/model-routing",
+      "jurisdiction": "universal",
+      "regulation": "OWASP Agentic AI Top 10 — LLM03/LLM05",
+      "short_name": "Model Routing Controls",
+      "version": "1.0.0",
+      "enforcing_authority": "OWASP",
+      "tags": ["security", "model-governance", "owasp", "universal"],
+      "agt_compatible": true,
+      "rego_tests": 22
+    }
+  ],
+  "jurisdiction_map": {
+    "NG": [
+      "comply54-nigeria-ndpa",
+      "comply54-nigeria-cbn",
+      "comply54-nigeria-bvn-nin",
+      "comply54-nigeria-nfiu-aml",
+      "comply54-nigeria-pos-geofencing"
+    ],
+    "KE": [
+      "comply54-kenya-kdpa"
+    ],
+    "ZA": [
+      "comply54-south-africa-popia"
+    ],
+    "universal": [
+      "comply54-universal-prompt-injection",
+      "comply54-universal-pii-leakage",
+      "comply54-universal-tool-permissions",
+      "comply54-universal-human-approval",
+      "comply54-universal-model-routing"
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "comply54-universal-pii-leakage",
+  "version": "1.0.0",
+  "jurisdiction": "universal",
+  "regulation": "OWASP Agentic AI Top 10 \u2014 LLM06",
+  "short_name": "PII Leakage Prevention",
+  "enforcing_authority": "OWASP Agentic AI Working Group",
+  "effective_date": "2025-01-01",
+  "last_updated": "2026-06-17",
+  "regulatory_source": "https://genai.owasp.org",
+  "sections_covered": [
+    "LLM06"
+  ],
+  "agt_compatible": true,
+  "rego_tests": 21,
+  "breaking_changes": false,
+  "tags": [
+    "security",
+    "pii",
+    "owasp",
+    "universal",
+    "bvn",
+    "nin",
+    "sa-id"
+  ]
+}

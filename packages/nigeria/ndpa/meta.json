@@ -1,0 +1,26 @@
+{
+  "id": "comply54-nigeria-ndpa",
+  "version": "1.0.0",
+  "jurisdiction": "NG",
+  "regulation": "Nigeria Data Protection Act 2023",
+  "short_name": "NDPA 2023",
+  "enforcing_authority": "Nigeria Data Protection Commission (NDPC)",
+  "effective_date": "2023-06-14",
+  "last_updated": "2026-06-17",
+  "regulatory_source": "https://ndpc.gov.ng",
+  "sections_covered": [
+    "s.22",
+    "s.24",
+    "s.25",
+    "s.30"
+  ],
+  "agt_compatible": true,
+  "rego_tests": 34,
+  "breaking_changes": false,
+  "tags": [
+    "data-protection",
+    "cross-border",
+    "pii",
+    "audit"
+  ]
+}

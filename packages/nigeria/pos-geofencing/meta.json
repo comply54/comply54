@@ -1,0 +1,25 @@
+{
+  "id": "comply54-nigeria-pos-geofencing",
+  "version": "1.0.0",
+  "jurisdiction": "NG",
+  "regulation": "CBN Agent Banking Guidelines 2020",
+  "short_name": "CBN POS Geo-fencing",
+  "enforcing_authority": "Central Bank of Nigeria (CBN)",
+  "effective_date": "2020-01-01",
+  "last_updated": "2026-06-17",
+  "regulatory_source": "https://www.cbn.gov.ng",
+  "sections_covered": [
+    "Agent location compliance",
+    "Terminal geo-fencing",
+    "Cross-state controls"
+  ],
+  "agt_compatible": true,
+  "rego_tests": 0,
+  "breaking_changes": false,
+  "tags": [
+    "pos",
+    "geofencing",
+    "agent-banking",
+    "location"
+  ]
+}

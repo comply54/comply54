@@ -1,0 +1,52 @@
+rules:
+  idiomatic:
+    custom-in-construct:
+      level: ignore
+    no-defined-entrypoint:
+      level: error
+    use-contains-key:
+      level: warn
+    use-in-operator:
+      level: warn
+    use-some-for-output-vars:
+      level: warn
+  imports:
+    avoid-importing-input-directly:
+      level: error
+    prefer-package-imports:
+      level: warn
+  style:
+    rule-length:
+      level: warn
+      max-rule-length: 60
+    opa-fmt:
+      level: error
+    use-rego-v1:
+      level: error
+    line-length:
+      level: warn
+      max-line-length: 120
+  testing:
+    identically-named-tests:
+      level: error
+    test-outside-test-package:
+      level: error
+  bugs:
+    constant-condition:
+      level: error
+    not-in-alternatives:
+      level: error
+    rule-shadows-builtin:
+      level: error
+    unused-return-value:
+      level: error
+  custom: {}
+
+capabilities:
+  from:
+    engine: opa
+    version: v0.70.0
+
+ignore:
+  files:
+    - "**/*_test.rego"

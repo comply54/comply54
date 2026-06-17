@@ -1,0 +1,24 @@
+{
+  "id": "comply54-universal-model-routing",
+  "version": "1.0.0",
+  "jurisdiction": "universal",
+  "regulation": "OWASP Agentic AI Top 10 \u2014 LLM03/LLM05",
+  "short_name": "Model Routing Controls",
+  "enforcing_authority": "OWASP Agentic AI Working Group",
+  "effective_date": "2025-01-01",
+  "last_updated": "2026-06-17",
+  "regulatory_source": "https://genai.owasp.org",
+  "sections_covered": [
+    "LLM03",
+    "LLM05"
+  ],
+  "agt_compatible": true,
+  "rego_tests": 22,
+  "breaking_changes": false,
+  "tags": [
+    "security",
+    "model-governance",
+    "owasp",
+    "universal"
+  ]
+}
