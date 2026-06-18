@@ -1,8 +1,8 @@
 {
   "$schema": "https://comply54.io/schema/registry.schema.json",
-  "version": "1.0.0",
-  "last_updated": "2026-06-17",
-  "total_packs": 12,
+  "version": "1.1.0",
+  "last_updated": "2026-06-18",
+  "total_packs": 15,
   "packs": [
     {
       "id": "comply54-nigeria-ndpa",
@@ -207,6 +207,57 @@
       "tags": ["security", "model-governance", "owasp", "universal"],
       "agt_compatible": true,
       "rego_tests": 22
+    },
+    {
+      "id": "comply54-uganda-dppa",
+      "source_repo": "kingztech2019/agt-policies-nigeria",
+      "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/uganda-dppa.yaml",
+      "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/uganda-dppa.rego",
+      "path": null,
+      "jurisdiction": "UG",
+      "regulation": "Uganda Data Protection and Privacy Act 2019",
+      "short_name": "Uganda DPPA 2019",
+      "version": "1.0.0",
+      "enforcing_authority": "PDPO / NITA-U",
+      "effective_date": "2019-02-01",
+      "regulatory_source": "https://www.nita.go.ug",
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "east-africa"],
+      "agt_compatible": true,
+      "rego_tests": 28
+    },
+    {
+      "id": "comply54-tanzania-pdpa",
+      "source_repo": "kingztech2019/agt-policies-nigeria",
+      "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/tanzania-pdpa.yaml",
+      "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/tanzania-pdpa.rego",
+      "path": null,
+      "jurisdiction": "TZ",
+      "regulation": "Tanzania Personal Data Protection Act 2022",
+      "short_name": "Tanzania PDPA 2022",
+      "version": "1.0.0",
+      "enforcing_authority": "PDPC",
+      "effective_date": "2022-01-01",
+      "regulatory_source": "https://www.tcra.go.tz",
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "east-africa"],
+      "agt_compatible": true,
+      "rego_tests": 28
+    },
+    {
+      "id": "comply54-ethiopia-pdp",
+      "source_repo": "kingztech2019/agt-policies-nigeria",
+      "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/ethiopia-pdp.yaml",
+      "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/ethiopia-pdp.rego",
+      "path": null,
+      "jurisdiction": "ET",
+      "regulation": "Ethiopia Computer Crime Proclamation 958/2016 + draft Personal Data Protection Proclamation",
+      "short_name": "Ethiopia PDP (draft)",
+      "version": "1.0.0",
+      "enforcing_authority": "ECA / MInT",
+      "effective_date": "2016-01-01",
+      "regulatory_source": "https://www.eca.gov.et",
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "east-africa", "draft"],
+      "agt_compatible": true,
+      "rego_tests": 28
     }
   ],
   "jurisdiction_map": {
@@ -219,6 +270,15 @@
     ],
     "KE": [
       "comply54-kenya-kdpa"
+    ],
+    "UG": [
+      "comply54-uganda-dppa"
+    ],
+    "TZ": [
+      "comply54-tanzania-pdpa"
+    ],
+    "ET": [
+      "comply54-ethiopia-pdp"
     ],
     "ZA": [
       "comply54-south-africa-popia"
