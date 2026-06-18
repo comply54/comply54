@@ -1,8 +1,8 @@
 {
   "$schema": "https://comply54.io/schema/registry.schema.json",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "last_updated": "2026-06-18",
-  "total_packs": 15,
+  "total_packs": 17,
   "packs": [
     {
       "id": "comply54-nigeria-ndpa",
@@ -249,15 +249,49 @@
       "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/ethiopia-pdp.rego",
       "path": null,
       "jurisdiction": "ET",
-      "regulation": "Ethiopia Computer Crime Proclamation 958/2016 + draft Personal Data Protection Proclamation",
-      "short_name": "Ethiopia PDP (draft)",
-      "version": "1.0.0",
-      "enforcing_authority": "ECA / MInT",
-      "effective_date": "2016-01-01",
+      "regulation": "Ethiopia Personal Data Protection Proclamation No. 1321/2024",
+      "short_name": "Ethiopia PDPP 1321/2024",
+      "version": "1.1.0",
+      "enforcing_authority": "ECA",
+      "effective_date": "2024-07-24",
       "regulatory_source": "https://www.eca.gov.et",
-      "tags": ["data-protection", "cross-border", "pii", "biometric", "east-africa", "draft"],
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "east-africa"],
       "agt_compatible": true,
       "rego_tests": 28
+    },
+    {
+      "id": "comply54-ghana-dpa",
+      "source_repo": "kingztech2019/agt-policies-nigeria",
+      "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/ghana-dpa.yaml",
+      "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/ghana-dpa.rego",
+      "path": null,
+      "jurisdiction": "GH",
+      "regulation": "Ghana Data Protection Act 2012 (Act 843)",
+      "short_name": "Ghana DPA 2012",
+      "version": "1.0.0",
+      "enforcing_authority": "DPC",
+      "effective_date": "2012-10-16",
+      "regulatory_source": "https://dataprotection.org.gh",
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "ghana-card", "west-africa"],
+      "agt_compatible": true,
+      "rego_tests": 30
+    },
+    {
+      "id": "comply54-rwanda-dpa",
+      "source_repo": "kingztech2019/agt-policies-nigeria",
+      "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rwanda-dpa.yaml",
+      "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/rwanda-dpa.rego",
+      "path": null,
+      "jurisdiction": "RW",
+      "regulation": "Rwanda Law No. 058/2021 on Personal Data Protection",
+      "short_name": "Rwanda DPA 2021",
+      "version": "1.0.0",
+      "enforcing_authority": "NCSA",
+      "effective_date": "2021-10-15",
+      "regulatory_source": "https://dpo.gov.rw",
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "automated-decisions", "east-africa"],
+      "agt_compatible": true,
+      "rego_tests": 32
     }
   ],
   "jurisdiction_map": {
@@ -279,6 +313,12 @@
     ],
     "ET": [
       "comply54-ethiopia-pdp"
+    ],
+    "GH": [
+      "comply54-ghana-dpa"
+    ],
+    "RW": [
+      "comply54-rwanda-dpa"
     ],
     "ZA": [
       "comply54-south-africa-popia"
