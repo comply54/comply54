@@ -1,8 +1,8 @@
 {
   "$schema": "https://comply54.io/schema/registry.schema.json",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "last_updated": "2026-06-19",
-  "total_packs": 18,
+  "total_packs": 19,
   "packs": [
     {
       "id": "comply54-nigeria-ndpa",
@@ -309,6 +309,23 @@
       "tags": ["data-protection", "cross-border", "pii", "biometric", "financial-data", "children-data", "north-africa"],
       "agt_compatible": true,
       "rego_tests": 39
+    },
+    {
+      "id": "comply54-mauritius-dpa",
+      "source_repo": "kingztech2019/agt-policies-nigeria",
+      "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/mauritius-dpa.yaml",
+      "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/mauritius-dpa.rego",
+      "path": null,
+      "jurisdiction": "MU",
+      "regulation": "Mauritius Data Protection Act 2017 (Act No. 20 of 2017)",
+      "short_name": "Mauritius DPA 2017",
+      "version": "1.0.0",
+      "enforcing_authority": "Data Protection Commissioner",
+      "effective_date": "2018-01-15",
+      "regulatory_source": "https://dataprotection.govmu.org",
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "gdpr-aligned", "automated-decisions", "mandatory-dpo", "indian-ocean"],
+      "agt_compatible": true,
+      "rego_tests": 39
     }
   ],
   "jurisdiction_map": {
@@ -339,6 +356,9 @@
     ],
     "EG": [
       "comply54-egypt-pdpl"
+    ],
+    "MU": [
+      "comply54-mauritius-dpa"
     ],
     "ZA": [
       "comply54-south-africa-popia"
