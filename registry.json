@@ -1,8 +1,8 @@
 {
   "$schema": "https://comply54.io/schema/registry.schema.json",
-  "version": "1.2.0",
-  "last_updated": "2026-06-18",
-  "total_packs": 17,
+  "version": "1.3.0",
+  "last_updated": "2026-06-19",
+  "total_packs": 18,
   "packs": [
     {
       "id": "comply54-nigeria-ndpa",
@@ -292,6 +292,23 @@
       "tags": ["data-protection", "cross-border", "pii", "biometric", "automated-decisions", "east-africa"],
       "agt_compatible": true,
       "rego_tests": 32
+    },
+    {
+      "id": "comply54-egypt-pdpl",
+      "source_repo": "kingztech2019/agt-policies-nigeria",
+      "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/egypt-pdpl.yaml",
+      "source_rego": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/rego/egypt-pdpl.rego",
+      "path": null,
+      "jurisdiction": "EG",
+      "regulation": "Egypt Personal Data Protection Law No. 151 of 2020",
+      "short_name": "Egypt PDPL 2020",
+      "version": "1.0.0",
+      "enforcing_authority": "PDPC",
+      "effective_date": "2020-07-15",
+      "regulatory_source": "https://pdp.mcit.gov.eg",
+      "tags": ["data-protection", "cross-border", "pii", "biometric", "financial-data", "children-data", "north-africa"],
+      "agt_compatible": true,
+      "rego_tests": 39
     }
   ],
   "jurisdiction_map": {
@@ -319,6 +336,9 @@
     ],
     "RW": [
       "comply54-rwanda-dpa"
+    ],
+    "EG": [
+      "comply54-egypt-pdpl"
     ],
     "ZA": [
       "comply54-south-africa-popia"
