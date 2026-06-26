@@ -290,4 +290,4 @@ For Python projects: `pip install comply54`
 
 ## License
 
-MIT © [Sage Grey Tech](https://sagegreytech.com)
+MIT © Oluwajuwon Omotayo

@@ -1,6 +1,6 @@
 {
   "name": "@comply54/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, KDPA, POPIA and 15+ African regulatory frameworks",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -36,7 +36,7 @@
     "langchain",
     "llm"
   ],
-  "author": "Sage Grey Tech <hello@comply54.io>",
+  "author": "Oluwajuwon Omotayo <hello@comply54.io>",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",

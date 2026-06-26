@@ -388,4 +388,4 @@ Build what embeds. Skip what impresses.
 
 *Last updated: 2026-06-23*  
 *Version: 1.0*  
-*Owner: Oluwajuwon Omotayo — Sage Grey Tech*
+*Owner: Oluwajuwon Omotayo*
