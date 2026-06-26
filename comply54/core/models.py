@@ -10,7 +10,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +30,7 @@ class PolicyDecision(BaseModel):
     jurisdiction: str
     action: Action
     messages: list[str] = Field(default_factory=list)
-    rule_triggered: str | None = None
+    rule_triggered: Optional[str] = None
     audit_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

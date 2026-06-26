@@ -29,7 +29,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from ..core.models import ComplianceResult, EvaluationInput
+from ..core.models import ComplianceResult
 from ..sectors._base import SectorCompliance
 
 

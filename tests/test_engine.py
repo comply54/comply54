@@ -3,10 +3,10 @@ Tests for comply54.core.engine — regopy-based evaluation engine.
 No OPA binary required.
 """
 
-import pytest
+
 from comply54.core.engine import Comply54Engine
 from comply54.core.models import EvaluationInput
-from comply54.core.packs import CBN, NDPA, BVN_NIN, NFIU_AML, PII_LEAKAGE, KDPA
+from comply54.core.packs import CBN, NDPA, BVN_NIN, PII_LEAKAGE, KDPA
 
 
 # ── CBN transaction limit tests ────────────────────────────────────────────────

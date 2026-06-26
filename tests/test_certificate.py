@@ -6,7 +6,7 @@ Tests for Phase 1.3 additions:
 """
 
 import json
-import pytest
+
 from comply54 import NigeriaFintechCompliance, PanAfricanFintechCompliance, ComplianceCertificate
 
 

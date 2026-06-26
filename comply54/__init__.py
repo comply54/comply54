@@ -33,16 +33,10 @@ from .core.engine import Comply54Engine
 from .core.models import Action, ComplianceCertificate, ComplianceResult, EvaluationInput, PolicyDecision
 from .core.packs import (
     PACK_REGISTRY,
-    UNIVERSAL_PACKS,
     PackSpec,
     packs_for_ids,
     packs_for_jurisdiction,
 )
-
-
-def list_packs() -> list[PackSpec]:
-    """Return all registered comply54 packs."""
-    return list(PACK_REGISTRY.values())
 from .sectors import (
     KenyaFintechCompliance,
     NigeriaFintechCompliance,
@@ -59,6 +53,7 @@ __all__ = [
     "SectorCompliance",
     # Low-level API
     "evaluate",
+    "list_packs",
     "Comply54Engine",
     "EvaluationInput",
     "ComplianceResult",
@@ -71,6 +66,11 @@ __all__ = [
     "packs_for_jurisdiction",
     "packs_for_ids",
 ]
+
+
+def list_packs() -> list[PackSpec]:
+    """Return all registered comply54 packs."""
+    return list(PACK_REGISTRY.values())
 
 
 def evaluate(

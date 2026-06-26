@@ -3,7 +3,7 @@ Tests for comply54 sector packs — NigeriaFintechCompliance, KenyaFintechCompli
 PanAfricanFintechCompliance.
 """
 
-import pytest
+
 from comply54 import NigeriaFintechCompliance, KenyaFintechCompliance, PanAfricanFintechCompliance
 
 

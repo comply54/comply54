@@ -5,8 +5,6 @@
     "moduleResolution": "bundler",
     "lib": ["ES2020"],
     "strict": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
