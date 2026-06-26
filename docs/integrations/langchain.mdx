@@ -1,0 +1,69 @@
+---
+title: LangChain
+description: comply54 adapters for LangChain tools and LangGraph state nodes.
+---
+
+## Install
+
+```bash
+pip install comply54 langchain-core langgraph
+```
+
+## Imports
+
+```python
+from comply54.langchain import compliance_node, comply54_tool
+```
+
+## `compliance_node(compliance)`
+
+Returns a LangGraph-compatible state node function. Add it to your graph as a mandatory step before action execution.
+
+```python
+from comply54 import NigeriaFintechCompliance
+from comply54.langchain import compliance_node
+from langgraph.graph import StateGraph
+
+compliance = NigeriaFintechCompliance()
+node = compliance_node(compliance)
+
+graph = StateGraph(YourState)
+graph.add_node("check_compliance", node)
+```
+
+**State keys read:**
+- `state["action"]` — the action string
+- `state["params"]` — dict of action parameters
+- `state["output"]` — agent output string (for output guards)
+- `state["context"]` — dict of contextual metadata
+
+**State keys written:**
+- `state["compliance_result"]` — `ComplianceResult` object
+- `state["blocked"]` — `True` if `result.blocked`
+
+## `comply54_tool(compliance)`
+
+Returns a `langchain_core.tools.StructuredTool` the LLM can call:
+
+```python
+from comply54.langchain import comply54_tool
+from langchain_openai import ChatOpenAI
+
+compliance = NigeriaFintechCompliance()
+tools = [comply54_tool(compliance)]
+
+llm = ChatOpenAI(model="claude-sonnet-4-6").bind_tools(tools)
+```
+
+The tool is named `check_compliance` and accepts `action`, `params`, `output`, and `context`.
+
+## Full LangGraph example
+
+See the [LangChain integration guide](/guides/langchain-integration) for a complete working example with conditional routing and output guards.
+
+## API reference
+
+```python
+compliance_node(compliance: SectorCompliance) -> Callable[[dict], dict]
+comply54_tool(compliance: SectorCompliance, name: str = "check_compliance") -> StructuredTool
+```

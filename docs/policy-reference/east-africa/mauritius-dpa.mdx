@@ -1,0 +1,43 @@
+---
+title: Mauritius DPA 2017
+description: Mauritius Data Protection Act 2017 — comply54 enforcement.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `mauritius/dpa` |
+| **Full title** | Data Protection Act 2017 (Act No. 20 of 2017) |
+| **Regulator** | Data Protection Office (DPO) |
+| **Jurisdiction** | Mauritius (MU) |
+| **Effective date** | January 2018 |
+
+## Key controls
+
+Mauritius DPA 2017 is broadly aligned with GDPR principles. comply54 enforces:
+
+- Cross-border transfer restrictions (Schedule 4 — adequate countries)
+- Biometric data prohibitions
+- Consent and legitimate interest requirements
+- Data subject rights (erasure, correction)
+
+## Example
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import MAURITIUS_DPA
+
+engine = Comply54Engine(packs=[MAURITIUS_DPA])
+result = engine.check(
+    action="export_data",
+    params={"destination_country": "NG", "data_type": "customer_pii"},
+    context={"consent_documented": True},
+)
+print(result.overall)   # "escalate" — notify DPO for cross-border transfer
+```
+
+## Regulatory references
+
+- [Mauritius Data Protection Act 2017](https://dataprotection.govmu.org)
+- [Data Protection Office](https://dataprotection.govmu.org)

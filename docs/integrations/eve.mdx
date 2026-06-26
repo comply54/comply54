@@ -1,0 +1,47 @@
+---
+title: Eve (Vercel)
+description: Integrate comply54 with Vercel Eve AI agents via comply54-adapter-eve.
+---
+
+## Overview
+
+`comply54-adapter-eve` wraps comply54 as an Eve-compatible middleware layer. Eve is Vercel's AI agent framework — comply54 hooks in as a guardrail that runs before and after every agent tool call.
+
+<Note>
+  `comply54-adapter-eve` is currently in development. Join the waitlist at comply54.io to be notified when it's available.
+</Note>
+
+## Planned install
+
+```bash
+pip install comply54-adapter-eve
+```
+
+## Planned usage
+
+```python
+from comply54 import NigeriaFintechCompliance
+from comply54_adapter_eve import Comply54Middleware
+
+compliance = NigeriaFintechCompliance()
+
+# Add as Eve middleware
+app = EveApp()
+app.use(Comply54Middleware(compliance=compliance))
+```
+
+The middleware will:
+1. Intercept every tool call before execution
+2. Run the full compliance check against the tool call's action and parameters
+3. Block or escalate if any pack fires
+4. Check the tool call output for PII leakage before returning to the agent
+
+## Notify me
+
+To be notified when `comply54-adapter-eve` is available, email [hello@comply54.io](mailto:hello@comply54.io) with subject "Eve adapter waitlist".
+
+## Related
+
+- [LangChain integration](/integrations/langchain) — available now
+- [CrewAI integration](/integrations/crewai) — available now
+- [AutoGen integration](/integrations/autogen) — available now

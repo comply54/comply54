@@ -1,0 +1,138 @@
+---
+title: Nigeria Fintech Pack
+description: Pre-composed compliance for AI agents operating in Nigerian financial services — NDPA 2023, CBN, BVN/NIN, NFIU AML, and OWASP agent safety.
+---
+
+## Overview
+
+`NigeriaFintechCompliance` is the canonical pack for AI agents in Nigerian financial services. It enforces all four Nigerian regulatory frameworks simultaneously, plus five universal agent-safety policies.
+
+```python
+from comply54 import NigeriaFintechCompliance
+
+compliance = NigeriaFintechCompliance()
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 5_000_000, "currency": "NGN"},
+    context={"kyc_tier": 2},
+)
+```
+
+## Included packs
+
+| Pack ID | Regulation | Authority | Key controls |
+|---------|-----------|-----------|-------------|
+| `nigeria/ndpa` | NDPA 2023 | NITDA | Cross-border transfer restrictions §25, consent, data minimisation |
+| `nigeria/cbn` | CBN Transaction Controls | CBN | ₦10M NIP cap, KYC tier limits, PEP screening |
+| `nigeria/bvn-nin` | BVN/NIN Framework | CBN/NIMC | Biometric PII detection in outputs, transfer of identifiers |
+| `nigeria/nfiu-aml` | NFIU/MLPPA 2022 | NFIU | CTR at ₦5M+, STR triggers, sanction list screening |
+| `universal/pii-leakage` | OWASP LLM01 | OWASP | PAN, BVN, NIN, passport, SWIFT codes in outputs |
+| `universal/prompt-injection` | OWASP LLM01 | OWASP | Jailbreak and indirect injection patterns |
+| `universal/tool-permissions` | OWASP LLM08 | OWASP | Excessive tool scope, IDOR-style access |
+| `universal/human-approval` | OWASP LLM08 | OWASP | High-value or irreversible actions require human sign-off |
+
+## Decision matrix by action type
+
+### Fund transfers
+
+| Amount | KYC Tier | Decision | Reason |
+|--------|----------|----------|--------|
+| ≤ ₦200,000 | 1 | `allow` | Within Tier 1 single-transaction limit |
+| ≤ ₦5,000,000 | 2 | `allow` | Below CBN NIP cap and CTR threshold |
+| ₦5,000,000–₦10,000,000 | 3 | `escalate` | NFIU CTR required within 24h |
+| > ₦10,000,000 | any | `deny` | Exceeds CBN NIP Framework §4.2 single-transaction cap |
+| any | 0 (no KYC) | `deny` | No verified identity — CBN KYC policy |
+
+### Data exports
+
+| Destination | Data type | Decision |
+|-------------|-----------|----------|
+| Nigeria | Any | `allow` |
+| ECOWAS / AU adequacy country | Non-sensitive | `allow` |
+| Non-adequate country | PII | `escalate` (NDPA §25) |
+| Any | Biometric (BVN/NIN) | `deny` |
+
+### Agent outputs
+
+| Output content | Decision |
+|---------------|----------|
+| Contains BVN pattern (11 digits) | `deny` |
+| Contains NIN pattern | `deny` |
+| Contains raw PAN (card number) | `deny` |
+| Clean text | `allow` |
+
+## Usage
+
+### Standalone check
+
+```python
+from comply54 import NigeriaFintechCompliance
+
+compliance = NigeriaFintechCompliance()
+
+# Fund transfer check
+result = compliance.check(
+    action="transfer_funds",
+    params={
+        "amount": 8_000_000,
+        "currency": "NGN",
+        "recipient_account": "0123456789",
+    },
+    context={"kyc_tier": 3, "pep_flag": False},
+)
+
+if result.blocked:
+    print(result.primary_violation.messages[0])
+elif result.overall == "escalate":
+    # CTR required — log for compliance team
+    print(f"Escalation required — audit ID: {result.audit_id}")
+```
+
+### With LangGraph
+
+```python
+from comply54.langchain import compliance_node
+from langgraph.graph import StateGraph, MessagesState
+
+def build_graph():
+    graph = StateGraph(MessagesState)
+    graph.add_node("check_compliance", compliance_node(compliance))
+    graph.add_node("execute_transfer", transfer_node)
+
+    graph.add_conditional_edges(
+        "check_compliance",
+        lambda state: "execute" if not state.get("blocked") else "reject",
+        {"execute": "execute_transfer", "reject": "__end__"},
+    )
+    return graph.compile()
+```
+
+### Accessing all decisions
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 8_000_000, "currency": "NGN"},
+)
+
+for decision in result.decisions:
+    status = "✓" if decision.action == "allow" else "✗"
+    print(f"{status} {decision.pack}: {decision.action}")
+    for msg in decision.messages:
+        print(f"   {msg}")
+```
+
+## Properties
+
+```python
+compliance = NigeriaFintechCompliance()
+compliance.jurisdictions   # ["NG"]
+compliance.pack_ids        # ["nigeria/ndpa", "nigeria/cbn", ...]
+len(compliance.packs)      # 8
+```
+
+## Related
+
+- [NDPA 2023 policy reference](/policy-reference/nigeria/ndpa)
+- [CBN Transaction Controls reference](/policy-reference/nigeria/cbn)
+- [Nigeria Fintech guide](/guides/nigeria-fintech-guide)

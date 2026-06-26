@@ -1,0 +1,87 @@
+[project]
+name = "comply54"
+version = "0.1.0"
+description = "African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, KDPA, POPIA and 15+ African regulatory frameworks."
+authors = [
+    { name = "Oluwajuwon Omotayo", email = "oluwajuwon.falore@sagegreytech.com" }
+]
+license = { text = "Apache-2.0" }
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = [
+    "comply54", "africa", "compliance", "ai-governance", "ndpa", "cbn",
+    "kdpa", "popia", "rego", "opa", "fintech", "data-protection", "nigeria", "kenya"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "Topic :: Office/Business :: Financial",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "regopy>=1.4.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+langchain = ["langchain-core>=0.1.0"]
+crewai    = ["crewai>=0.28.0"]
+autogen   = ["pyautogen>=0.2.0"]
+all       = ["langchain-core>=0.1.0", "crewai>=0.28.0", "pyautogen>=0.2.0"]
+dev       = ["pytest>=8.0", "pytest-cov", "ruff", "pyright"]
+
+[project.urls]
+Homepage   = "https://comply54.io"
+Repository = "https://github.com/comply54/comply54"
+Issues     = "https://github.com/comply54/comply54/issues"
+
+[build-system]
+requires      = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["comply54*"]
+
+[tool.setuptools.package-data]
+"comply54.packs" = ["**/*.rego"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts    = "-ra -q --tb=short"
+testpaths  = ["tests"]
+
+[tool.coverage.run]
+source = ["comply54"]
+omit   = [
+    "comply54/packs/*",
+    "comply54/langchain/*",
+    "comply54/crewai/*",
+    "comply54/autogen/*",
+    "comply54/*/__pycache__/*",
+]
+branch = true
+
+[tool.coverage.report]
+show_missing  = true
+skip_covered  = false
+fail_under    = 85
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.pyright]
+include = ["comply54"]
+pythonVersion = "3.9"

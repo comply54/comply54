@@ -1,0 +1,107 @@
+---
+title: Quickstart
+description: Add NDPA + CBN compliance to a LangChain agent in under 5 minutes.
+---
+
+## Install
+
+```bash
+pip install comply54
+```
+
+No OPA binary required. comply54 evaluates Rego policies in-process using `regopy`.
+
+## Your first compliance check
+
+```python
+from comply54 import NigeriaFintechCompliance
+
+compliance = NigeriaFintechCompliance()
+
+# Check a fund transfer against NDPA + CBN + BVN/NIN + NFIU + agent safety packs
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+    context={"kyc_tier": 3},
+)
+
+print(result.overall)          # "deny"
+print(result.blocked)          # True
+print(result.primary_violation.regulation)   # "CBN NIP Framework"
+print(result.primary_violation.messages[0])  # "Transaction of ₦15,000,000 exceeds ..."
+```
+
+## Integrate with LangChain
+
+```python
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph, MessagesState
+from comply54 import NigeriaFintechCompliance
+from comply54.langchain import compliance_node, comply54_tool
+
+compliance = NigeriaFintechCompliance()
+
+# As a LangGraph node
+def build_graph():
+    graph = StateGraph(MessagesState)
+    graph.add_node("compliance", compliance_node(compliance))
+    graph.add_node("agent", your_agent_node)
+    graph.add_edge("compliance", "agent")
+    return graph.compile()
+
+# As a tool the agent calls itself
+tools = [comply54_tool(compliance)]
+llm = ChatOpenAI(model="gpt-4o").bind_tools(tools)
+```
+
+## Check output for PII leakage
+
+```python
+result = compliance.check(
+    action="respond_to_user",
+    output="Your BVN is 12345678901",
+)
+
+print(result.overall)   # "deny"
+# The PII leakage pack caught a BVN in the output
+```
+
+## Read the full decision
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+)
+
+for decision in result.decisions:
+    print(f"{decision.pack}: {decision.action}")
+    for msg in decision.messages:
+        print(f"  → {msg}")
+```
+
+Output:
+```
+nigeria/cbn: deny
+  → CBN NIP Framework §4.2: Single transaction of ₦15,000,000 exceeds the ₦10,000,000 cap
+nigeria/ndpa: allow
+nigeria/bvn-nin: allow
+nigeria/nfiu-aml: escalate
+  → NFIU/MLPPA 2022: Transaction ≥ ₦5,000,000 — Currency Transaction Report required within 24 hours
+universal/pii-leakage: allow
+...
+```
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Nigeria Fintech Pack" icon="naira-sign" href="/sector-packs/nigeria-fintech">
+    Full pack reference
+  </Card>
+  <Card title="LangChain Guide" icon="link" href="/guides/langchain-integration">
+    Advanced LangGraph patterns
+  </Card>
+  <Card title="Understanding Decisions" icon="magnifying-glass" href="/guides/understanding-decisions">
+    How results are structured
+  </Card>
+</CardGroup>

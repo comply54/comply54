@@ -1,0 +1,188 @@
+---
+title: Nigeria Fintech Guide
+description: Complete guide for building compliant AI agents in Nigerian financial services.
+---
+
+## Regulatory landscape
+
+Nigerian AI agents in financial services must navigate four overlapping regulatory frameworks:
+
+| Framework | Regulator | What it governs |
+|-----------|----------|----------------|
+| **NDPA 2023** | NITDA | Personal data processing, cross-border transfers, consent |
+| **CBN Transaction Controls** | CBN | Transaction limits, KYC tiers, foreign exchange |
+| **BVN/NIN Framework** | CBN / NIMC | Biometric identity data handling |
+| **NFIU/MLPPA 2022** | NFIU | Anti-money laundering, Currency Transaction Reports, Suspicious Transaction Reports |
+
+comply54 enforces all four simultaneously via `NigeriaFintechCompliance`.
+
+## Common agent scenarios
+
+### Scenario 1: Transfer agent
+
+An AI agent that processes fund transfer instructions from users.
+
+```python
+from comply54 import NigeriaFintechCompliance
+
+compliance = NigeriaFintechCompliance()
+
+def process_transfer_intent(user_message: str, account_context: dict) -> dict:
+    # Extract amount and destination from LLM response
+    amount = extract_amount(user_message)
+    currency = extract_currency(user_message)
+
+    result = compliance.check(
+        action="transfer_funds",
+        params={"amount": amount, "currency": currency},
+        context={
+            "kyc_tier": account_context.get("kyc_tier"),
+            "pep_flag": account_context.get("is_pep", False),
+        },
+    )
+
+    if result.overall == "deny":
+        return {
+            "status": "blocked",
+            "reason": result.primary_violation.messages[0],
+            "audit_id": result.audit_id,
+        }
+
+    if result.overall == "escalate":
+        # Requires CTR filing — log for compliance team, allow transfer
+        file_ctr(amount=amount, audit_id=result.audit_id)
+        return {"status": "approved_with_ctr", "audit_id": result.audit_id}
+
+    return {"status": "approved"}
+```
+
+### Scenario 2: Customer data agent
+
+An AI agent that accesses and processes customer records.
+
+```python
+def handle_data_request(action: str, params: dict, user_id: str) -> str:
+    # Check before accessing customer data
+    result = compliance.check(
+        action=action,
+        params=params,
+        context={"user_id": user_id},
+    )
+
+    if result.blocked:
+        log_compliance_block(result)
+        return "This action cannot be completed due to data protection requirements."
+
+    # Proceed — then check the output
+    output = fetch_customer_record(params)
+
+    output_result = compliance.check(
+        action="respond_to_user",
+        output=str(output),
+    )
+
+    if output_result.blocked:
+        # The record contains raw BVN/NIN — redact before responding
+        output = redact_identifiers(output)
+
+    return output
+```
+
+### Scenario 3: Cross-border data export
+
+```python
+def export_to_processor(data: list[dict], destination: str) -> None:
+    result = compliance.check(
+        action="send_to_external",
+        params={
+            "destination_country": destination,
+            "data_type": "customer_pii",
+            "record_count": len(data),
+        },
+        context={"consent_documented": all_consented(data)},
+    )
+
+    if result.overall == "deny":
+        raise PermissionError(
+            f"NDPA §25: Cross-border transfer to {destination} blocked. "
+            f"{result.primary_violation.messages[0]}"
+        )
+
+    if result.overall == "escalate":
+        # Allowed with NITDA notification
+        submit_nitda_transfer_notification(destination=destination, count=len(data))
+
+    send_to_processor(data, destination)
+```
+
+## KYC tier reference
+
+CBN defines three customer tiers with different transaction limits:
+
+| Tier | ID verification | Single transaction limit | Daily limit |
+|------|----------------|------------------------|-------------|
+| Tier 1 | BVN-lite (phone only) | ₦200,000 | ₦500,000 |
+| Tier 2 | BVN | ₦2,000,000 | ₦5,000,000 |
+| Tier 3 | BVN + additional ID | ₦10,000,000 | ₦20,000,000 |
+
+Pass the tier in `context`:
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 1_500_000, "currency": "NGN"},
+    context={"kyc_tier": 2},  # Tier 2 — this will be denied (exceeds ₦2M single limit)
+)
+```
+
+## NFIU Currency Transaction Reports
+
+All transactions of ₦5,000,000 or above require a Currency Transaction Report (CTR) to the NFIU within 24 hours. comply54 returns `escalate` for these transactions — it does not block them, but your agent must file the report.
+
+```python
+if result.overall == "escalate":
+    violations = [d for d in result.decisions if d.action == "escalate"]
+    nfiu_violation = next(
+        (v for v in violations if "nfiu" in v.pack.lower()), None
+    )
+    if nfiu_violation:
+        # CTR filing required
+        file_nfiu_ctr(amount=amount, ctr_deadline_hours=24)
+```
+
+## BVN/NIN in outputs
+
+The NIMC Act and CBN Framework prohibit sharing BVN/NIN values in plaintext. The `universal/pii-leakage` pack detects these in agent outputs:
+
+```python
+# Check every output before sending to user
+output_check = compliance.check(
+    action="respond_to_user",
+    output=llm_response,
+)
+
+if output_check.blocked:
+    # Redact and re-check
+    safe_output = redact_bvn_nin(llm_response)
+    return safe_output
+
+return llm_response
+```
+
+## LangGraph integration
+
+See the full [LangGraph integration guide](/guides/langchain-integration) for a complete working graph with compliance nodes at input, tool call, and output stages.
+
+## Audit trail
+
+Every `ComplianceResult` has an `audit_id`. Store it alongside the transaction:
+
+```python
+result = compliance.check(...)
+record_transaction(
+    amount=amount,
+    decision=result.overall,
+    comply54_audit_id=result.audit_id,
+    violations=[d.pack for d in result.violations],
+)
+```

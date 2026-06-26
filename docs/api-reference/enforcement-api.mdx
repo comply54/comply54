@@ -1,0 +1,197 @@
+---
+title: Enforcement API
+description: Python API reference for comply54 — ComplianceResult, PolicyDecision, SectorCompliance, Comply54Engine.
+---
+
+## Top-level functions
+
+### `evaluate()`
+
+Low-level function — evaluate specific pack IDs without a sector pack:
+
+```python
+from comply54 import evaluate
+
+result = evaluate(
+    pack_ids=["nigeria/cbn", "universal/pii-leakage"],
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+    output="",
+    context={"kyc_tier": 3},
+)
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `pack_ids` | `list[str]` | Pack IDs from the registry |
+| `action` | `str` | The action the agent wants to take |
+| `params` | `dict` | Action parameters |
+| `output` | `str` | Agent output text (for PII checks) |
+| `context` | `dict` | Contextual metadata (KYC tier, consent, etc.) |
+
+**Returns:** `ComplianceResult`
+
+---
+
+## ComplianceResult
+
+```python
+@dataclass
+class ComplianceResult:
+    overall: Literal["allow", "audit", "escalate", "deny"]
+    decisions: list[PolicyDecision]
+    audit_id: str
+```
+
+**Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `.blocked` | `bool` | `True` if `overall in ("deny", "escalate")` |
+| `.violations` | `list[PolicyDecision]` | Decisions where `action != "allow"` |
+| `.primary_violation` | `PolicyDecision \| None` | Highest-severity violation |
+
+---
+
+## PolicyDecision
+
+```python
+@dataclass
+class PolicyDecision:
+    pack: str           # "nigeria/cbn"
+    regulation: str     # "CBN NIP Framework"
+    jurisdiction: str   # "NG"
+    action: str         # "deny"
+    messages: list[str] # ["CBN NIP Framework §4.2: ..."]
+    audit_id: str
+    evaluated_at: str   # ISO 8601
+```
+
+---
+
+## SectorCompliance (base class)
+
+All sector packs (`NigeriaFintechCompliance`, `KenyaFintechCompliance`, `PanAfricanFintechCompliance`) extend `SectorCompliance`.
+
+```python
+class SectorCompliance:
+    def check(
+        self,
+        action: str,
+        params: dict | None = None,
+        output: str = "",
+        context: dict | None = None,
+    ) -> ComplianceResult: ...
+
+    @property
+    def jurisdictions(self) -> list[str]: ...
+
+    @property
+    def pack_ids(self) -> list[str]: ...
+
+    @property
+    def packs(self) -> list[PackSpec]: ...
+```
+
+---
+
+## Comply54Engine
+
+Low-level engine for custom pack composition:
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import CBN, NDPA, KDPA
+
+engine = Comply54Engine(packs=[CBN, NDPA, KDPA])
+result = engine.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+)
+```
+
+**Constructor:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `packs` | `list[PackSpec]` | Packs to evaluate |
+| `cache` | `bool` | Cache interpreter by pack set (default: `True`) |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `.check(action, params, output, context)` | Convenience wrapper |
+| `.evaluate(input: EvaluationInput)` | Full evaluation with input object |
+
+---
+
+## EvaluationInput
+
+```python
+class EvaluationInput(BaseModel):
+    action: str
+    params: dict = {}
+    output: str = ""
+    context: dict = {}
+```
+
+---
+
+## PackSpec
+
+```python
+@dataclass(frozen=True)
+class PackSpec:
+    id: str            # "nigeria/cbn"
+    regulation: str    # "CBN NIP Framework"
+    jurisdiction: str  # "NG"
+    authority: str     # "CBN"
+    rego_path: str     # path to bundled .rego file
+    query_prefix: str  # "data.agt_policies_nigeria.cbn"
+    tags: list[str]    # ["aml", "transaction-limits"]
+```
+
+---
+
+## Registry helpers
+
+```python
+from comply54 import list_packs, packs_for_jurisdiction, packs_for_ids
+
+# All 18 packs
+all_packs = list_packs()
+
+# All packs for a jurisdiction
+ng_packs = packs_for_jurisdiction("NG")   # returns list[PackSpec]
+
+# Specific packs by ID
+selected = packs_for_ids(["nigeria/cbn", "kenya/kdpa"])
+```
+
+---
+
+## Available pack IDs
+
+| ID | Jurisdiction |
+|----|-------------|
+| `nigeria/ndpa` | NG |
+| `nigeria/cbn` | NG |
+| `nigeria/bvn-nin` | NG |
+| `nigeria/nfiu-aml` | NG |
+| `kenya/kdpa` | KE |
+| `south-africa/popia` | ZA |
+| `ghana/dpa` | GH |
+| `rwanda/dpa` | RW |
+| `egypt/pdpl` | EG |
+| `ethiopia/pdp` | ET |
+| `mauritius/dpa` | MU |
+| `tanzania/pdpa` | TZ |
+| `uganda/dppa` | UG |
+| `universal/pii-leakage` | — |
+| `universal/prompt-injection` | — |
+| `universal/tool-permissions` | — |
+| `universal/human-approval` | — |
+| `universal/model-routing` | — |

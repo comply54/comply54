@@ -1,0 +1,108 @@
+---
+title: Pan-African Pack
+description: All 13 African jurisdiction packs + 5 universal packs in one — for AI agents operating across the continent.
+---
+
+## Overview
+
+`PanAfricanFintechCompliance` is the broadest available pack, enforcing all 18 comply54 policy packs simultaneously. It is designed for AI platforms deployed across multiple African jurisdictions — a single evaluation returns a decision for every applicable regulation.
+
+```python
+from comply54 import PanAfricanFintechCompliance
+
+compliance = PanAfricanFintechCompliance()
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+)
+print(result.blocked)          # True
+print(len(result.decisions))   # 18
+```
+
+## Included packs
+
+### Nigerian frameworks
+| Pack | Regulation |
+|------|-----------|
+| `nigeria/ndpa` | NDPA 2023 |
+| `nigeria/cbn` | CBN Transaction Controls |
+| `nigeria/bvn-nin` | BVN/NIN Framework |
+| `nigeria/nfiu-aml` | NFIU/MLPPA 2022 |
+
+### East African frameworks
+| Pack | Regulation |
+|------|-----------|
+| `kenya/kdpa` | Kenya Data Protection Act 2019 |
+| `ethiopia/pdp` | Ethiopia PDP Proclamation 1321/2024 |
+| `mauritius/dpa` | Mauritius Data Protection Act 2017 |
+| `rwanda/dpa` | Rwanda Law No. 058/2021 |
+| `tanzania/pdpa` | Tanzania PDPA 2022 |
+| `uganda/dppa` | Uganda DPPA 2019 |
+
+### Southern & West African frameworks
+| Pack | Regulation |
+|------|-----------|
+| `south-africa/popia` | POPIA |
+| `ghana/dpa` | Ghana Data Protection Act 2012 |
+| `egypt/pdpl` | Egypt PDPL No. 151/2020 |
+
+### Universal agent safety
+| Pack | Standard |
+|------|---------|
+| `universal/pii-leakage` | OWASP LLM01 |
+| `universal/prompt-injection` | OWASP LLM01 |
+| `universal/tool-permissions` | OWASP LLM08 |
+| `universal/human-approval` | OWASP LLM08 |
+| `universal/model-routing` | OWASP LLM09 |
+
+## When to use this pack
+
+Use `PanAfricanFintechCompliance` when:
+- Your AI agent serves users across multiple African countries
+- You don't know the user's jurisdiction at evaluation time
+- You want to guarantee compliance before building jurisdiction-specific routing
+
+For single-jurisdiction deployments, prefer the more focused packs (`NigeriaFintechCompliance`, `KenyaFintechCompliance`) — evaluation is faster and messages are more targeted.
+
+## Usage
+
+```python
+from comply54 import PanAfricanFintechCompliance
+
+compliance = PanAfricanFintechCompliance()
+
+result = compliance.check(
+    action="export_data",
+    params={
+        "destination_country": "EU",
+        "data_type": "customer_pii",
+        "record_count": 5000,
+    },
+    context={"consent_documented": True},
+)
+
+# Summarise by jurisdiction
+for decision in result.decisions:
+    if decision.action != "allow":
+        print(f"[{decision.jurisdiction}] {decision.regulation}: {decision.action}")
+        for msg in decision.messages:
+            print(f"  {msg}")
+```
+
+## Checking covered jurisdictions
+
+```python
+compliance = PanAfricanFintechCompliance()
+print(compliance.jurisdictions)
+# ['NG', 'KE', 'ZA', 'GH', 'RW', 'EG', 'ET', 'MU', 'TZ', 'UG']
+```
+
+## Performance note
+
+The pan-African pack evaluates 18 packs per call. comply54 uses interpreter caching — the first call initialises modules once, subsequent calls reuse the cached interpreter. Typical latency: **2–5ms** for the first call in a process, **0.5–1ms** for subsequent calls.
+
+## Related
+
+- [Nigeria Fintech pack](/sector-packs/nigeria-fintech)
+- [Kenya Fintech pack](/sector-packs/kenya-fintech)
+- [Understanding decisions](/guides/understanding-decisions)

@@ -1,0 +1,195 @@
+---
+title: LangChain / LangGraph Integration
+description: Add comply54 to LangChain agents and LangGraph workflows — as a tool, a node, or a guard.
+---
+
+## Installation
+
+```bash
+pip install comply54 langchain-core langgraph
+```
+
+## The two patterns
+
+comply54 ships two LangGraph primitives:
+
+| Import | Type | When to use |
+|--------|------|------------|
+| `compliance_node(compliance)` | State node | Compliance check as a mandatory step in the graph |
+| `comply54_tool(compliance)` | StructuredTool | The LLM decides when to call the compliance check |
+
+For financial services, use `compliance_node` — compliance must not be optional.
+
+## Pattern 1: compliance_node (recommended)
+
+The compliance node reads `action`, `params`, `output`, and `context` from graph state, evaluates all packs, and writes the result back to state. If the check blocks, it sets `blocked: True` and the graph routes to a rejection handler instead of the execution node.
+
+```python
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph
+from typing import TypedDict, Any
+from comply54 import NigeriaFintechCompliance
+from comply54.langchain import compliance_node
+
+
+class AgentState(TypedDict):
+    action: str
+    params: dict
+    context: dict
+    output: str
+    blocked: bool
+    compliance_result: Any
+    messages: list
+
+
+compliance = NigeriaFintechCompliance()
+
+def agent_node(state: AgentState) -> AgentState:
+    llm = ChatOpenAI(model="claude-sonnet-4-6")
+    # ... generate action/params from messages
+    return {**state, "action": "transfer_funds", "params": {"amount": 5_000_000}}
+
+def execute_node(state: AgentState) -> AgentState:
+    # safe to execute — compliance passed
+    result = execute_transfer(state["params"])
+    return {**state, "output": result}
+
+def rejection_node(state: AgentState) -> AgentState:
+    reason = state["compliance_result"].primary_violation.messages[0]
+    return {**state, "output": f"Blocked: {reason}"}
+
+
+def build_graph():
+    graph = StateGraph(AgentState)
+
+    graph.add_node("agent", agent_node)
+    graph.add_node("check_compliance", compliance_node(compliance))
+    graph.add_node("execute", execute_node)
+    graph.add_node("reject", rejection_node)
+
+    graph.set_entry_point("agent")
+    graph.add_edge("agent", "check_compliance")
+
+    graph.add_conditional_edges(
+        "check_compliance",
+        lambda state: "reject" if state.get("blocked") else "execute",
+        {"execute": "execute", "reject": "reject"},
+    )
+    graph.add_edge("execute", "__end__")
+    graph.add_edge("reject", "__end__")
+
+    return graph.compile()
+
+
+app = build_graph()
+result = app.invoke({
+    "action": "transfer_funds",
+    "params": {"amount": 15_000_000, "currency": "NGN"},
+    "context": {"kyc_tier": 3},
+    "messages": [],
+})
+print(result["output"])
+# Blocked: CBN NIP Framework §4.2: Transaction exceeds ₦10,000,000 cap
+```
+
+## Pattern 2: comply54_tool
+
+The compliance check becomes a tool the LLM calls before taking actions. Best for exploratory agents where the model needs to reason about whether an action is compliant before deciding to execute it.
+
+```python
+from comply54.langchain import comply54_tool
+from langchain_openai import ChatOpenAI
+
+compliance = NigeriaFintechCompliance()
+tools = [comply54_tool(compliance)]
+
+llm = ChatOpenAI(model="claude-sonnet-4-6").bind_tools(tools)
+
+response = llm.invoke(
+    "Check if I can transfer ₦12,000,000 to account 0123456789. My KYC tier is 3."
+)
+# The LLM calls check_compliance tool → receives "deny" with CBN message
+# → responds explaining the block
+```
+
+## Output guard pattern
+
+Check the agent's output before sending it to the user — catches BVN/NIN leakage regardless of where in the graph it occurs.
+
+```python
+def output_guard_node(state: AgentState) -> AgentState:
+    result = compliance.check(
+        action="respond_to_user",
+        output=state["output"],
+    )
+
+    if result.blocked:
+        # Redact and return a safe message
+        safe_output = "[Response contained sensitive data and was redacted]"
+        return {**state, "output": safe_output, "pii_blocked": True}
+
+    return state
+```
+
+Add it as the last node before `__end__`:
+
+```python
+graph.add_node("output_guard", output_guard_node)
+graph.add_edge("execute", "output_guard")
+graph.add_edge("output_guard", "__end__")
+```
+
+## Three-stage guard (production pattern)
+
+Production Nigerian fintech agents should gate compliance at three points:
+
+```
+User input → [Input guard] → Agent reasoning → [Tool call guard] → Execute → [Output guard] → User
+```
+
+```python
+# Stage 1: Input guard — check what the user is asking to do
+def input_guard(state):
+    result = compliance.check(
+        action=extract_intent(state["messages"]),
+        params=extract_params(state["messages"]),
+        context=state["context"],
+    )
+    return {**state, "input_check": result}
+
+# Stage 2: Tool call guard — check before every tool execution
+def before_tool(tool_call, context):
+    result = compliance.check(
+        action=tool_call["name"],
+        params=tool_call["args"],
+        context=context,
+    )
+    if result.blocked:
+        raise ToolCallBlocked(result.primary_violation.messages[0])
+
+# Stage 3: Output guard — check before response is sent to user
+def output_guard(state):
+    result = compliance.check(
+        action="respond_to_user",
+        output=state["output"],
+    )
+    if result.blocked:
+        return {**state, "output": redact(state["output"])}
+    return state
+```
+
+## Streaming with compliance
+
+comply54 evaluates synchronously in microseconds — it does not interfere with LangChain streaming:
+
+```python
+async for chunk in app.astream(input_state):
+    # compliance evaluation happens synchronously inside nodes
+    # streaming is unaffected
+    yield chunk
+```
+
+## Related
+
+- [Nigeria Fintech sector pack](/sector-packs/nigeria-fintech)
+- [CrewAI integration](/guides/crewai-integration)

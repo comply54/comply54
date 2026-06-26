@@ -2,6 +2,13 @@
 
 **Open-source AI governance registry and tooling for African regulatory compliance.**
 
+[![CI](https://github.com/comply54/comply54/actions/workflows/ci.yml/badge.svg)](https://github.com/comply54/comply54/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/comply54/comply54/branch/main/graph/badge.svg)](https://codecov.io/gh/comply54/comply54)
+[![PyPI](https://img.shields.io/pypi/v/comply54.svg)](https://pypi.org/project/comply54)
+[![npm](https://img.shields.io/npm/v/@comply54/core.svg)](https://www.npmjs.com/package/@comply54/core)
+[![Python](https://img.shields.io/pypi/pyversions/comply54.svg)](https://pypi.org/project/comply54)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 ---
 
 ## How it relates to agt-policies-nigeria

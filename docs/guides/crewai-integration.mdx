@@ -1,0 +1,130 @@
+---
+title: CrewAI Integration
+description: Add comply54 to CrewAI agents as a tool — enforce African regulatory compliance across crews.
+---
+
+## Installation
+
+```bash
+pip install comply54 crewai
+```
+
+## Basic usage
+
+```python
+from crewai import Agent, Task, Crew
+from comply54 import NigeriaFintechCompliance
+from comply54.crewai import Comply54CrewTool
+
+compliance = NigeriaFintechCompliance()
+compliance_tool = Comply54CrewTool(compliance=compliance)
+
+compliance_officer = Agent(
+    role="Compliance Officer",
+    goal="Ensure all financial transactions comply with Nigerian regulations",
+    backstory=(
+        "You are a Nigerian financial compliance expert. Before any transaction "
+        "is approved, you verify it against NDPA, CBN, BVN/NIN, and NFIU rules."
+    ),
+    tools=[compliance_tool],
+    verbose=True,
+)
+
+check_task = Task(
+    description=(
+        "Check whether a transfer of ₦8,000,000 NGN to account 0123456789 "
+        "is compliant for a KYC Tier 3 customer."
+    ),
+    agent=compliance_officer,
+    expected_output="Compliance decision with reason and audit ID",
+)
+
+crew = Crew(agents=[compliance_officer], tasks=[check_task])
+result = crew.kickoff()
+print(result)
+```
+
+## Multi-agent crew with compliance gating
+
+```python
+from crewai import Agent, Task, Crew, Process
+
+compliance_tool = Comply54CrewTool(compliance=NigeriaFintechCompliance())
+
+# Agent 1: Validates the transaction request
+validator = Agent(
+    role="Transaction Validator",
+    goal="Validate transaction requests against Nigerian regulations",
+    tools=[compliance_tool],
+    backstory="Expert in CBN transaction controls and NFIU AML requirements",
+)
+
+# Agent 2: Executes only after compliance approval
+executor = Agent(
+    role="Transaction Executor",
+    goal="Execute approved transactions securely",
+    backstory="Responsible for executing pre-approved financial transactions",
+)
+
+validate_task = Task(
+    description="Validate transfer of ₦3,000,000 for customer tier 2",
+    agent=validator,
+    expected_output="JSON compliance decision",
+)
+
+execute_task = Task(
+    description="Execute the transfer if compliance check passed",
+    agent=executor,
+    context=[validate_task],   # receives validator output
+    expected_output="Transaction execution confirmation or rejection reason",
+)
+
+crew = Crew(
+    agents=[validator, executor],
+    tasks=[validate_task, execute_task],
+    process=Process.sequential,
+)
+crew.kickoff()
+```
+
+## Tool output format
+
+The `Comply54CrewTool` returns a JSON string the agent can parse and reason about:
+
+```json
+{
+  "overall": "escalate",
+  "blocked": true,
+  "audit_id": "aud_f3a9b2c1",
+  "violations": [
+    {
+      "pack": "nigeria/nfiu-aml",
+      "regulation": "NFIU/MLPPA 2022",
+      "action": "escalate",
+      "messages": [
+        "Transaction ≥ ₦5,000,000 — Currency Transaction Report required within 24 hours"
+      ]
+    }
+  ]
+}
+```
+
+## Injecting context from crew state
+
+If your crew tracks KYC context, pass it via the tool input:
+
+```python
+# The agent calls the tool with this structured input
+tool_input = {
+    "action": "transfer_funds",
+    "params": {"amount": 5_000_000, "currency": "NGN"},
+    "context": {"kyc_tier": 3, "pep_flag": False},
+}
+```
+
+The CrewAI tool schema is automatically generated from `EvaluationInput` — agents can construct the correct input from natural language instructions.
+
+## Related
+
+- [LangChain integration](/guides/langchain-integration)
+- [Nigeria Fintech pack](/sector-packs/nigeria-fintech)

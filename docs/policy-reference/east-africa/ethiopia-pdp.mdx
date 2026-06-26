@@ -1,0 +1,44 @@
+---
+title: Ethiopia PDP Proclamation 1321/2024
+description: Ethiopia Personal Data Protection Proclamation No. 1321/2024 — comply54 enforcement.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `ethiopia/pdp` |
+| **Full title** | Personal Data Protection Proclamation No. 1321/2024 |
+| **Regulator** | Data Protection Commission of Ethiopia |
+| **Jurisdiction** | Ethiopia (ET) |
+| **Effective date** | 2024 |
+
+## Key controls
+
+Ethiopia's PDP Proclamation is one of the most recently enacted on the continent. comply54 enforces:
+
+- Prohibition on cross-border transfer without adequacy or explicit consent
+- Biometric and sensitive data prohibitions
+- Data localisation preference for government and critical sector data
+- Consent as primary legal basis
+
+## Example
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import ETHIOPIA_PDP
+
+engine = Comply54Engine(packs=[ETHIOPIA_PDP])
+result = engine.check(
+    action="export_data",
+    params={"destination_country": "EU", "data_type": "customer_pii"},
+    context={"consent_documented": True},
+)
+# EU has adequacy — escalate for notification
+print(result.overall)   # "escalate"
+```
+
+## Regulatory references
+
+- Ethiopia Personal Data Protection Proclamation No. 1321/2024
+- [Data Protection Commission Ethiopia](https://www.dpc.gov.et)

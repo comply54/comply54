@@ -1,0 +1,39 @@
+---
+title: Tanzania PDPA 2022
+description: Tanzania Personal Data Protection Act 2022 — comply54 enforcement.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `tanzania/pdpa` |
+| **Full title** | Personal Data Protection Act 2022 |
+| **Regulator** | Tanzania Communications Regulatory Authority (TCRA) |
+| **Jurisdiction** | Tanzania (TZ) |
+| **Effective date** | 2022 |
+
+## Key controls
+
+- Consent as primary legal basis for processing
+- Cross-border transfer restrictions — must have adequate protection
+- Biometric data classified as sensitive; requires explicit consent
+- Data breach notification within 72 hours to regulator
+
+## Example
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import TANZANIA_PDPA
+
+engine = Comply54Engine(packs=[TANZANIA_PDPA])
+result = engine.check(
+    action="send_to_external",
+    params={"destination_country": "US", "data_type": "biometric"},
+)
+print(result.overall)   # "deny"
+```
+
+## Regulatory references
+
+- [Tanzania Communications Regulatory Authority](https://www.tcra.go.tz)

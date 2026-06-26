@@ -1,0 +1,82 @@
+---
+title: PII Leakage Detection
+description: Detects sensitive identifiers in agent outputs — BVN, NIN, PAN, passport numbers, and more.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `universal/pii-leakage` |
+| **Standard** | OWASP Top 10 for LLM Applications — LLM06: Sensitive Information Disclosure |
+| **Jurisdiction** | Universal (applies globally) |
+
+## What comply54 enforces
+
+This pack scans agent **output text** for African and global PII patterns that must not appear in plaintext responses. It enforces at the output layer — before the response is sent to the user.
+
+### Detected patterns
+
+| Pattern | Identifier | Regulatory basis |
+|---------|-----------|-----------------|
+| 11-digit number near "BVN" | Bank Verification Number | CBN BVN Framework |
+| 11-digit number near "NIN" | National ID Number | NIMC Act |
+| `\b\d{15,16}\b` (luhn-valid) | Payment card number (PAN) | PCI-DSS |
+| `[A-Z]{1,2}\d{7}` | Passport number | Various |
+| `\b\d{10}\b` near "KRA" | Kenya Revenue Authority PIN | KDPA 2019 |
+| `[A-Z]{3}\d{6}` near "Ghana Card" | Ghana Card | Ghana DPA |
+| Raw SWIFT/BIC code | Bank routing | International standard |
+| IBAN patterns | Bank account IBAN | EU/international |
+
+## Usage
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import PII_LEAKAGE
+
+engine = Comply54Engine(packs=[PII_LEAKAGE])
+
+# BVN detected — blocked
+result = engine.check(
+    action="respond_to_user",
+    output="Your BVN is 12345678901",
+)
+print(result.overall)   # "deny"
+print(result.primary_violation.messages[0])
+# "OWASP LLM06: BVN detected in agent output — must not be exposed in plaintext"
+
+# Clean output — passes
+result = engine.check(
+    action="respond_to_user",
+    output="Your transfer of ₦50,000 was successful.",
+)
+print(result.overall)   # "allow"
+```
+
+## Integration recommendation
+
+Check every agent output before returning it to the user, especially:
+1. Responses that include database query results
+2. Tool call outputs that may contain raw records
+3. Summaries generated from user data
+
+```python
+# Wrap all outbound responses
+def safe_respond(agent_output: str, compliance) -> str:
+    result = compliance.check(
+        action="respond_to_user",
+        output=agent_output,
+    )
+    if result.blocked:
+        return "[Response redacted — contained sensitive identifier]"
+    return agent_output
+```
+
+## Messages returned
+
+```
+OWASP LLM06: BVN detected in agent output — must not be exposed in plaintext
+OWASP LLM06: Payment card number (PAN) detected in agent output
+OWASP LLM06: Passport number pattern detected in response
+OWASP LLM06: KRA PIN detected — Kenya personal identifier must not appear in output
+```

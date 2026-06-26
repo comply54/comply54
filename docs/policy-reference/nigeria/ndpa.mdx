@@ -1,0 +1,84 @@
+---
+title: NDPA 2023
+description: Nigeria Data Protection Act 2023 — policy rules and enforcement behaviour in comply54.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `nigeria/ndpa` |
+| **Full title** | Nigeria Data Protection Act 2023 |
+| **Regulator** | NITDA (National Information Technology Development Agency) |
+| **Jurisdiction** | Nigeria (NG) |
+| **Effective date** | June 2023 |
+
+## What comply54 enforces
+
+### Cross-border data transfers (§25)
+
+NDPA §25 prohibits transferring personal data outside Nigeria unless the destination country provides adequate protection, or explicit consent has been obtained.
+
+| Condition | Action |
+|-----------|--------|
+| Destination is Nigeria | `allow` |
+| Destination has AU/ECOWAS adequacy status | `allow` |
+| Destination lacks adequacy + consent documented | `escalate` |
+| Destination lacks adequacy + no consent | `deny` |
+| Data type is biometric | `deny` (regardless of destination) |
+
+### Consent (§25, §30)
+
+```python
+result = compliance.check(
+    action="send_to_external",
+    params={
+        "destination_country": "GB",
+        "data_type": "customer_pii",
+    },
+    context={"consent_documented": True},  # escalate — consent present but no adequacy
+)
+```
+
+### Data minimisation (§24)
+
+The NDPA requires that only necessary data is processed. The pack flags large record batch operations for audit:
+
+```python
+result = compliance.check(
+    action="export_data",
+    params={
+        "destination_country": "NG",
+        "record_count": 10_000,
+        "data_type": "customer_pii",
+    },
+)
+# decision: audit — large-scale domestic processing flagged for record
+```
+
+## Input fields used
+
+| Field | Path in input | Description |
+|-------|--------------|-------------|
+| Action | `input.action` | `"store_data"`, `"send_to_external"`, `"export_data"` |
+| Destination country | `input.params.destination_country` | ISO 3166-1 alpha-2 |
+| Destination region | `input.params.destination_region` | e.g. `"NG"`, `"us-east-1"` |
+| Data type | `input.params.data_type` | `"biometric"`, `"customer_pii"`, `"financial"` |
+| Record count | `input.params.record_count` | Integer |
+| Consent documented | `input.context.consent_documented` | Boolean |
+
+## Messages returned
+
+Messages include the exact NDPA section and reason:
+
+```
+NDPA 2023 §25: Cross-border transfer to US requires explicit consent or adequacy confirmation
+NDPA 2023 §25: Biometric data transfer outside Nigeria is prohibited
+NDPA 2023 §24: Large-scale export of 10,000+ records flagged for data minimisation audit
+```
+
+## Regulatory references
+
+- [NDPA 2023 full text — NITDA](https://nitda.gov.ng/ndpa)
+- [NDPA §25 — Cross-border transfers](https://nitda.gov.ng/ndpa#section25)
+- Nigeria Data Protection Regulation 2019 (precursor, partially superseded)

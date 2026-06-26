@@ -1,0 +1,56 @@
+---
+title: Egypt PDPL No. 151/2020
+description: Egypt Personal Data Protection Law No. 151/2020 — comply54 enforcement.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `egypt/pdpl` |
+| **Full title** | Personal Data Protection Law No. 151 of 2020 |
+| **Regulator** | Personal Data Protection Center (PDPC) |
+| **Jurisdiction** | Egypt (EG) |
+| **Effective date** | October 2020 |
+
+## Key controls
+
+Egypt PDPL imposes some of the strictest data localisation requirements on the continent, with strong provisions for financial and biometric data:
+
+- **Data localisation**: Financial and government data must be stored on servers within Egypt
+- **Cross-border transfer**: Requires PDPC approval or adequate protection in destination country
+- **Biometric data**: Prohibited from cross-border transfer
+- **Financial data**: Must be processed within Egypt (data localisation)
+
+## Transfer and localisation rules
+
+| Scenario | Decision |
+|----------|----------|
+| Processing financial data in Egypt | `allow` |
+| Storing financial data outside Egypt | `deny` — localisation required |
+| Cross-border transfer to PDPC-approved country | `escalate` |
+| Cross-border transfer without PDPC approval | `deny` |
+| Biometric data cross-border | `deny` |
+
+## Example
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import EGYPT_PDPL
+
+engine = Comply54Engine(packs=[EGYPT_PDPL])
+result = engine.check(
+    action="store_data",
+    params={
+        "destination_country": "US",
+        "destination_region": "us-east-1",
+        "data_type": "financial",
+    },
+)
+print(result.overall)   # "deny" — financial data must be stored in Egypt
+```
+
+## Regulatory references
+
+- [Egypt Personal Data Protection Law No. 151/2020](https://www.pdpc.gov.eg)
+- [Personal Data Protection Center Egypt](https://www.pdpc.gov.eg)

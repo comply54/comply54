@@ -1,0 +1,81 @@
+---
+title: CrewAI
+description: comply54 as a CrewAI BaseTool — add African compliance to any crew.
+---
+
+## Install
+
+```bash
+pip install comply54 crewai
+```
+
+## Import
+
+```python
+from comply54.crewai import Comply54CrewTool
+```
+
+## Usage
+
+```python
+from comply54 import NigeriaFintechCompliance
+from comply54.crewai import Comply54CrewTool
+from crewai import Agent
+
+compliance = NigeriaFintechCompliance()
+tool = Comply54CrewTool(compliance=compliance)
+
+agent = Agent(
+    role="Compliance Officer",
+    goal="Verify all financial transactions comply with Nigerian law",
+    tools=[tool],
+)
+```
+
+## Tool input schema
+
+The tool accepts a JSON string or dict with these fields:
+
+```json
+{
+  "action": "transfer_funds",
+  "params": {"amount": 5000000, "currency": "NGN"},
+  "context": {"kyc_tier": 3},
+  "output": ""
+}
+```
+
+## Tool output
+
+The tool returns a JSON string:
+
+```json
+{
+  "overall": "escalate",
+  "blocked": true,
+  "audit_id": "aud_a1b2c3",
+  "violations": [
+    {
+      "pack": "nigeria/nfiu-aml",
+      "regulation": "NFIU/MLPPA 2022",
+      "action": "escalate",
+      "messages": ["Transaction ≥ ₦5,000,000 — CTR required within 24 hours"]
+    }
+  ]
+}
+```
+
+## Full example
+
+See the [CrewAI integration guide](/guides/crewai-integration) for a complete multi-agent crew with compliance gating.
+
+## API reference
+
+```python
+class Comply54CrewTool(BaseTool):
+    name: str = "comply54_compliance_check"
+    description: str = "Check an agent action against African regulatory compliance packs"
+    compliance: SectorCompliance
+
+    def _run(self, action: str, params: dict, output: str = "", context: dict = {}) -> str: ...
+```

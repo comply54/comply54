@@ -1,0 +1,41 @@
+---
+title: Uganda DPPA 2019
+description: Uganda Data Protection and Privacy Act 2019 — comply54 enforcement.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `uganda/dppa` |
+| **Full title** | Data Protection and Privacy Act 2019 |
+| **Regulator** | Personal Data Protection Office (PDPO) |
+| **Jurisdiction** | Uganda (UG) |
+| **Effective date** | February 2019 |
+
+## Key controls
+
+- Cross-border transfer requires written contract or adequacy decision (§19)
+- Sensitive data (biometric, health) requires explicit consent
+- Data controller registration obligation
+- Prohibition on transfer to countries without adequate safeguards
+
+## Example
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import UGANDA_DPPA
+
+engine = Comply54Engine(packs=[UGANDA_DPPA])
+result = engine.check(
+    action="export_data",
+    params={"destination_country": "US", "data_type": "customer_pii"},
+    context={"consent_documented": False},
+)
+print(result.overall)   # "deny"
+```
+
+## Regulatory references
+
+- [Uganda DPPA 2019 — Uganda Legal Information Institute](https://ulii.org)
+- [Personal Data Protection Office Uganda](https://www.pdpo.go.ug)

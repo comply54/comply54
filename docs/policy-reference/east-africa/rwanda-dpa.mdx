@@ -1,0 +1,40 @@
+---
+title: Rwanda DPA (Law 058/2021)
+description: Rwanda Law No. 058/2021 on Personal Data Protection — comply54 enforcement.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `rwanda/dpa` |
+| **Full title** | Law No. 058/2021 on Personal Data Protection and Privacy |
+| **Regulator** | Rwanda Utilities Regulatory Authority (RURA) |
+| **Jurisdiction** | Rwanda (RW) |
+| **Effective date** | October 2021 |
+
+## Key controls
+
+- Cross-border transfer restrictions for non-adequate destinations
+- Biometric data prohibition
+- Data minimisation requirements
+- Consent as default legal basis
+
+## Example
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import RWANDA_DPA
+
+engine = Comply54Engine(packs=[RWANDA_DPA])
+result = engine.check(
+    action="export_data",
+    params={"destination_country": "CN", "data_type": "customer_pii"},
+    context={"consent_documented": False},
+)
+print(result.overall)   # "deny"
+```
+
+## Regulatory references
+
+- [Law No. 058/2021 — Rwanda Official Gazette](https://www.rura.rw)

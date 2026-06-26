@@ -1,0 +1,110 @@
+---
+title: NFIU / MLPPA 2022
+description: Nigeria Financial Intelligence Unit — Currency Transaction Reports and Suspicious Transaction Reports enforced by comply54.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `nigeria/nfiu-aml` |
+| **Full title** | NFIU Anti-Money Laundering / Money Laundering (Prevention and Prohibition) Act 2022 |
+| **Regulator** | Nigeria Financial Intelligence Unit (NFIU) |
+| **Jurisdiction** | Nigeria (NG) |
+
+## What comply54 enforces
+
+### Currency Transaction Reports (CTR)
+
+All cash and electronic transactions of ₦5,000,000 and above must be reported to the NFIU within 24 hours via a Currency Transaction Report.
+
+comply54 returns `escalate` for these transactions — the transaction is not blocked, but the CTR filing is mandatory:
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 5_000_000, "currency": "NGN"},
+)
+# decision: escalate
+# "NFIU/MLPPA 2022: Transaction ≥ ₦5,000,000 — CTR required within 24 hours"
+```
+
+### Suspicious Transaction Reports (STR)
+
+Patterns flagged as suspicious trigger an STR requirement:
+
+| Pattern | Action |
+|---------|--------|
+| Multiple transfers just below ₦5M threshold (structuring) | `escalate` |
+| Transfer to/from sanctioned country | `deny` |
+| Velocity: >3 transfers in 1 hour | `escalate` |
+| PEP-related transaction | `escalate` |
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 4_900_000, "currency": "NGN"},
+    context={"structuring_detected": True},
+)
+# decision: escalate — "STR pattern detected: possible structuring below CTR threshold"
+```
+
+### Sanctions screening
+
+Transfers to OFAC/UN-sanctioned destinations are blocked:
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 100_000, "currency": "NGN", "destination_country": "IR"},
+)
+# decision: deny — "NFIU/MLPPA 2022: Transfer to sanctioned jurisdiction blocked"
+```
+
+## Input fields used
+
+| Field | Path | Description |
+|-------|------|-------------|
+| Action | `input.action` | `"transfer_funds"` triggers AML checks |
+| Amount | `input.params.amount` | Numeric |
+| Currency | `input.params.currency` | ISO 4217 |
+| Destination country | `input.params.destination_country` | ISO 3166-1 |
+| Structuring flag | `input.context.structuring_detected` | Boolean |
+| PEP flag | `input.context.pep_flag` | Boolean |
+
+## Messages returned
+
+```
+NFIU/MLPPA 2022: Transaction ≥ ₦5,000,000 — Currency Transaction Report (CTR) required within 24 hours
+NFIU/MLPPA 2022: STR pattern detected — possible structuring to evade CTR threshold
+NFIU/MLPPA 2022: Transfer to sanctioned jurisdiction (IR) — blocked per UN/OFAC sanctions
+```
+
+## Handling escalations in your agent
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 8_000_000, "currency": "NGN"},
+)
+
+if result.overall == "escalate":
+    nfiu = next(
+        (d for d in result.decisions if d.pack == "nigeria/nfiu-aml"),
+        None,
+    )
+    if nfiu and nfiu.action == "escalate":
+        # File CTR before executing transfer
+        file_ctr(
+            amount=8_000_000,
+            currency="NGN",
+            audit_id=result.audit_id,
+            deadline_hours=24,
+        )
+```
+
+## Regulatory references
+
+- Money Laundering (Prevention and Prohibition) Act 2022 (MLPPA 2022)
+- NFIU AML/CFT/CPF Regulations 2023
+- Financial Action Task Force (FATF) Recommendations

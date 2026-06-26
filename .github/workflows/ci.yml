@@ -7,150 +7,129 @@ on:
     branches: [main]
 
 jobs:
-  # -------------------------------------------------------------------
-  # 1. Validate all registry packs (remote sources + any local packs)
-  # -------------------------------------------------------------------
-  validate-schemas:
-    name: Schema Validation
+  # ── 1. Python package tests + coverage ──────────────────────────────────────
+  python:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
+          cache: pip
 
-      - name: Install dependencies
-        run: pip install pyyaml jsonschema
+      - name: Install comply54 + dev deps
+        run: pip install -e ".[dev]"
 
-      - name: Validate all registry packs
-        run: python tools/validate.py
+      - name: Run tests with coverage
+        run: pytest tests/ --cov=comply54 --cov-report=xml --cov-report=term-missing -q
 
-  # -------------------------------------------------------------------
-  # 2. OPA tests — only for local packs in packages/
-  #    Remote packs (agt-policies-nigeria) are tested in their own repo.
-  # -------------------------------------------------------------------
-  opa-tests:
-    name: OPA Tests (local packs only)
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: python
+          name: comply54-python
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ── 2. TypeScript package tests ──────────────────────────────────────────────
+  typescript:
+    name: TypeScript (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["18", "20", "22"]
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check for local policy packs
-        id: check_packs
-        run: |
-          COUNT=$(find packages -name "policy.rego" 2>/dev/null | wc -l)
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-          echo "Local packs with Rego: $COUNT"
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: packages/core/package-lock.json
+
+      - name: Install dependencies
+        working-directory: packages/core
+        run: npm ci --prefer-offline || npm install
+
+      - name: Type check
+        working-directory: packages/core
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: packages/core
+        run: npx vitest run --reporter=verbose
+
+  # ── 3. Rego syntax check (bundled packs) ────────────────────────────────────
+  rego:
+    name: Rego Policy Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Install OPA
-        if: steps.check_packs.outputs.count > 0
         run: |
-          curl -L -o /usr/local/bin/opa \
+          curl -sSL -o /usr/local/bin/opa \
             https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
           chmod +x /usr/local/bin/opa
           opa version
 
-      - name: Check OPA syntax
-        if: steps.check_packs.outputs.count > 0
+      - name: Check Rego syntax — all bundled packs
         run: |
-          find packages -name "*.rego" | while read f; do
+          find comply54/packs -name "*.rego" | while read f; do
             opa check "$f" || exit 1
+            echo "  ✓  $f"
           done
 
-      - name: Run OPA tests
-        if: steps.check_packs.outputs.count > 0
+      - name: Run Rego tests (if any _test.rego files present)
         run: |
-          find packages -name "policy.rego" | while read policy; do
-            dir=$(dirname "$policy")
-            testdir="$dir/tests"
-            if [ -d "$testdir" ]; then
-              echo "Testing $dir ..."
-              opa test "$policy" "$testdir/" -v || exit 1
-            fi
-          done
+          COUNT=$(find comply54/packs -name "*_test.rego" | wc -l)
+          if [ "$COUNT" -gt 0 ]; then
+            opa test comply54/packs/ -v
+          else
+            echo "No _test.rego files found — skipping OPA test runner"
+          fi
 
-  # -------------------------------------------------------------------
-  # 3. Regal lint — only for local packs
-  # -------------------------------------------------------------------
-  regal-lint:
-    name: Regal Lint (local packs only)
+  # ── 4. Lint ──────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check for local Rego files
-        id: check_rego
-        run: |
-          COUNT=$(find packages -name "*.rego" 2>/dev/null | wc -l)
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-
-      - name: Install Regal
-        if: steps.check_rego.outputs.count > 0
-        run: |
-          curl -L -o /usr/local/bin/regal \
-            https://github.com/StyraInc/regal/releases/latest/download/regal_Linux_x86_64
-          chmod +x /usr/local/bin/regal
-          regal version
-
-      - name: Lint local Rego policies
-        if: steps.check_rego.outputs.count > 0
-        run: regal lint packages/
-
-  # -------------------------------------------------------------------
-  # 4. Check every local pack has a meta.json
-  # -------------------------------------------------------------------
-  meta-check:
-    name: meta.json Check (local packs)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify every local pack has meta.json
-        run: |
-          FAIL=0
-          for policy_yaml in $(find packages -name "policy.yaml" 2>/dev/null); do
-            dir=$(dirname "$policy_yaml")
-            if [ ! -f "$dir/meta.json" ]; then
-              echo "MISSING meta.json: $dir"
-              FAIL=1
-            fi
-          done
-          exit $FAIL
-
-  # -------------------------------------------------------------------
-  # 5. registry.json integrity check
-  # -------------------------------------------------------------------
-  registry-check:
-    name: Registry Integrity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
 
-      - name: Check registry.json is valid JSON
-        run: python -c "import json; json.load(open('registry.json')); print('registry.json is valid JSON')"
+      - name: Install ruff
+        run: pip install ruff
 
-      - name: Check all registry source URLs are reachable
-        run: |
-          python3 << 'EOF'
-          import json, urllib.request, sys
-          registry = json.load(open("registry.json"))
-          fail = 0
-          for pack in registry["packs"]:
-              url = pack.get("source_yaml")
-              if not url:
-                  continue
-              try:
-                  req = urllib.request.Request(url, method="HEAD")
-                  urllib.request.urlopen(req, timeout=10)
-                  print(f"  ✓  {pack['id']}")
-              except Exception as e:
-                  print(f"  ✗  {pack['id']}: {e}")
-                  fail += 1
-          sys.exit(fail)
-          EOF
+      - name: Run ruff
+        run: ruff check comply54/ tests/
+
+  # ── 5. Registry integrity ────────────────────────────────────────────────────
+  registry:
+    name: Registry Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate registry.json is valid JSON
+        run: python3 -c "import json; json.load(open('registry.json')); print('✓ registry.json valid')"

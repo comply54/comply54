@@ -1,0 +1,78 @@
+---
+title: POPIA (South Africa)
+description: Protection of Personal Information Act — comply54 enforcement for South African AI agents.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `south-africa/popia` |
+| **Full title** | Protection of Personal Information Act 4 of 2013 (POPIA) |
+| **Regulator** | Information Regulator of South Africa |
+| **Jurisdiction** | South Africa (ZA) |
+| **Effective date** | July 2021 (full enforcement) |
+
+## What comply54 enforces
+
+POPIA is South Africa's comprehensive data privacy framework, broadly aligned with GDPR. comply54 enforces the agent-facing conditions of POPIA:
+
+### Cross-border transfers (§72)
+
+POPIA §72 requires that the destination country has adequate protection before personal information is transferred outside South Africa.
+
+| Destination | Decision |
+|-------------|----------|
+| South Africa | `allow` |
+| AU/SADC adequacy partner | `allow` |
+| Non-adequate country + consent | `escalate` — IR notification |
+| Non-adequate country, no consent | `deny` |
+| Any country, special data (biometric/health) | `deny` |
+
+### Special personal information (§26)
+
+POPIA §26 imposes strict controls on biometric data, race, health information, and criminal records — prohibiting cross-border transfer in all cases:
+
+```python
+result = compliance.check(
+    action="export_data",
+    params={"destination_country": "US", "data_type": "biometric"},
+)
+# decision: deny — "POPIA §26: Special personal information cannot be transferred cross-border"
+```
+
+### Consent (§11)
+
+Processing personal information requires at least one lawful basis (consent, legitimate interest, contract, legal obligation):
+
+```python
+result = compliance.check(
+    action="process_data",
+    params={"data_type": "customer_pii"},
+    context={"consent_documented": False, "legitimate_interest": False},
+)
+# decision: escalate — lawful basis required
+```
+
+## Input fields used
+
+| Field | Path | Description |
+|-------|------|-------------|
+| Action | `input.action` | `"export_data"`, `"process_data"`, `"send_to_external"` |
+| Destination country | `input.params.destination_country` | ISO 3166-1 |
+| Data type | `input.params.data_type` | `"biometric"`, `"customer_pii"`, `"health"`, `"financial"` |
+| Consent documented | `input.context.consent_documented` | Boolean |
+| Legitimate interest | `input.context.legitimate_interest` | Boolean |
+
+## Messages returned
+
+```
+POPIA §72: Cross-border transfer to US requires adequacy confirmation or consent
+POPIA §26: Special personal information (biometric) — cross-border transfer prohibited
+POPIA §11: No lawful basis for processing — consent or legitimate interest required
+```
+
+## Regulatory references
+
+- [Protection of Personal Information Act 4 of 2013](https://www.justice.gov.za/inforeg)
+- [Information Regulator South Africa](https://www.inforeg.org.za)

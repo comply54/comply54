@@ -1,0 +1,111 @@
+---
+title: Introduction
+description: African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, KDPA, POPIA and 15+ African regulatory frameworks.
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="Comply54"
+/>
+
+## What is Comply54?
+
+Comply54 is the African AI compliance infrastructure layer. It enforces African regulatory requirements — NDPA 2023, CBN transaction controls, KDPA 2019, POPIA, and 13 other African data protection laws — directly inside your AI agent stack.
+
+**One import. Zero Rego knowledge required.**
+
+```python
+from comply54 import NigeriaFintechCompliance
+
+compliance = NigeriaFintechCompliance()
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+    context={"kyc_tier": 3},
+)
+
+if result.blocked:
+    raise ValueError(result.primary_violation.messages[0])
+# → "CBN NIP Framework: Transaction of ₦15,000,000 exceeds
+#    ₦10,000,000 single-transaction cap — blocked"
+```
+
+## Why Comply54?
+
+African AI companies operating in regulated sectors face a compliance problem that generic tools don't solve:
+
+- **Presidio** and **spaCy** have no awareness of BVN, NIN, Ghana Card, KRA PIN, or any African identity format
+- **GDPR/CCPA tools** don't cover NDPA 2023, CBN AML/CFT regulations, or KDPA cross-border transfer restrictions
+- **OPA** is powerful but requires every team to author and maintain their own Rego policies
+- **No existing tool** enforces CBN transaction limits (₦10M NIP cap), NFIU CTR thresholds, or NDPA §25 cross-border rules at agent runtime
+
+Comply54 solves this at the enforcement layer — the point where an AI agent is about to take an action. It evaluates the action against the applicable regulations and returns a structured decision before anything is executed.
+
+## How it works
+
+```
+Agent decides to take an action
+           │
+           ▼
+  comply54.check(action, params)
+           │
+           ├─ NDPA 2023:       cross-border? data type? consent?
+           ├─ CBN Controls:    amount within limits? KYC tier?
+           ├─ BVN/NIN:         biometric data in output?
+           ├─ NFIU AML:        CTR threshold? suspicious pattern?
+           └─ OWASP Safety:    PII leak? prompt injection?
+           │
+           ▼
+    PolicyDecision
+    ┌──────────────────────────────────┐
+    │ overall:   "deny"                │
+    │ regulation: "CBN NIP Framework"  │
+    │ message:   "₦15M exceeds cap"    │
+    │ audit_id:  "aud_abc123"          │
+    └──────────────────────────────────┘
+```
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="No OPA required" icon="shield-check">
+    Built on `regopy` — evaluates Rego policies in-process. No binary to install, works in Lambda and Edge functions.
+  </Card>
+  <Card title="19 policy packs" icon="scale-balanced">
+    NDPA, CBN, KDPA, POPIA, Ghana DPA, Rwanda DPA, Egypt PDPL and 12 more — all with exact regulatory citations.
+  </Card>
+  <Card title="Sector packs" icon="building-columns">
+    `NigeriaFintechCompliance`, `KenyaFintechCompliance`, `PanAfricanFintechCompliance` — pre-composed for your vertical.
+  </Card>
+  <Card title="Framework adapters" icon="plug">
+    Native integration with LangChain, CrewAI, AutoGen, and Vercel Eve via `comply54-adapter-eve`.
+  </Card>
+</CardGroup>
+
+## Regulatory coverage
+
+| Region | Frameworks |
+|--------|-----------|
+| Nigeria | NDPA 2023, CBN Transaction Controls, BVN/NIN Framework, NFIU/MLPPA 2022 |
+| Kenya | Kenya Data Protection Act 2019 |
+| South Africa | POPIA (Protection of Personal Information Act) |
+| Ghana | Ghana Data Protection Act 2012 |
+| Rwanda | Law No. 058/2021 on Personal Data Protection |
+| Egypt | Personal Data Protection Law No. 151/2020 |
+| Ethiopia | Personal Data Protection Proclamation 1321/2024 |
+| Mauritius | Data Protection Act 2017 |
+| Tanzania | Personal Data Protection Act 2022 |
+| Uganda | Data Protection and Privacy Act 2019 |
+| Universal | OWASP Agentic AI LLM01, LLM06, LLM08, LLM09 |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Add NDPA + CBN compliance to a LangChain agent in 5 minutes
+  </Card>
+  <Card title="Nigeria Fintech Guide" icon="naira-sign" href="/guides/nigeria-fintech-guide">
+    Complete guide for AI agents in Nigerian financial services
+  </Card>
+</CardGroup>

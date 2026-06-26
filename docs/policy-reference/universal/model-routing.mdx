@@ -1,0 +1,81 @@
+---
+title: Model Routing
+description: Enforces data residency and model-selection rules — prevents sensitive data from being sent to models outside approved regions.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `universal/model-routing` |
+| **Standard** | OWASP Top 10 for LLM Applications — LLM09: Misinformation / Model Selection |
+| **Jurisdiction** | Universal |
+
+## What comply54 enforces
+
+When an AI agent routes tasks to external models or APIs, it must ensure that sensitive data stays within approved jurisdictions. This pack enforces model routing constraints for data residency compliance.
+
+### Controls
+
+| Scenario | Decision |
+|----------|----------|
+| Sensitive data routed to model in non-approved region | `deny` |
+| PII sent to model with no data processing agreement | `escalate` |
+| Biometric data sent to any external model | `deny` |
+| Model selection overrides compliance constraints | `deny` |
+| High-stakes decision delegated to non-approved model | `escalate` |
+
+## Usage
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import MODEL_ROUTING
+
+engine = Comply54Engine(packs=[MODEL_ROUTING])
+
+# Nigerian PII being routed to US model — NDPA §25 consideration
+result = engine.check(
+    action="route_to_model",
+    params={
+        "model_provider": "openai",
+        "model_region": "us-east-1",
+        "data_type": "customer_pii",
+        "data_jurisdiction": "NG",
+    },
+)
+print(result.overall)   # "escalate" — PII routing outside Nigeria requires DPA review
+
+# Biometric data — always deny
+result = engine.check(
+    action="route_to_model",
+    params={
+        "model_provider": "openai",
+        "model_region": "us-east-1",
+        "data_type": "biometric",
+        "data_jurisdiction": "NG",
+    },
+)
+print(result.overall)   # "deny"
+```
+
+## Approved model regions
+
+Configure approved regions via the `context` parameter:
+
+```python
+result = engine.check(
+    action="route_to_model",
+    params={"model_region": "eu-west-1", "data_type": "customer_pii"},
+    context={"approved_regions": ["eu-west-1", "eu-central-1"]},
+)
+print(result.overall)   # "allow" — EU region is in approved list
+```
+
+## Messages returned
+
+```
+OWASP LLM09: Routing Nigerian PII to US model region — NDPA §25 cross-border transfer applies
+OWASP LLM09: Biometric data must not be sent to external model APIs
+OWASP LLM09: Model region 'us-east-1' not in approved regions for NG data
+OWASP LLM09: No data processing agreement recorded for provider 'openai' — escalation required
+```

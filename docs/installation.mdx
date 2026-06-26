@@ -1,0 +1,115 @@
+---
+title: Installation
+description: Install comply54 and its framework adapters.
+---
+
+## Requirements
+
+- Python 3.9 or higher
+- No OPA binary — evaluation is in-process via `regopy`
+
+## Core package
+
+```bash
+pip install comply54
+```
+
+This installs the evaluation engine, all 19 policy packs, and the sector packs for Nigeria, Kenya, and Pan-African coverage.
+
+## Framework adapters
+
+Install the adapter for your AI framework alongside the core:
+
+<Tabs>
+  <Tab title="LangChain / LangGraph">
+    ```bash
+    pip install comply54 langchain-core langgraph
+    ```
+
+    ```python
+    from comply54.langchain import compliance_node, comply54_tool
+    ```
+  </Tab>
+  <Tab title="CrewAI">
+    ```bash
+    pip install comply54 crewai
+    ```
+
+    ```python
+    from comply54.crewai import Comply54CrewTool
+    ```
+  </Tab>
+  <Tab title="AutoGen">
+    ```bash
+    pip install comply54 pyautogen
+    ```
+
+    ```python
+    from comply54.autogen import register_compliance
+    ```
+  </Tab>
+  <Tab title="Eve (Vercel)">
+    ```bash
+    pip install comply54-adapter-eve
+    ```
+
+    See the [Eve integration guide](/integrations/eve) for configuration.
+  </Tab>
+</Tabs>
+
+## Verify installation
+
+```python
+import comply54
+
+# Check package version
+print(comply54.__version__)   # 0.1.0
+
+# List all available packs
+from comply54 import list_packs
+for pack in list_packs():
+    print(f"{pack.id}  ({pack.jurisdiction})  — {pack.regulation}")
+```
+
+Expected output:
+```
+nigeria/ndpa        (NG)  — NDPA 2023
+nigeria/cbn         (NG)  — CBN Transaction Controls
+nigeria/bvn-nin     (NG)  — BVN/NIN Framework
+nigeria/nfiu-aml    (NG)  — NFIU/MLPPA 2022
+kenya/kdpa          (KE)  — Kenya Data Protection Act 2019
+south-africa/popia  (ZA)  — POPIA
+ghana/dpa           (GH)  — Ghana Data Protection Act 2012
+rwanda/dpa          (RW)  — Law No. 058/2021
+egypt/pdpl          (EG)  — Egypt PDPL No. 151/2020
+ethiopia/pdp        (ET)  — Ethiopia PDP Proclamation 1321/2024
+mauritius/dpa       (MU)  — Mauritius DPA 2017
+tanzania/pdpa       (TZ)  — Tanzania PDPA 2022
+uganda/dppa         (UG)  — Uganda DPPA 2019
+universal/pii-leakage       — OWASP LLM01
+universal/prompt-injection  — OWASP LLM01
+universal/tool-permissions  — OWASP LLM08
+universal/human-approval    — OWASP LLM08
+universal/model-routing     — OWASP LLM09
+```
+
+## Environment variables
+
+comply54 requires no mandatory environment variables. Optional configuration:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `COMPLY54_AUDIT_BACKEND` | `none` | Audit log destination: `none`, `stdout`, `file`, or a URL |
+| `COMPLY54_AUDIT_FILE` | `comply54-audit.jsonl` | Path when `AUDIT_BACKEND=file` |
+| `COMPLY54_STRICT_MODE` | `false` | Treat `escalate` decisions as `deny` |
+
+## Docker / Lambda
+
+comply54 works in any Python environment — no system dependencies:
+
+```dockerfile
+FROM python:3.12-slim
+RUN pip install comply54
+```
+
+The `regopy` wheel ships with a pre-compiled Go OPA binary embedded as a shared object — no `apt-get` or `brew install opa` required.

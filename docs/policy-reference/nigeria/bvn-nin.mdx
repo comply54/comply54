@@ -1,0 +1,96 @@
+---
+title: BVN/NIN Framework
+description: Bank Verification Number and National Identity Number data protection rules enforced by comply54.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `nigeria/bvn-nin` |
+| **Full title** | BVN/NIN Biometric Data Framework |
+| **Regulators** | CBN (BVN), NIMC (NIN) |
+| **Jurisdiction** | Nigeria (NG) |
+
+## What comply54 enforces
+
+BVN (Bank Verification Number) and NIN (National Identification Number) are biometric-linked identifiers unique to each Nigerian. The CBN Act and NIMC Act prohibit sharing these values in plaintext in any output or cross-border transfer.
+
+The comply54 `nigeria/bvn-nin` pack checks agent **outputs** for these patterns. It is also triggered by actions that export biometric data cross-border.
+
+### BVN/NIN detection in outputs
+
+BVN is an 11-digit number. NIN is also 11 digits. The pack uses regex to detect these patterns in agent response text:
+
+```python
+# BVN in output — detected and blocked
+result = compliance.check(
+    action="respond_to_user",
+    output="Your BVN is 12345678901 and your NIN is 98765432101",
+)
+# decision: deny
+
+# Safe output — no identifiers
+result = compliance.check(
+    action="respond_to_user",
+    output="Your account balance is ₦150,000",
+)
+# decision: allow
+```
+
+### Cross-border biometric transfer
+
+```python
+result = compliance.check(
+    action="send_to_external",
+    params={"destination_country": "US", "data_type": "biometric"},
+)
+# decision: deny — biometric export prohibited
+```
+
+## Pattern matching
+
+| Pattern | Matched identifier |
+|---------|--------------------|
+| `\b\d{11}\b` in financial context | BVN or NIN (11-digit) |
+| `BVN\s*:?\s*\d{11}` | Explicit BVN label |
+| `NIN\s*:?\s*\d{11}` | Explicit NIN label |
+
+The pack uses conservative matching: 11-digit numbers are flagged only when surrounded by identifier context (e.g., "BVN:", "your NIN", etc.), to avoid false positives on account numbers.
+
+## Input fields used
+
+| Field | Path | Description |
+|-------|------|-------------|
+| Action | `input.action` | Any — output check applies to all actions |
+| Output | `input.output` | String — the agent's response text |
+| Data type | `input.params.data_type` | `"biometric"` triggers export block |
+| Destination | `input.params.destination_country` | ISO 3166-1 alpha-2 |
+
+## Messages returned
+
+```
+BVN/NIN Framework: BVN detected in agent output — must not be exposed in plaintext
+BVN/NIN Framework: NIN detected in agent output — sharing NIN values is prohibited
+BVN/NIN Framework: Biometric data export outside Nigeria is prohibited under NIMC Act
+```
+
+## Remediation
+
+When the pack fires on an output, redact before responding:
+
+```python
+import re
+
+def redact_bvn_nin(text: str) -> str:
+    # Replace 11-digit sequences near BVN/NIN labels
+    text = re.sub(r'(BVN\s*:?\s*)\d{11}', r'\1[REDACTED]', text, flags=re.I)
+    text = re.sub(r'(NIN\s*:?\s*)\d{11}', r'\1[REDACTED]', text, flags=re.I)
+    return text
+```
+
+## Regulatory references
+
+- Bank Verification Number (BVN) Operational Framework — CBN 2014 (amended 2022)
+- National Identity Management Commission Act 2007
+- NDPA 2023 §30 — special categories of personal data (biometric)

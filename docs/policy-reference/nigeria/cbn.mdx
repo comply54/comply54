@@ -1,0 +1,97 @@
+---
+title: CBN Transaction Controls
+description: Central Bank of Nigeria transaction limits, KYC tier requirements, and PEP screening — enforced by comply54.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `nigeria/cbn` |
+| **Full title** | CBN Transaction Controls / NIP Framework |
+| **Regulator** | Central Bank of Nigeria (CBN) |
+| **Jurisdiction** | Nigeria (NG) |
+
+## What comply54 enforces
+
+### NIP single-transaction cap (CBN NIP Framework §4.2)
+
+The CBN NIP (Nigeria Inter-Bank Payment) Framework sets a ₦10,000,000 cap on individual electronic transfers. Any single transaction above this limit is prohibited.
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+)
+# decision: deny
+# "CBN NIP Framework §4.2: Transaction of ₦15,000,000 exceeds the ₦10,000,000 single-transaction cap"
+```
+
+### KYC tier limits
+
+| Tier | Single transaction | Daily cumulative |
+|------|-------------------|-----------------|
+| 0 (no KYC) | `deny` — identity not verified | `deny` |
+| 1 | ₦200,000 | ₦500,000 |
+| 2 | ₦2,000,000 | ₦5,000,000 |
+| 3 | ₦10,000,000 | ₦20,000,000 |
+
+```python
+# Tier 2 attempting ₦3M — exceeds Tier 2 single limit
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 3_000_000, "currency": "NGN"},
+    context={"kyc_tier": 2},
+)
+# decision: deny
+```
+
+### PEP screening
+
+Transfers involving Politically Exposed Persons require escalation regardless of amount:
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 500_000, "currency": "NGN"},
+    context={"kyc_tier": 3, "pep_flag": True},
+)
+# decision: escalate — "PEP screening required"
+```
+
+### Foreign exchange
+
+Non-NGN transfers are flagged for CBN FX policy review:
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 10_000, "currency": "USD"},
+)
+# decision: escalate — "Non-NGN transfer requires CBN FX policy review"
+```
+
+## Input fields used
+
+| Field | Path | Description |
+|-------|------|-------------|
+| Action | `input.action` | Must be `"transfer_funds"` to trigger CBN checks |
+| Amount | `input.params.amount` | Numeric, in the specified currency |
+| Currency | `input.params.currency` | ISO 4217 (`"NGN"`, `"USD"`, etc.) |
+| KYC tier | `input.context.kyc_tier` | Integer 0–3 |
+| PEP flag | `input.context.pep_flag` | Boolean |
+
+## Messages returned
+
+```
+CBN NIP Framework §4.2: Transaction of ₦15,000,000 exceeds the ₦10,000,000 single-transaction cap
+CBN KYC Framework: Tier 2 single-transaction limit is ₦2,000,000 — ₦3,000,000 exceeds limit
+CBN KYC Framework: No KYC tier — transaction blocked pending identity verification
+CBN AML/CFT: PEP flag set — transaction requires compliance officer approval
+```
+
+## Regulatory references
+
+- CBN NIP Framework (latest revision)
+- CBN Know Your Customer (KYC) Policy 2023
+- CBN AML/CFT Regulations 2022

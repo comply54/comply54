@@ -1,0 +1,52 @@
+---
+title: Ghana DPA 2012
+description: Ghana Data Protection Act 2012 — comply54 enforcement.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `ghana/dpa` |
+| **Full title** | Data Protection Act 2012 (Act 843) |
+| **Regulator** | Data Protection Commission (DPC) |
+| **Jurisdiction** | Ghana (GH) |
+| **Effective date** | October 2012 |
+
+## Key controls
+
+Ghana was one of the earliest African countries to enact comprehensive data protection legislation. comply54 enforces:
+
+- Cross-border transfer restrictions (§33) — requires DPC-approved countries or explicit consent
+- Prohibition on transfer of sensitive personal data (health, biometric, religion, ethnicity) without explicit consent
+- Data processor registration with the DPC
+- Data subject rights compliance
+
+## Transfer restriction
+
+| Destination | Data type | Decision |
+|-------------|-----------|----------|
+| Ghana | Any | `allow` |
+| DPC-approved country | Non-sensitive | `allow` |
+| Non-approved country | Personal data + consent | `escalate` |
+| Non-approved country | Sensitive data | `deny` |
+
+## Example
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import GHANA_DPA
+
+engine = Comply54Engine(packs=[GHANA_DPA])
+result = engine.check(
+    action="export_data",
+    params={"destination_country": "US", "data_type": "customer_pii"},
+    context={"consent_documented": True},
+)
+print(result.overall)   # "escalate" — DPC notification required
+```
+
+## Regulatory references
+
+- [Ghana Data Protection Act 843 (2012)](https://www.dpc.gov.gh)
+- [Data Protection Commission Ghana](https://www.dpc.gov.gh)

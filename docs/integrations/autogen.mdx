@@ -1,0 +1,72 @@
+---
+title: AutoGen
+description: Register comply54 as a function tool on AutoGen agents.
+---
+
+## Install
+
+```bash
+pip install comply54 pyautogen
+```
+
+## Import
+
+```python
+from comply54.autogen import register_compliance
+```
+
+## Usage
+
+```python
+import autogen
+from comply54 import NigeriaFintechCompliance
+from comply54.autogen import register_compliance
+
+compliance = NigeriaFintechCompliance()
+
+assistant = autogen.AssistantAgent(
+    name="FinancialAgent",
+    llm_config={"model": "claude-sonnet-4-6"},
+)
+
+# Register comply54 as a callable tool on the assistant
+register_compliance(assistant, compliance)
+
+user_proxy = autogen.UserProxyAgent(
+    name="user_proxy",
+    human_input_mode="NEVER",
+    max_consecutive_auto_reply=3,
+)
+
+user_proxy.initiate_chat(
+    assistant,
+    message="Can I transfer ₦8,000,000 to account 0123456789?",
+)
+```
+
+## What `register_compliance` does
+
+It registers a `check_compliance(action, params, output, context)` function tool on the agent. The assistant can call it during conversation to validate actions before executing them.
+
+## Return value
+
+The tool returns a Python dict that AutoGen includes in the function call response:
+
+```python
+{
+    "overall": "escalate",
+    "blocked": True,
+    "audit_id": "aud_f1e2d3",
+    "violations": [...],
+}
+```
+
+## API reference
+
+```python
+register_compliance(
+    agent: autogen.ConversableAgent,
+    compliance: SectorCompliance,
+    tool_name: str = "check_compliance",
+) -> None
+```

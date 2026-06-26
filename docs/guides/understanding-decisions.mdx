@@ -1,0 +1,152 @@
+---
+title: Understanding Decisions
+description: How comply54 structures compliance results — actions, decisions, violations, and audit IDs.
+---
+
+## The ComplianceResult object
+
+Every `.check()` call returns a `ComplianceResult`:
+
+```python
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+)
+```
+
+```python
+result.overall      # "deny" | "escalate" | "audit" | "allow"
+result.blocked      # True if overall == "deny" or "escalate"
+result.audit_id     # "aud_a1b2c3d4"  — unique per evaluation
+result.decisions    # list[PolicyDecision]  — one per pack
+result.violations   # list[PolicyDecision]  — decisions where action != "allow"
+result.primary_violation  # PolicyDecision | None  — highest-severity violation
+```
+
+## Decision actions
+
+Each pack returns one of four actions:
+
+| Action | Meaning | `result.blocked` |
+|--------|---------|-----------------|
+| `allow` | Input is compliant with this regulation | `False` |
+| `audit` | Compliant but must be logged for audit trail | `False` |
+| `escalate` | Action requires human review or regulatory filing before proceeding | `True` |
+| `deny` | Action is prohibited by this regulation | `True` |
+
+The `overall` field is the **highest severity** action across all packs. If any pack returns `deny`, `overall = "deny"`. If no pack returns `deny` but one returns `escalate`, `overall = "escalate"`.
+
+Severity order: `deny > escalate > audit > allow`
+
+## PolicyDecision fields
+
+```python
+decision = result.primary_violation
+
+decision.pack           # "nigeria/cbn"
+decision.regulation     # "CBN NIP Framework"
+decision.jurisdiction   # "NG"
+decision.action         # "deny"
+decision.messages       # ["CBN NIP Framework §4.2: Transaction of ₦15,000,000 exceeds ..."]
+decision.audit_id       # shared audit ID for this evaluation
+decision.evaluated_at   # ISO 8601 timestamp
+```
+
+## Inspecting per-pack decisions
+
+```python
+for decision in result.decisions:
+    icon = "✓" if decision.action == "allow" else "✗"
+    print(f"{icon} [{decision.jurisdiction}] {decision.pack}: {decision.action}")
+    for msg in decision.messages:
+        print(f"   → {msg}")
+```
+
+Example output for a ₦15M transfer:
+```
+✗ [NG] nigeria/cbn: deny
+   → CBN NIP Framework §4.2: Single transaction of ₦15,000,000 exceeds the ₦10,000,000 cap
+✓ [NG] nigeria/ndpa: allow
+✓ [NG] nigeria/bvn-nin: allow
+✗ [NG] nigeria/nfiu-aml: escalate
+   → NFIU/MLPPA 2022: Transaction ≥ ₦5,000,000 — CTR required within 24 hours
+✓    universal/pii-leakage: allow
+✓    universal/prompt-injection: allow
+✓    universal/tool-permissions: allow
+✗    universal/human-approval: escalate
+   → Action transfer_funds with amount ₦15,000,000 requires human approval
+```
+
+## Filtering by jurisdiction
+
+```python
+# Only look at Nigerian violations
+ng_violations = [
+    d for d in result.violations
+    if d.jurisdiction == "NG"
+]
+```
+
+## The audit_id
+
+Every `ComplianceResult` has a `UUID`-derived `audit_id` shared across all its `PolicyDecision` objects. Use it to correlate compliance checks with transactions in your own audit log:
+
+```python
+result = compliance.check(...)
+
+db.transactions.insert({
+    "id": transaction_id,
+    "amount": amount,
+    "comply54_decision": result.overall,
+    "comply54_audit_id": result.audit_id,
+    "comply54_violations": [d.pack for d in result.violations],
+})
+```
+
+## Handling each outcome
+
+```python
+result = compliance.check(action=action, params=params)
+
+match result.overall:
+    case "allow":
+        proceed()
+
+    case "audit":
+        log_for_audit(result.audit_id)
+        proceed()
+
+    case "escalate":
+        # Some escalations are CTR/reporting requirements — action may still proceed
+        # after the filing. Others require human sign-off before proceeding.
+        if needs_human_approval(result):
+            request_human_approval(result)
+        else:
+            file_regulatory_report(result)
+            proceed()
+
+    case "deny":
+        raise ComplianceError(
+            result.primary_violation.messages[0],
+            audit_id=result.audit_id,
+        )
+```
+
+## Strict mode
+
+Set `COMPLY54_STRICT_MODE=true` to treat `escalate` as `deny`:
+
+```python
+import os
+os.environ["COMPLY54_STRICT_MODE"] = "true"
+
+# Now result.blocked is True for both "deny" and "escalate"
+```
+
+Or per-check:
+
+```python
+result = compliance.check(action="transfer_funds", params={"amount": 8_000_000})
+if result.overall in ("deny", "escalate"):
+    raise ComplianceError(...)
+```

@@ -1,0 +1,71 @@
+---
+title: Tool Permissions
+description: Prevents AI agents from using tools with excessive scope or performing IDOR-style access.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `universal/tool-permissions` |
+| **Standard** | OWASP Top 10 for LLM Applications — LLM08: Excessive Agency |
+| **Jurisdiction** | Universal |
+
+## What comply54 enforces
+
+LLM agents that have access to tools can cause harm when they access resources beyond what the current user is authorised to see — the agentic equivalent of an IDOR vulnerability. This pack enforces tool-scope boundaries.
+
+### Controls
+
+| Scenario | Decision |
+|----------|----------|
+| Tool called with another user's ID in params | `deny` |
+| Agent attempts to call an undeclared/unregistered tool | `deny` |
+| Write operation on read-only resource | `deny` |
+| Bulk read operation (>100 records, no admin scope) | `escalate` |
+| Recursive tool chain >10 hops | `escalate` |
+
+## Usage
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import TOOL_PERMISSIONS
+
+engine = Comply54Engine(packs=[TOOL_PERMISSIONS])
+
+# IDOR-style access — current user is user_123 but params reference user_999
+result = engine.check(
+    action="get_account_details",
+    params={"account_id": "user_999"},
+    context={"current_user_id": "user_123", "is_admin": False},
+)
+print(result.overall)   # "deny"
+
+# Legitimate admin bulk access
+result = engine.check(
+    action="export_all_records",
+    params={"record_count": 5000},
+    context={"current_user_id": "admin_1", "is_admin": True},
+)
+print(result.overall)   # "allow"
+```
+
+## Declaring allowed tool scope
+
+```python
+result = engine.check(
+    action="send_email",
+    params={"tool_name": "send_email"},
+    context={"allowed_tools": ["get_balance", "list_transactions"]},  # send_email not in scope
+)
+print(result.overall)   # "deny" — tool not in declared scope
+```
+
+## Messages returned
+
+```
+OWASP LLM08: Tool call references resource owned by a different user — possible IDOR
+OWASP LLM08: Tool 'send_email' is not in the agent's declared tool scope
+OWASP LLM08: Bulk read of 5,000 records without admin scope — escalation required
+OWASP LLM08: Recursive tool chain exceeded 10 hops — possible loop
+```

@@ -8,6 +8,7 @@ build/
 .venv/
 venv/
 *.egg
+node_modules/
 
 # Virtual environments
 .env

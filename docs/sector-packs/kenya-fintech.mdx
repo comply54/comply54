@@ -1,0 +1,84 @@
+---
+title: Kenya Fintech Pack
+description: Pre-composed compliance for AI agents in Kenyan financial services — KDPA 2019 plus OWASP agent safety.
+---
+
+## Overview
+
+`KenyaFintechCompliance` covers AI agents operating in Kenya's financial sector. It applies the Kenya Data Protection Act 2019 enforced by the Office of the Data Protection Commissioner (ODPC), combined with universal agent-safety policies.
+
+```python
+from comply54 import KenyaFintechCompliance
+
+compliance = KenyaFintechCompliance()
+result = compliance.check(
+    action="export_data",
+    params={"destination_country": "CN", "data_type": "biometric"},
+)
+print(result.overall)   # "deny"
+```
+
+## Included packs
+
+| Pack ID | Regulation | Authority | Key controls |
+|---------|-----------|-----------|-------------|
+| `kenya/kdpa` | Kenya Data Protection Act 2019 | ODPC | Cross-border restrictions §48, biometric prohibition, consent |
+| `universal/pii-leakage` | OWASP LLM01 | OWASP | PII, financial identifiers in agent outputs |
+| `universal/prompt-injection` | OWASP LLM01 | OWASP | Indirect and direct injection patterns |
+| `universal/tool-permissions` | OWASP LLM08 | OWASP | Excessive tool scope |
+| `universal/human-approval` | OWASP LLM08 | OWASP | Irreversible or high-impact actions |
+
+## Decision matrix
+
+### Data exports
+
+| Destination | Data type | Decision |
+|-------------|-----------|----------|
+| Kenya | Any | `allow` |
+| EAC / AU adequacy partner | Non-sensitive | `allow` |
+| Non-adequate country | Personal data | `escalate` — ODPC notification required |
+| Any country | Biometric data | `deny` |
+
+### Data collection
+
+| Scenario | Decision |
+|----------|----------|
+| Consent documented | `allow` |
+| No consent, non-sensitive data | `escalate` |
+| No consent, sensitive/biometric data | `deny` |
+
+## Usage
+
+```python
+from comply54 import KenyaFintechCompliance
+
+compliance = KenyaFintechCompliance()
+
+# Cross-border data export
+result = compliance.check(
+    action="export_data",
+    params={
+        "destination_country": "US",
+        "data_type": "customer_pii",
+        "record_count": 1000,
+    },
+    context={"consent_documented": True, "odpc_notification": False},
+)
+
+if result.overall == "escalate":
+    # ODPC notification required before export can proceed
+    notify_odpc(result.audit_id)
+```
+
+## Properties
+
+```python
+compliance = KenyaFintechCompliance()
+compliance.jurisdictions   # ["KE"]
+compliance.pack_ids        # ["kenya/kdpa", "universal/pii-leakage", ...]
+```
+
+## Related
+
+- [KDPA 2019 policy reference](/policy-reference/east-africa/kdpa)
+- [Pan-African pack](/sector-packs/pan-african)

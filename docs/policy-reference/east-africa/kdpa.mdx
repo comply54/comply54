@@ -1,0 +1,65 @@
+---
+title: KDPA 2019 (Kenya)
+description: Kenya Data Protection Act 2019 — policy rules enforced by comply54.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `kenya/kdpa` |
+| **Full title** | Kenya Data Protection Act 2019 |
+| **Regulator** | Office of the Data Protection Commissioner (ODPC) |
+| **Jurisdiction** | Kenya (KE) |
+| **Effective date** | November 2019 |
+
+## What comply54 enforces
+
+### Cross-border transfers (§48)
+
+KDPA §48 restricts cross-border transfers of personal data to countries that provide adequate protection. Biometric data exports are prohibited entirely.
+
+| Destination | Data type | Decision |
+|-------------|-----------|----------|
+| Kenya | Any | `allow` |
+| EAC / AU adequacy partner | Non-sensitive | `allow` |
+| Non-adequate country | Personal data + consent | `escalate` |
+| Non-adequate country | Personal data, no consent | `deny` |
+| Any country | Biometric (KRA PIN, passport) | `deny` |
+
+### Consent requirements (§30)
+
+```python
+result = compliance.check(
+    action="export_data",
+    params={"destination_country": "US", "data_type": "customer_pii"},
+    context={"consent_documented": False},
+)
+# decision: deny
+```
+
+### Special categories (§46)
+
+Health data, genetic data, and biometric data receive heightened protection — always `deny` for cross-border transfer.
+
+## Input fields used
+
+| Field | Path | Description |
+|-------|------|-------------|
+| Action | `input.action` | `"export_data"`, `"send_to_external"`, `"store_data"` |
+| Destination country | `input.params.destination_country` | ISO 3166-1 alpha-2 |
+| Data type | `input.params.data_type` | `"biometric"`, `"customer_pii"`, `"health"` |
+| Consent documented | `input.context.consent_documented` | Boolean |
+
+## Messages returned
+
+```
+KDPA 2019 §48: Cross-border transfer to US requires consent or adequacy confirmation
+KDPA 2019 §46: Biometric data export prohibited — special category data
+KDPA 2019 §30: Processing personal data without consent — legal basis required
+```
+
+## Regulatory references
+
+- [Kenya Data Protection Act 2019](https://kenyalaw.org/kl/fileadmin/pdfdownloads/Acts/2019/TheDataProtectionAct__No24of2019.pdf)
+- [ODPC — Office of the Data Protection Commissioner](https://www.odpc.go.ke)

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Comply54",
+  "logo": {
+    "dark": "/images/logo-dark.svg",
+    "light": "/images/logo-light.svg"
+  },
+  "favicon": "/images/favicon.svg",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#22C55E",
+    "dark": "#15803D",
+    "anchors": {
+      "from": "#16A34A",
+      "to": "#065F46"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/comply54/comply54"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "PyPI",
+    "url": "https://pypi.org/project/comply54"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/comply54/comply54"
+    },
+    {
+      "name": "PyPI",
+      "icon": "python",
+      "url": "https://pypi.org/project/comply54"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "installation"
+      ]
+    },
+    {
+      "group": "Sector Packs",
+      "pages": [
+        "sector-packs/nigeria-fintech",
+        "sector-packs/kenya-fintech",
+        "sector-packs/pan-african"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/nigeria-fintech-guide",
+        "guides/understanding-decisions",
+        "guides/langchain-integration",
+        "guides/crewai-integration"
+      ]
+    },
+    {
+      "group": "Policy Reference — Nigeria",
+      "pages": [
+        "policy-reference/nigeria/ndpa",
+        "policy-reference/nigeria/cbn",
+        "policy-reference/nigeria/bvn-nin",
+        "policy-reference/nigeria/nfiu-aml"
+      ]
+    },
+    {
+      "group": "Policy Reference — East Africa",
+      "pages": [
+        "policy-reference/east-africa/kdpa",
+        "policy-reference/east-africa/mauritius-dpa",
+        "policy-reference/east-africa/rwanda-dpa",
+        "policy-reference/east-africa/tanzania-pdpa",
+        "policy-reference/east-africa/uganda-dppa",
+        "policy-reference/east-africa/ethiopia-pdp"
+      ]
+    },
+    {
+      "group": "Policy Reference — Southern & West Africa",
+      "pages": [
+        "policy-reference/southern-west-africa/popia",
+        "policy-reference/southern-west-africa/ghana-dpa",
+        "policy-reference/southern-west-africa/egypt-pdpl"
+      ]
+    },
+    {
+      "group": "Policy Reference — Universal",
+      "pages": [
+        "policy-reference/universal/pii-leakage",
+        "policy-reference/universal/prompt-injection",
+        "policy-reference/universal/tool-permissions",
+        "policy-reference/universal/human-approval",
+        "policy-reference/universal/model-routing"
+      ]
+    },
+    {
+      "group": "Framework Integrations",
+      "pages": [
+        "integrations/langchain",
+        "integrations/crewai",
+        "integrations/autogen",
+        "integrations/eve"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/enforcement-api"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/comply54/comply54",
+    "x": "https://x.com/comply54"
+  }
+}

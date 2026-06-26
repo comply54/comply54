@@ -1,0 +1,84 @@
+---
+title: Human Approval
+description: Requires human sign-off for high-value, irreversible, or sensitive agent actions.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `universal/human-approval` |
+| **Standard** | OWASP Top 10 for LLM Applications — LLM08: Excessive Agency |
+| **Jurisdiction** | Universal |
+
+## What comply54 enforces
+
+Autonomous AI agents must not take irreversible or high-impact actions without a human approval checkpoint. This pack enforces Human-in-the-Loop (HITL) requirements.
+
+### Escalation triggers
+
+| Action type | Threshold | Decision |
+|-------------|-----------|----------|
+| Monetary transfer | > ₦1,000,000 (or equivalent) | `escalate` |
+| Data deletion | Any | `escalate` |
+| Account closure | Any | `escalate` |
+| Mass notification / bulk message | > 100 recipients | `escalate` |
+| System configuration change | Any | `escalate` |
+| Irreversible operation (`delete`, `terminate`, `revoke`) | Any | `escalate` |
+
+All of the above return `escalate`, not `deny` — the action *can* proceed after a human approves it.
+
+## Usage
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import HUMAN_APPROVAL
+
+engine = Comply54Engine(packs=[HUMAN_APPROVAL])
+
+# High-value transfer — human approval required
+result = engine.check(
+    action="transfer_funds",
+    params={"amount": 5_000_000, "currency": "NGN"},
+)
+print(result.overall)   # "escalate"
+print(result.primary_violation.messages[0])
+# "OWASP LLM08: Transfer of ₦5,000,000 requires human approval"
+
+# Low-value read — no approval needed
+result = engine.check(
+    action="get_balance",
+    params={},
+)
+print(result.overall)   # "allow"
+```
+
+## Implementing the approval gate
+
+```python
+result = compliance.check(action="transfer_funds", params={"amount": 8_000_000})
+
+if result.overall == "escalate":
+    human_approval_needed = any(
+        d.pack == "universal/human-approval"
+        for d in result.decisions
+        if d.action == "escalate"
+    )
+
+    if human_approval_needed:
+        approval_token = request_human_approval(
+            action="transfer_funds",
+            amount=8_000_000,
+            audit_id=result.audit_id,
+        )
+        await_approval(approval_token)   # blocks until approved or rejected
+```
+
+## Messages returned
+
+```
+OWASP LLM08: Transfer of ₦5,000,000 requires human approval before execution
+OWASP LLM08: Data deletion is an irreversible operation — human sign-off required
+OWASP LLM08: Bulk message to 500 recipients requires human review
+OWASP LLM08: Account closure is irreversible — compliance officer approval required
+```

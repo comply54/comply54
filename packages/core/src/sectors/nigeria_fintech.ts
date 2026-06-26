@@ -1,0 +1,76 @@
+/**
+ * NigeriaFintechCompliance — TypeScript sector pack.
+ *
+ * Composes: NDPA 2023, CBN Transaction Controls, BVN/NIN Framework,
+ *           NFIU/MLPPA 2022, OWASP Universal (PII, injection, tools, approval).
+ */
+
+import { Comply54Engine } from "../engine.js";
+import { evaluateCBN, evaluateNDPA, evaluateBvnNin, evaluateNfiu } from "../packs/nigeria.js";
+import {
+  evaluatePiiLeakage,
+  evaluatePromptInjection,
+  evaluateToolPermissions,
+  evaluateHumanApproval,
+} from "../packs/universal.js";
+import type { ComplianceCertificate, ComplianceResult, EvaluationInput } from "../types.js";
+
+const PACKS = [
+  evaluateNDPA,
+  evaluateCBN,
+  evaluateBvnNin,
+  evaluateNfiu,
+  evaluatePiiLeakage,
+  evaluatePromptInjection,
+  evaluateToolPermissions,
+  evaluateHumanApproval,
+];
+
+const REGULATIONS = [
+  "Nigeria Data Protection Act 2023",
+  "CBN Transaction Controls",
+  "CBN BVN Framework & NIBSS Rules",
+  "MLPPA 2022 / NFIU AML Guidelines",
+  "OWASP Agentic AI",
+];
+
+export class NigeriaFintechCompliance {
+  readonly name = "Nigeria Fintech Compliance";
+  readonly jurisdictions = ["NG"];
+  readonly regulations = REGULATIONS;
+
+  private readonly engine: Comply54Engine;
+
+  constructor(options: { strictMode?: boolean } = {}) {
+    this.engine = new Comply54Engine(PACKS, options);
+  }
+
+  check(
+    action: string,
+    params?: Record<string, unknown>,
+    output?: string,
+    context?: Record<string, unknown>
+  ): ComplianceResult {
+    return this.engine.check(action, params, output, context);
+  }
+
+  evaluate(input: EvaluationInput): ComplianceResult {
+    return this.engine.evaluate(input);
+  }
+
+  async certificate(
+    action: string,
+    params?: Record<string, unknown>,
+    output?: string,
+    context?: Record<string, unknown>
+  ): Promise<ComplianceCertificate> {
+    return this.engine.certificate(
+      { action, params, output, context },
+      {
+        sectorPack: this.name,
+        jurisdictions: this.jurisdictions,
+        regulations: this.regulations,
+      }
+    );
+  }
+}
