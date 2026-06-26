@@ -1,20 +1,21 @@
 {
   "name": "@comply54/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, KDPA, POPIA and 15+ African regulatory frameworks",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "README.md"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
