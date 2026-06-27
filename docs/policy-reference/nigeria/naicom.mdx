@@ -1,0 +1,149 @@
+---
+title: NAICOM / Insurance Act 2003
+description: Insurance Act 2003 (Cap I17 LFN 2004), NAICOM Operational Guidelines 2021, and NAICOM Market Conduct Guidelines 2023 — policy rules and enforcement in comply54.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `nigeria/naicom` |
+| **Full title** | Insurance Act 2003 (Cap I17 LFN 2004) + NAICOM Guidelines |
+| **Regulator** | NAICOM (National Insurance Commission) |
+| **Jurisdiction** | Nigeria (NG) |
+| **Effective date** | Insurance Act: 2003; Operational Guidelines: 2021; Market Conduct: 2023 |
+
+## What comply54 enforces
+
+### Claims adjudication thresholds (NAICOM Operational Guidelines 2021)
+
+| Threshold | Guideline | Rule |
+|-----------|-----------|------|
+| ≤ ₦500,000 | Guideline 15 | Auto-approval allowed |
+| ₦500,001 – ₦2,000,000 | Guideline 15 | Human adjuster required; auto-denial prohibited |
+| ₦2,000,001 – ₦5,000,000 | Guideline 12 | Senior adjuster (≥ 5 yrs experience) required |
+| > ₦5,000,000 | Guideline 12 + NFIU | Manual review + AML reporting |
+
+```python
+result = compliance.check(
+    action="approve_claim",
+    params={"claim_amount": 2_500_000, "claim_type": "motor"},
+    context={"human_adjuster_assigned": True, "senior_approval": False},
+)
+# decision: escalate — NAICOM Guideline 12: senior adjuster required for claims > ₦2,000,000
+```
+
+### Life insurance underwriting cap (NAICOM Guideline 18)
+
+AI agents may not autonomously underwrite life insurance policies above ₦5,000,000.
+
+```python
+result = compliance.check(
+    action="approve_underwriting",
+    params={"policy_type": "life", "coverage_amount": 6_000_000},
+    context={"human_underwriter": False},
+)
+# decision: deny — NAICOM Guideline 18: life insurance underwriting above ₦5,000,000
+#           requires manual human underwriter
+```
+
+### Anti-discrimination in underwriting (Insurance Act §67, NAICOM Market Conduct Rule 6)
+
+The following characteristics are explicitly prohibited as underwriting factors:
+
+| Prohibited characteristic |
+|--------------------------|
+| `religion` |
+| `ethnicity` |
+| `tribe` |
+| `political_affiliation` |
+| `gender` |
+| `disability` |
+| `hiv_status` |
+
+```python
+result = compliance.check(
+    action="generate_quote",
+    params={
+        "policy_type": "life",
+        "coverage_amount": 1_000_000,
+        "underwriting_factors": ["age", "smoking_status", "religion"],
+    },
+    context={"human_underwriter": True},
+)
+# decision: deny — Insurance Act §67 + NAICOM Market Conduct Rule 6:
+#           religion is a prohibited underwriting characteristic
+```
+
+### Fraud investigation (NAICOM Market Conduct Rule 11)
+
+AI fraud detection may flag suspicious claims but may not autonomously deny them. Claims with fraud score ≥ 0.65 require human investigation.
+
+| Condition | Decision |
+|-----------|----------|
+| Fraud score ≥ 0.65, no human investigator | `deny` |
+| Fraud score ≥ 0.65, human investigator assigned | `escalate` — investigation in progress |
+| Fraud score < 0.65 | Continue standard checks |
+
+```python
+result = compliance.check(
+    action="flag_fraud",
+    params={"claim_id": "CLM-001", "fraud_score": 0.78},
+    context={"human_investigator_assigned": False},
+)
+# decision: deny — NAICOM Market Conduct Rule 11: fraud score 0.78 exceeds threshold —
+#           human investigation required before any claim decision
+```
+
+### Policy modification (Insurance Act §50)
+
+Policy terms may not be modified without notifying the customer.
+
+| Condition | Decision |
+|-----------|----------|
+| `customer_notified = true` | `allow` |
+| `customer_notified = false` | `deny` |
+
+### AML reporting (NFIU / MLPPA 2022)
+
+Premiums or payouts ≥ ₦5,000,000 trigger AML reporting obligations enforced by the `nigeria/nfiu-aml` pack (also included in `NigeriaInsuranceCompliance`).
+
+## Input fields used
+
+| Field | Path in input | Description |
+|-------|--------------|-------------|
+| Action | `input.action` | `"approve_claim"`, `"deny_claim"`, `"generate_quote"`, `"approve_underwriting"`, `"flag_fraud"`, `"cancel_policy"` |
+| Claim amount | `input.params.claim_amount` | Integer (NGN) |
+| Coverage amount | `input.params.coverage_amount` | Integer (NGN) |
+| Policy type | `input.params.policy_type` | `"life"`, `"motor"`, `"property"`, `"health"` |
+| Underwriting factors | `input.params.underwriting_factors` | Array of strings |
+| Fraud score | `input.params.fraud_score` | Float 0–1 |
+| Human adjuster assigned | `input.context.human_adjuster_assigned` | Boolean |
+| Senior approval | `input.context.senior_approval` | Boolean |
+| Human underwriter | `input.context.human_underwriter` | Boolean |
+| Human investigator assigned | `input.context.human_investigator_assigned` | Boolean |
+| Customer notified | `input.context.customer_notified` | Boolean |
+
+## Messages returned
+
+```
+NAICOM Guideline 15: Claim of ₦1,500,000 exceeds ₦500,000 auto-denial cap — human adjuster required
+NAICOM Guideline 12: Claim of ₦3,000,000 exceeds ₦2,000,000 threshold — senior adjuster required
+NAICOM Guideline 18: Life insurance underwriting above ₦5,000,000 requires manual human underwriter
+Insurance Act §67 + NAICOM Rule 6: religion is a prohibited underwriting characteristic
+NAICOM Market Conduct Rule 11: Fraud score 0.78 exceeds threshold — human investigation required
+Insurance Act §50: Policy modification requires customer notification
+```
+
+## Regulatory references
+
+- Insurance Act 2003 (Cap I17 LFN 2004) — NAICOM
+- [NAICOM Operational Guidelines 2021](https://naicom.gov.ng) — Guidelines 12, 15, 18
+- [NAICOM Market Conduct Guidelines 2023](https://naicom.gov.ng) — Rules 6 (anti-discrimination), 11 (fraud investigation)
+- MLPPA 2022 / NFIU AML Guidelines — AML reporting obligations (see also `nigeria/nfiu-aml`)
+
+## Related
+
+- [Nigeria Insurance sector pack](/sector-packs/nigeria-insurance)
+- [NDPA 2023 policy reference](/policy-reference/nigeria/ndpa)
+- [NFIU/AML policy reference](/policy-reference/nigeria/nfiu-aml)

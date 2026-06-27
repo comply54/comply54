@@ -90,27 +90,49 @@ Agent Action
 
 ---
 
+## Phase 0.5 — Sector Packs & LangGraph Adapter (COMPLETE)
+
+**Status:** Done as of v0.2.0.
+
+These items were originally scoped to Phase 1 but shipped early because the
+embedded OPA foundation (regopy) was already in place.
+
+- [x] `NigeriaFintechCompliance` composed sector pack (NDPA + CBN + BVN/NIN + NFIU AML + OWASP)
+- [x] `KenyaFintechCompliance` composed sector pack
+- [x] `PanAfricanFintechCompliance` composed sector pack (all 13 jurisdictions + OWASP)
+- [x] `NigeriaHealthcareCompliance` — NHA 2014 + NDPA (special-category) + FMOH AI Policy + OWASP
+- [x] `NigeriaInsuranceCompliance` — Insurance Act 2003 + NAICOM 2021/2023 + NFIU AML + OWASP
+- [x] `nigeria/nha` Rego pack (National Health Act 2014 + FMOH AI in Healthcare Policy)
+- [x] `nigeria/naicom` Rego pack (Insurance Act 2003 + NAICOM Operational & Market Conduct Guidelines)
+- [x] `Comply54Guard` — LangGraph node with in-process compliance interception
+- [x] `comply54_route` — conditional routing function for guard node
+- [x] `comply54_tool` — LangChain StructuredTool wrapper for self-check pattern
+- [x] `block_on_escalate` / `strict_mode` support
+- [x] Compliance certificate output (JSON, SHA-256 tamper-evident hash)
+- [x] Example agents: `nigeria_fintech_agent`, `nigeria_health_agent`, `nigeria_insurance_agent`
+
+---
+
 ## Phase 1 — Go Deep Before Going Wide
 
 **Timeline:** 6–10 weeks  
 **Theme:** Make one path production-grade. Earn the right to expand.  
 **Milestone:** A developer can add NDPA + CBN compliance to a LangChain agent in under 10 minutes with zero OPA knowledge required.
 
-### 1.1 — Embedded OPA (Kill the Subprocess)
+### 1.1 — Embedded OPA (Kill the Subprocess) ✅ DONE
 
-The subprocess `opa eval` approach is the single biggest technical debt in comply54. It breaks in serverless environments, requires OPA installed on the host, has no retry logic, and is opaque to debug.
+~~The subprocess `opa eval` approach is the single biggest technical debt in comply54.~~
 
-Replace it with embedded OPA evaluation using one of:
-- **Python:** `opa-python` client or ship a bundled OPA binary + WASM bundle
-- **TypeScript:** `@open-policy-agent/opa-wasm` — runs OPA policies in-process, works in Edge/Lambda
-
-This one change upgrades every adapter from "demo code" to "production-ready."
+**Done.** `regopy` provides in-process Rego evaluation — no subprocess, no OPA binary,
+works in serverless environments. All sector packs evaluate in-process via `Comply54Engine`.
+The LangGraph adapter (`Comply54Guard`) is rewritten on top of this.
 
 **Deliverables:**
-- [ ] `comply54` Python package on PyPI with embedded evaluation (no subprocess)
-- [ ] `@comply54/core` npm package with OPA-WASM evaluation
-- [ ] LangChain adapter rewritten on top of embedded OPA — published as `comply54-langchain`
-- [ ] All existing tests passing against embedded evaluator
+- [x] `comply54` Python package with embedded evaluation via `regopy` (no subprocess)
+- [x] `Comply54Guard` LangGraph adapter rewritten on top of embedded evaluator
+- [x] All tests passing against embedded evaluator
+- [ ] `@comply54/core` npm package with OPA-WASM evaluation ← still pending
+- [ ] Published to PyPI as installable package ← still pending
 
 ### 1.2 — Documentation Site (comply54.io)
 
@@ -123,23 +145,25 @@ Right now comply54.io is referenced in the registry schema but nothing is there.
 - [ ] API reference (even if the hosted API comes in Phase 2, document the interface now)
 - [ ] Nigerian fintech compliance guide (the most complete, most cited use case)
 
-### 1.3 — Sector Pack: Nigerian Fintech
+### 1.3 — Sector Packs ✅ DONE (Python; TypeScript pending)
 
-The registry has jurisdiction packs (NDPA, CBN, BVN/NIN, NFIU). What it does not have is a sector-level composition — a single import that gives a fintech agent everything it needs.
+**Done** for the Python layer. See Phase 0.5 above for the full list.
 
 ```python
-from comply54 import NigeriaFintechCompliance
+from comply54.sectors import NigeriaFintechCompliance
 
 guard = NigeriaFintechCompliance()
-# Automatically covers: NDPA + CBN limits + BVN/NIN protection + NFIU AML
-# One import. Zero configuration for the standard case.
+# Covers: NDPA + CBN limits + BVN/NIN protection + NFIU AML + OWASP
 ```
 
 **Deliverables:**
-- [ ] `NigeriaFintechCompliance` composed pack (Python + TypeScript)
-- [ ] `KenyaFintechCompliance` composed pack
-- [ ] `PanAfricanFintechCompliance` composed pack (all jurisdictions, strict mode)
-- [ ] Each pack has a compliance certificate output (JSON, exportable for auditors)
+- [x] `NigeriaFintechCompliance` composed pack
+- [x] `NigeriaHealthcareCompliance` composed pack
+- [x] `NigeriaInsuranceCompliance` composed pack
+- [x] `KenyaFintechCompliance` composed pack
+- [x] `PanAfricanFintechCompliance` composed pack (all jurisdictions, strict mode)
+- [x] Compliance certificate output (JSON, SHA-256 hash, exportable for auditors)
+- [ ] TypeScript equivalents ← still pending
 
 ### 1.4 — Real Test Coverage
 
@@ -257,10 +281,15 @@ Current coverage: 10 jurisdictions. Target: all 30+ African countries with enact
 
 Right now comply54 is jurisdiction-first. Enterprise customers think sector-first. A healthtech company does not think "I need Kenya compliance" — they think "I need African healthtech compliance."
 
+**Progress:** Nigeria-scoped sector packs for health and insurance shipped in v0.2.0.
+Pan-African compositions are the next step.
+
 **Deliverables:**
-- [ ] `AfricanHealthtechCompliance` — NDPA health data §30 + KDPA §43 + POPIA §26 + cross-border medical data restrictions
+- [x] `NigeriaHealthcareCompliance` — NHA 2014 + NDPA special-category + FMOH AI Policy ✅
+- [x] `NigeriaInsuranceCompliance` — Insurance Act 2003 + NAICOM + NFIU AML ✅
+- [ ] `AfricanHealthtechCompliance` — extend with KDPA §43 + POPIA §26 + cross-border medical data
+- [ ] `AfricanInsuranceCompliance` — extend with IRA Kenya + FSB South Africa + actuary data handling
 - [ ] `AfricanTelecomCompliance` — NCC Nigeria + CA Kenya + ICASA South Africa + subscriber data rules
-- [ ] `AfricanInsuranceCompliance` — NAICOM Nigeria + IRA Kenya + FSB South Africa + actuary data handling
 - [ ] `AfricanEcommerceCompliance` — Consumer protection + payment data + cross-border sales rules
 
 ### 3.3 — Cross-Border Transfer Matrix
@@ -386,6 +415,6 @@ Build what embeds. Skip what impresses.
 
 ---
 
-*Last updated: 2026-06-23*  
-*Version: 1.0*  
+*Last updated: 2026-06-27*  
+*Version: 1.1*  
 *Owner: Oluwajuwon Omotayo*

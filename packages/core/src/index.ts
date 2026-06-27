@@ -15,6 +15,7 @@
 // Types
 export type {
   Action,
+  RegulatorySource,
   PolicyDecision,
   ComplianceResult,
   ComplianceCertificate,
@@ -28,6 +29,8 @@ export { Comply54Engine } from "./engine.js";
 
 // Sector packs (recommended entry point)
 export { NigeriaFintechCompliance } from "./sectors/nigeria_fintech.js";
+export { NigeriaHealthcareCompliance } from "./sectors/nigeria_health.js";
+export { NigeriaInsuranceCompliance } from "./sectors/nigeria_insurance.js";
 export { KenyaFintechCompliance } from "./sectors/kenya_fintech.js";
 export { PanAfricanFintechCompliance } from "./sectors/pan_african.js";
 
@@ -37,6 +40,8 @@ export {
   evaluateNDPA,
   evaluateBvnNin,
   evaluateNfiu,
+  evaluateNHA,
+  evaluateNAICOM,
 } from "./packs/nigeria.js";
 
 // African jurisdiction pack evaluators

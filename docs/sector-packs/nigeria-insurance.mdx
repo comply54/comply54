@@ -1,0 +1,172 @@
+---
+title: Nigeria Insurance Pack
+description: Pre-composed compliance for AI agents in Nigerian insurance — Insurance Act 2003, NAICOM Guidelines 2021/2023, NFIU AML, and OWASP agent safety.
+---
+
+## Overview
+
+`NigeriaInsuranceCompliance` enforces Nigerian insurance regulations simultaneously, covering claims adjudication thresholds, underwriting prohibitions, fraud investigation requirements, and AML reporting obligations.
+
+```python
+from comply54.sectors import NigeriaInsuranceCompliance
+
+compliance = NigeriaInsuranceCompliance()
+result = compliance.check(
+    action="approve_claim",
+    params={"claim_amount": 3_000_000, "claim_type": "property"},
+    context={"human_adjuster_assigned": True, "senior_approval": False},
+)
+```
+
+## Included packs
+
+| Pack ID | Regulation | Authority | Key controls |
+|---------|-----------|-----------|-------------|
+| `nigeria/naicom` | Insurance Act 2003, NAICOM Guidelines 2021/2023 | NAICOM | Claim thresholds, underwriting limits, anti-discrimination, fraud investigation |
+| `nigeria/ndpa` | NDPA 2023 | NITDA | Customer PII in insurance workflows |
+| `nigeria/nfiu-aml` | NFIU/MLPPA 2022 | NFIU | AML reporting at ₦5M+ premiums/payouts |
+| `universal/pii-leakage` | OWASP LLM01 | OWASP | Policy holder PII, medical info in outputs |
+| `universal/prompt-injection` | OWASP LLM01 | OWASP | Jailbreak and indirect injection patterns |
+| `universal/tool-permissions` | OWASP LLM08 | OWASP | Unauthorised access to policy records |
+| `universal/human-approval` | OWASP LLM08 | OWASP | High-value or irreversible decisions require human sign-off |
+
+## Decision matrix by action type
+
+### Claims approval
+
+| Claim Amount | Human Adjuster | Senior Approval | Decision | Reason |
+|-------------|---------------|-----------------|----------|--------|
+| ≤ ₦500,000 | Either | Either | `allow` | NAICOM Guideline 15: within auto-approval cap |
+| ₦500,001 – ₦2,000,000 | `true` | Not required | `allow` | NAICOM Guideline 12: human adjuster sufficient |
+| ₦500,001 – ₦2,000,000 | `false` | — | `deny` | NAICOM Guideline 15: exceeds auto-denial cap |
+| ₦2,000,001 – ₦5,000,000 | `true` | `true` | `allow` | NAICOM Guideline 12: senior review cleared |
+| ₦2,000,001 – ₦5,000,000 | `true` | `false` | `escalate` | NAICOM Guideline 12: senior adjuster required |
+| > ₦5,000,000 | `true` | `true` | `escalate` | NFIU AML reporting required |
+| Any | `false` | `false` | `deny` | No human adjuster for significant claim |
+
+### Underwriting
+
+| Condition | Decision | Reason |
+|-----------|----------|--------|
+| Uses prohibited characteristic (religion, ethnicity, disability, etc.) | `deny` | Insurance Act 2003 §67 + NAICOM Market Conduct Rule 6 |
+| Life policy > ₦5,000,000 without human underwriter | `deny` | NAICOM Guideline 18: manual underwriting required |
+| Life policy > ₦5,000,000 with human underwriter | `escalate` | NAICOM Guideline 18: human sign-off required |
+
+### Fraud investigation
+
+| Condition | Decision | Reason |
+|-----------|----------|--------|
+| Fraud score ≥ 0.65 without human investigator | `deny` | NAICOM Market Conduct Rule 11: human investigation required |
+| Fraud score ≥ 0.65 with human investigator | `escalate` | NAICOM Rule 11: investigation in progress, escalate for oversight |
+
+### Policy modification
+
+| Condition | Decision | Reason |
+|-----------|----------|--------|
+| Modification without customer notification | `deny` | Insurance Act 2003 §50: customer must be notified |
+| Modification with notification | `allow` | §50 met |
+
+## Usage
+
+### Standalone check
+
+```python
+from comply54.sectors import NigeriaInsuranceCompliance
+
+compliance = NigeriaInsuranceCompliance()
+
+# Claims adjudication
+result = compliance.check(
+    action="approve_claim",
+    params={"claim_amount": 2_500_000, "claim_type": "motor"},
+    context={"human_adjuster_assigned": True, "senior_approval": False},
+)
+
+if result.blocked:
+    print(result.primary_violation.messages[0])
+elif result.overall == "escalate":
+    print(f"Senior review required — audit ID: {result.audit_id}")
+```
+
+### With LangGraph (ReAct agent)
+
+```python
+from comply54.sectors import NigeriaInsuranceCompliance
+from comply54.langchain import Comply54Guard, comply54_route
+from langgraph.graph import StateGraph, MessagesState
+from langgraph.prebuilt import ToolNode
+
+compliance = NigeriaInsuranceCompliance()
+tools = [approve_claim_tool, deny_claim_tool, generate_quote_tool, flag_fraud_tool]
+guard = Comply54Guard(compliance, tools)
+
+def build_graph():
+    graph = StateGraph(MessagesState)
+    graph.add_node("agent", agent_node)
+    graph.add_node("guard", guard)
+    graph.add_node("tools", ToolNode(tools))
+
+    graph.set_entry_point("agent")
+    graph.add_conditional_edges("agent", comply54_route, {"guard": "guard", "__end__": "__end__"})
+    graph.add_edge("guard", "tools")
+    graph.add_edge("tools", "agent")
+    return graph.compile()
+
+# Pass adjudication context via compliance_context state key
+result = build_graph().invoke({
+    "messages": [("user", "Approve the ₦3,000,000 motor claim for policy POL-001")],
+    "compliance_context": {
+        "human_adjuster_assigned": True,
+        "senior_approval": False,  # will escalate — senior review required at ₦2M+
+    },
+})
+```
+
+### Strict mode
+
+In strict mode, `escalate` decisions are upgraded to `deny`:
+
+```python
+compliance = NigeriaInsuranceCompliance(strict_mode=True)
+```
+
+## Prohibited underwriting characteristics
+
+The following characteristics are prohibited under Insurance Act 2003 §67 and NAICOM Market Conduct Rule 6. Passing any of them in `underwriting_factors` will result in `deny`:
+
+- `religion`
+- `ethnicity`
+- `tribe`
+- `political_affiliation`
+- `gender`
+- `disability`
+- `hiv_status`
+
+```python
+result = compliance.check(
+    action="generate_quote",
+    params={
+        "policy_type": "life",
+        "coverage_amount": 1_000_000,
+        "underwriting_factors": ["age", "smoking_status", "religion"],  # religion → deny
+    },
+    context={"human_underwriter": True},
+)
+# decision: deny — Insurance Act §67: religion is a prohibited underwriting characteristic
+```
+
+## Properties
+
+```python
+compliance = NigeriaInsuranceCompliance()
+compliance.name           # "Nigeria Insurance Compliance"
+compliance.jurisdictions  # ["NG"]
+len(compliance.packs)     # 7
+```
+
+## Related
+
+- [NAICOM / Insurance Act policy reference](/policy-reference/nigeria/naicom)
+- [NDPA 2023 policy reference](/policy-reference/nigeria/ndpa)
+- [Nigeria Fintech Pack](/sector-packs/nigeria-fintech)
+- [Nigeria Health Pack](/sector-packs/nigeria-health)

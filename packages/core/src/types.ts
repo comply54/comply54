@@ -5,12 +5,27 @@
 
 export type Action = "allow" | "audit" | "escalate" | "deny";
 
+export interface RegulatorySource {
+  /** Official document name or reference (e.g. "CBN Circular FPR/DIR/GEN/CIR/07/003") */
+  document: string;
+  /** Section, article, or guideline number (e.g. "§4.1", "Guideline 4", "Art. 22") */
+  section: string;
+  /** Issuing authority (e.g. "CBN", "NDPC", "NAICOM") */
+  authority: string;
+  /** Year the document was issued or last amended */
+  year: number;
+  /** Optional URL to the official document text */
+  url?: string;
+}
+
 export interface PolicyDecision {
   pack: string;
   regulation: string;
   jurisdiction: string;
   action: Action;
   messages: string[];
+  /** Regulatory documents and sections this decision traces to */
+  citations: RegulatorySource[];
   ruleTriggered?: string;
   auditId: string;
   evaluatedAt: string; // ISO 8601
@@ -44,6 +59,7 @@ export interface CertificateViolation {
   jurisdiction: string;
   action: Action;
   messages: string[];
+  citations: RegulatorySource[];
 }
 
 export interface ComplianceCertificate {

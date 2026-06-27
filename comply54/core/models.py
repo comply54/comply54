@@ -12,10 +12,27 @@ import uuid
 from datetime import datetime, timezone
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 Action = Literal["allow", "deny", "escalate", "audit"]
+
+
+class RegulatorySource(BaseModel):
+    """A specific regulatory document and section enforced by a policy rule."""
+
+    model_config = ConfigDict(frozen=True)
+
+    document: str
+    """Official document name or reference (e.g. 'CBN Circular FPR/DIR/GEN/CIR/07/003')."""
+    section: str
+    """Section, article, or guideline number (e.g. '§4.1', 'Guideline 4', 'Art. 22')."""
+    authority: str
+    """Issuing authority (e.g. 'CBN', 'NDPC', 'NAICOM')."""
+    year: int
+    """Year the document was issued or last amended."""
+    url: str = ""
+    """Optional URL to the official document text."""
 
 
 class PolicyDecision(BaseModel):
@@ -30,6 +47,7 @@ class PolicyDecision(BaseModel):
     jurisdiction: str
     action: Action
     messages: list[str] = Field(default_factory=list)
+    citations: list[RegulatorySource] = Field(default_factory=list)
     rule_triggered: Optional[str] = None
     audit_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -105,6 +123,7 @@ class ComplianceResult(BaseModel):
                 "jurisdiction": d.jurisdiction,
                 "action": d.action,
                 "messages": d.messages,
+                "citations": [c.model_dump() for c in d.citations],
             }
             for d in self.violations
         ]

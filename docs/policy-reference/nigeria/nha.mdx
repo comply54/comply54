@@ -1,0 +1,141 @@
+---
+title: Nigeria National Health Act 2014
+description: NHA 2014, NDPA special-category health data, FMOH AI in Healthcare Policy Draft 2024, and Medical and Dental Practitioners Act Cap M8 — policy rules and enforcement in comply54.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `nigeria/nha` |
+| **Full title** | Nigeria National Health Act 2014 |
+| **Regulator** | Federal Ministry of Health (FMOH) |
+| **Jurisdiction** | Nigeria (NG) |
+| **Effective date** | December 2014 |
+| **Additional authorities** | NITDA (NDPA special-category), MDCN (MDP Act Cap M8) |
+
+## What comply54 enforces
+
+### Patient consent (NHA §26)
+
+Access to patient health records requires documented consent. No exemption for AI systems.
+
+| Condition | Decision |
+|-----------|----------|
+| `consent_documented = true` | Continue to further checks |
+| `consent_documented = false` | `deny` |
+
+```python
+result = compliance.check(
+    action="access_patient_records",
+    params={"patient_id": "P001", "record_type": "full_history"},
+    context={"consent_documented": False},
+)
+# decision: deny — NHA §26: patient consent required before accessing health records
+```
+
+### AI diagnosis and clinical oversight (FMOH AI Policy Guideline 4)
+
+The FMOH AI in Healthcare Policy (Draft 2024) prohibits autonomous AI diagnosis without a human clinician in the loop.
+
+| Condition | Decision |
+|-----------|----------|
+| `human_clinician_oversight = true` | `escalate` — clinician sign-off required |
+| `human_clinician_oversight = false` | `deny` |
+
+```python
+result = compliance.check(
+    action="generate_diagnosis",
+    params={"patient_id": "P001", "symptoms": ["fever", "headache"]},
+    context={"human_clinician_oversight": True, "consent_documented": True},
+)
+# decision: escalate — FMOH AI Policy Guideline 4: AI-generated diagnosis requires
+#           clinician review and sign-off before communicating to patient
+```
+
+### Prescription prohibition (NHA §30, MDP Act Cap M8 §16)
+
+Only registered medical or dental practitioners may prescribe medication. AI systems may not prescribe.
+
+| Condition | Decision |
+|-----------|----------|
+| `licensed_clinician_approval = true` | `allow` |
+| `licensed_clinician_approval = false` | `deny` |
+
+```python
+result = compliance.check(
+    action="prescribe_medication",
+    params={"medication": "amoxicillin", "dosage": "500mg"},
+    context={"licensed_clinician_approval": False, "consent_documented": True},
+)
+# decision: deny — NHA §30 + MDP Act Cap M8 §16: AI prescription without licensed
+#           clinician approval is prohibited
+```
+
+### Cross-border health data (NHA §29 + NDPA §25)
+
+Health data is special-category under the NDPA. Transfer outside Nigeria is prohibited regardless of destination adequacy.
+
+| Condition | Decision |
+|-----------|----------|
+| Destination = Nigeria | Standard NDPA checks |
+| Destination outside Nigeria, health data | `deny` |
+
+```python
+result = compliance.check(
+    action="share_health_data",
+    params={
+        "patient_id": "P001",
+        "destination_country": "GB",
+        "data_type": "health_records",
+    },
+    context={"consent_documented": True},
+)
+# decision: deny — NHA §29 + NDPA §25: cross-border transfer of health data prohibited
+```
+
+### Bulk record access and research (NHA §29)
+
+Access to more than 10 patient records triggers escalation. Research purposes require IRB/ethics committee approval.
+
+| Condition | Decision |
+|-----------|----------|
+| `record_count > 10` | `escalate` |
+| `purpose = "research"` | `escalate` — IRB/ethics approval required |
+
+## Input fields used
+
+| Field | Path in input | Description |
+|-------|--------------|-------------|
+| Action | `input.action` | `"access_patient_records"`, `"generate_diagnosis"`, `"prescribe_medication"`, `"share_health_data"` |
+| Patient ID | `input.params.patient_id` | Patient identifier |
+| Record count | `input.params.record_count` | Integer (triggers escalation above 10) |
+| Destination country | `input.params.destination_country` | ISO 3166-1 alpha-2 |
+| Data type | `input.params.data_type` | `"health_records"`, `"lab_results"`, `"prescription"` |
+| Purpose | `input.params.purpose` | `"treatment"`, `"research"`, `"referral"` |
+| Consent documented | `input.context.consent_documented` | Boolean |
+| Human clinician oversight | `input.context.human_clinician_oversight` | Boolean |
+| Licensed clinician approval | `input.context.licensed_clinician_approval` | Boolean |
+
+## Messages returned
+
+```
+NHA §26: Patient consent is required before accessing health records — no consent documented
+FMOH AI Policy Guideline 4: AI-generated diagnosis requires human clinician review and sign-off
+NHA §30 + MDP Act Cap M8 §16: AI prescription without licensed clinician approval is prohibited
+NHA §29 + NDPA §25: Cross-border transfer of health data is prohibited regardless of destination
+NHA §29: Bulk access to 10+ patient records requires escalation and audit trail
+NHA §29: Research purpose requires IRB or ethics committee approval
+```
+
+## Regulatory references
+
+- Nigeria National Health Act 2014 — Federal Ministry of Health
+- FMOH AI in Healthcare Policy Draft 2024 — Guideline 4 (clinical oversight), Guideline 7 (no autonomous prescriptions)
+- Medical and Dental Practitioners Act Cap M8 LFN 2004 §16 — practitioner definition and prescription rights
+- Nigeria Data Protection Act 2023 §25 — cross-border transfers; special-category data provisions
+
+## Related
+
+- [Nigeria Health sector pack](/sector-packs/nigeria-health)
+- [NDPA 2023 policy reference](/policy-reference/nigeria/ndpa)

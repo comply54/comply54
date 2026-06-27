@@ -129,6 +129,7 @@ class Comply54Engine:
                 jurisdiction=p.jurisdiction,
                 action=action,
                 messages=messages_by_index.get(i, []),
+                citations=list(p.sources),
             )
             for i, p, action in decisions_step1
         ]
@@ -158,6 +159,7 @@ class Comply54Engine:
                 jurisdiction=pack.jurisdiction,
                 action=action,
                 messages=messages,
+                citations=list(pack.sources),
             ))
         return ComplianceResult.from_decisions(decisions)
 

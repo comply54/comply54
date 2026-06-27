@@ -1,35 +1,84 @@
 ---
 title: LangChain / LangGraph Integration
-description: Add comply54 to LangChain agents and LangGraph workflows — as a tool, a node, or a guard.
+description: Add comply54 to LangChain agents and LangGraph workflows — Comply54Guard for ReAct agents, compliance_node for pipelines.
 ---
 
 ## Installation
 
 ```bash
-pip install comply54 langchain-core langgraph
+pip install comply54 langchain-core langgraph langchain-anthropic
 ```
 
-## The two patterns
+## Patterns at a glance
 
-comply54 ships two LangGraph primitives:
+comply54 ships three LangGraph primitives:
 
 | Import | Type | When to use |
 |--------|------|------------|
-| `compliance_node(compliance)` | State node | Compliance check as a mandatory step in the graph |
+| `Comply54Guard` + `comply54_route` | Guard node | **Recommended** — intercepts tool calls in ReAct agents |
+| `compliance_node(compliance)` | State node | Compliance check as explicit step in a pipeline graph |
 | `comply54_tool(compliance)` | StructuredTool | The LLM decides when to call the compliance check |
 
-For financial services, use `compliance_node` — compliance must not be optional.
+For all regulated sectors (fintech, healthcare, insurance), use `Comply54Guard` — compliance must intercept every tool call automatically.
 
-## Pattern 1: compliance_node (recommended)
+## Pattern 1: Comply54Guard (recommended)
 
-The compliance node reads `action`, `params`, `output`, and `context` from graph state, evaluates all packs, and writes the result back to state. If the check blocks, it sets `blocked: True` and the graph routes to a rejection handler instead of the execution node.
+`Comply54Guard` sits between the agent node and the tools node. When the LLM emits `tool_calls`, the guard evaluates each against all compliance packs. Blocked calls receive a `ToolMessage` error; the LLM reads it and explains the refusal to the user.
 
 ```python
-from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph
-from typing import TypedDict, Any
-from comply54 import NigeriaFintechCompliance
+from langchain_anthropic import ChatAnthropic
+from langgraph.graph import StateGraph, MessagesState
+from langgraph.prebuilt import ToolNode
+from comply54.sectors import NigeriaFintechCompliance
+from comply54.langchain import Comply54Guard, comply54_route
+
+compliance = NigeriaFintechCompliance()
+tools = [transfer_funds_tool, check_balance_tool]
+
+def agent_node(state):
+    llm = ChatAnthropic(model="claude-haiku-4-5-20251001").bind_tools(tools)
+    return {"messages": [llm.invoke(state["messages"])]}
+
+guard = Comply54Guard(compliance, tools)
+
+def build_graph():
+    graph = StateGraph(MessagesState)
+
+    graph.add_node("agent", agent_node)
+    graph.add_node("guard", guard)
+    graph.add_node("tools", ToolNode(tools))
+
+    graph.set_entry_point("agent")
+    graph.add_conditional_edges("agent", comply54_route, {"guard": "guard", "__end__": "__end__"})
+    graph.add_edge("guard", "tools")
+    graph.add_edge("tools", "agent")
+
+    return graph.compile()
+
+
+app = build_graph()
+result = app.invoke({"messages": [("user", "Transfer ₦15,000,000 to account 0123456789")]})
+# Last AIMessage: "I can't process this transfer — it exceeds the ₦10,000,000 CBN NIP cap."
+```
+
+**Passing context to the guard:** Set `state["compliance_context"]` before the agent runs:
+
+```python
+result = app.invoke({
+    "messages": [("user", "Transfer ₦500,000 to 0123456789")],
+    "compliance_context": {"kyc_tier": 2},
+})
+```
+
+## Pattern 2: compliance_node (pipeline graphs)
+
+Use `compliance_node` when compliance is a named, explicit step in a non-ReAct pipeline:
+
+```python
+from comply54.sectors import NigeriaFintechCompliance
 from comply54.langchain import compliance_node
+from typing import TypedDict, Any
+from langgraph.graph import StateGraph
 
 
 class AgentState(TypedDict):
@@ -45,12 +94,9 @@ class AgentState(TypedDict):
 compliance = NigeriaFintechCompliance()
 
 def agent_node(state: AgentState) -> AgentState:
-    llm = ChatOpenAI(model="claude-sonnet-4-6")
-    # ... generate action/params from messages
-    return {**state, "action": "transfer_funds", "params": {"amount": 5_000_000}}
+    return {**state, "action": "transfer_funds", "params": {"amount": 15_000_000}}
 
 def execute_node(state: AgentState) -> AgentState:
-    # safe to execute — compliance passed
     result = execute_transfer(state["params"])
     return {**state, "output": result}
 
@@ -92,18 +138,18 @@ print(result["output"])
 # Blocked: CBN NIP Framework §4.2: Transaction exceeds ₦10,000,000 cap
 ```
 
-## Pattern 2: comply54_tool
+## Pattern 3: comply54_tool
 
 The compliance check becomes a tool the LLM calls before taking actions. Best for exploratory agents where the model needs to reason about whether an action is compliant before deciding to execute it.
 
 ```python
 from comply54.langchain import comply54_tool
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 compliance = NigeriaFintechCompliance()
 tools = [comply54_tool(compliance)]
 
-llm = ChatOpenAI(model="claude-sonnet-4-6").bind_tools(tools)
+llm = ChatAnthropic(model="claude-sonnet-4-6").bind_tools(tools)
 
 response = llm.invoke(
     "Check if I can transfer ₦12,000,000 to account 0123456789. My KYC tier is 3."
@@ -192,4 +238,6 @@ async for chunk in app.astream(input_state):
 ## Related
 
 - [Nigeria Fintech sector pack](/sector-packs/nigeria-fintech)
+- [Nigeria Health sector pack](/sector-packs/nigeria-health)
+- [Nigeria Insurance sector pack](/sector-packs/nigeria-insurance)
 - [CrewAI integration](/guides/crewai-integration)

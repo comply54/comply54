@@ -30,7 +30,7 @@ Low-level API:
 from __future__ import annotations
 
 from .core.engine import Comply54Engine
-from .core.models import Action, ComplianceCertificate, ComplianceResult, EvaluationInput, PolicyDecision
+from .core.models import Action, ComplianceCertificate, ComplianceResult, EvaluationInput, PolicyDecision, RegulatorySource
 from .core.packs import (
     PACK_REGISTRY,
     PackSpec,
@@ -59,6 +59,7 @@ __all__ = [
     "ComplianceResult",
     "ComplianceCertificate",
     "PolicyDecision",
+    "RegulatorySource",
     "Action",
     # Pack registry
     "PACK_REGISTRY",

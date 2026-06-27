@@ -1,0 +1,159 @@
+---
+title: Nigeria Health Pack
+description: Pre-composed compliance for AI agents in Nigerian healthcare — NHA 2014, NDPA special-category data, FMOH AI Policy, and OWASP agent safety.
+---
+
+## Overview
+
+`NigeriaHealthcareCompliance` enforces Nigerian healthcare AI regulations simultaneously, including patient consent, clinical oversight requirements, and special-category health data restrictions under the NDPA.
+
+```python
+from comply54.sectors import NigeriaHealthcareCompliance
+
+compliance = NigeriaHealthcareCompliance()
+result = compliance.check(
+    action="generate_diagnosis",
+    params={"patient_id": "P001", "symptoms": ["fever", "headache"]},
+    context={"human_clinician_oversight": True, "consent_documented": True},
+)
+```
+
+## Included packs
+
+| Pack ID | Regulation | Authority | Key controls |
+|---------|-----------|-----------|-------------|
+| `nigeria/nha` | National Health Act 2014 | FMOH | Patient consent (§26), confidentiality (§29), prescription prohibition (§30), cross-border health data |
+| `nigeria/ndpa` | NDPA 2023 — special-category | NITDA | Health data as special-category, cross-border restrictions (§25), consent |
+| `nigeria/bvn-nin` | BVN/NIN Framework | CBN/NIMC | Biometric PII detection in outputs |
+| `universal/pii-leakage` | OWASP LLM01 | OWASP | Patient ID, health record numbers, diagnoses in outputs |
+| `universal/prompt-injection` | OWASP LLM01 | OWASP | Jailbreak and indirect injection patterns |
+| `universal/tool-permissions` | OWASP LLM08 | OWASP | Excessive tool scope, unauthorised record access |
+| `universal/human-approval` | OWASP LLM08 | OWASP | Irreversible clinical actions require human sign-off |
+
+## Decision matrix by action type
+
+### Patient data access
+
+| Condition | Decision | Reason |
+|-----------|----------|--------|
+| `consent_documented = true` | `allow` / further checks | NHA §26 consent present |
+| `consent_documented = false` | `deny` | NHA §26: patient consent required before accessing health records |
+| Cross-border, health data | `deny` | NDPA §25 + NHA §29: health data is special-category |
+| Bulk access > 10 records | `escalate` | NHA §29: bulk health record access requires escalation |
+
+### AI diagnosis
+
+| Condition | Decision | Reason |
+|-----------|----------|--------|
+| `human_clinician_oversight = true` | `escalate` | FMOH AI Policy Guideline 4: clinician sign-off required |
+| `human_clinician_oversight = false` | `deny` | FMOH Guideline 4: AI diagnosis without clinician oversight prohibited |
+
+### Prescriptions
+
+| Condition | Decision | Reason |
+|-----------|----------|--------|
+| `licensed_clinician_approval = true` | `allow` | MDP Act Cap M8 §16 met |
+| `licensed_clinician_approval = false` | `deny` | NHA §30 + MDP Act §16: only licensed clinicians may prescribe |
+
+### Research / analytics
+
+| Condition | Decision | Reason |
+|-----------|----------|--------|
+| Purpose = `research` | `escalate` | NHA §29: IRB/ethics approval required for research use |
+| Purpose = `treatment` | Standard checks | Normal clinical workflow |
+
+## Usage
+
+### Standalone check
+
+```python
+from comply54.sectors import NigeriaHealthcareCompliance
+
+compliance = NigeriaHealthcareCompliance()
+
+# Access patient records — consent required
+result = compliance.check(
+    action="access_patient_records",
+    params={"patient_id": "P001", "record_type": "full_history"},
+    context={"consent_documented": True},
+)
+
+if result.blocked:
+    print(result.primary_violation.messages[0])
+elif result.overall == "escalate":
+    print(f"Escalation required — audit ID: {result.audit_id}")
+```
+
+### With LangGraph (ReAct agent)
+
+```python
+from comply54.sectors import NigeriaHealthcareCompliance
+from comply54.langchain import Comply54Guard, comply54_route
+from langgraph.graph import StateGraph, MessagesState
+from langgraph.prebuilt import ToolNode
+
+compliance = NigeriaHealthcareCompliance()
+tools = [access_patient_records_tool, generate_diagnosis_tool, prescribe_medication_tool]
+guard = Comply54Guard(compliance, tools)
+
+def build_graph():
+    graph = StateGraph(MessagesState)
+    graph.add_node("agent", agent_node)
+    graph.add_node("guard", guard)
+    graph.add_node("tools", ToolNode(tools))
+
+    graph.set_entry_point("agent")
+    graph.add_conditional_edges("agent", comply54_route, {"guard": "guard", "__end__": "__end__"})
+    graph.add_edge("guard", "tools")
+    graph.add_edge("tools", "agent")
+    return graph.compile()
+
+# Pass clinical context via compliance_context state key
+result = build_graph().invoke({
+    "messages": [("user", "Generate a diagnosis for patient P001")],
+    "compliance_context": {
+        "consent_documented": True,
+        "human_clinician_oversight": False,  # will be denied by FMOH Guideline 4
+    },
+})
+```
+
+### Strict mode
+
+In strict mode, `escalate` decisions are upgraded to `deny` — no clinical action proceeds without full human approval:
+
+```python
+compliance = NigeriaHealthcareCompliance(strict_mode=True)
+```
+
+### Accessing all decisions
+
+```python
+result = compliance.check(
+    action="generate_diagnosis",
+    params={"patient_id": "P001"},
+    context={"human_clinician_oversight": True, "consent_documented": True},
+)
+
+for decision in result.decisions:
+    status = "✓" if decision.action == "allow" else "!"
+    print(f"{status} {decision.pack}: {decision.action}")
+    for msg in decision.messages:
+        print(f"   {msg}")
+```
+
+## Properties
+
+```python
+compliance = NigeriaHealthcareCompliance()
+compliance.name           # "Nigeria Healthcare Compliance"
+compliance.jurisdictions  # ["NG"]
+len(compliance.packs)     # 7
+```
+
+## Related
+
+- [NHA 2014 policy reference](/policy-reference/nigeria/nha)
+- [NDPA 2023 policy reference](/policy-reference/nigeria/ndpa)
+- [Nigeria Fintech Pack](/sector-packs/nigeria-fintech)
+- [Nigeria Insurance Pack](/sector-packs/nigeria-insurance)

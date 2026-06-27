@@ -5,9 +5,33 @@
  */
 
 import { makeAuditId, nowIso, hasBvn, hasNin, hasPan, hasPassport } from "../utils.js";
-import type { EvaluationInput, PackEvaluatorFn, PolicyDecision } from "../types.js";
+import type { EvaluationInput, PackEvaluatorFn, PolicyDecision, RegulatorySource } from "../types.js";
 
 type Input = Required<EvaluationInput>;
+
+// ── Regulatory citation constants ─────────────────────────────────────────────
+
+const _OWASP_URL = "https://owasp.org/www-project-top-10-for-large-language-model-applications/";
+
+const PII_LEAKAGE_CITATIONS: RegulatorySource[] = [
+  { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM06:2025 — Excessive Agency", authority: "OWASP", year: 2025, url: _OWASP_URL },
+];
+
+const PROMPT_INJECTION_CITATIONS: RegulatorySource[] = [
+  { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM01:2025 — Prompt Injection", authority: "OWASP", year: 2025, url: _OWASP_URL },
+];
+
+const TOOL_PERMISSIONS_CITATIONS: RegulatorySource[] = [
+  { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency", authority: "OWASP", year: 2025, url: _OWASP_URL },
+];
+
+const HUMAN_APPROVAL_CITATIONS: RegulatorySource[] = [
+  { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency", authority: "OWASP", year: 2025, url: _OWASP_URL },
+];
+
+const MODEL_ROUTING_CITATIONS: RegulatorySource[] = [
+  { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM09:2025 — Misinformation", authority: "OWASP", year: 2025, url: _OWASP_URL },
+];
 
 // ── PII Leakage (OWASP LLM06) ────────────────────────────────────────────────
 
@@ -18,6 +42,7 @@ export const evaluatePiiLeakage: PackEvaluatorFn = (input: Input): PolicyDecisio
     jurisdiction: "",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: PII_LEAKAGE_CITATIONS,
   };
 
   const output = input.output ?? "";
@@ -78,6 +103,7 @@ export const evaluatePromptInjection: PackEvaluatorFn = (input: Input): PolicyDe
     jurisdiction: "",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: PROMPT_INJECTION_CITATIONS,
   };
 
   const userMessage = String(input.params["user_message"] ?? input.params["content"] ?? "");
@@ -106,6 +132,7 @@ export const evaluateToolPermissions: PackEvaluatorFn = (input: Input): PolicyDe
     jurisdiction: "",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: TOOL_PERMISSIONS_CITATIONS,
   };
 
   const allowedTools = input.context["allowed_tools"] as string[] | undefined;
@@ -167,6 +194,7 @@ export const evaluateHumanApproval: PackEvaluatorFn = (input: Input): PolicyDeci
     jurisdiction: "",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: HUMAN_APPROVAL_CITATIONS,
   };
 
   // Irreversible actions
@@ -219,6 +247,7 @@ export const evaluateModelRouting: PackEvaluatorFn = (input: Input): PolicyDecis
     jurisdiction: "",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: MODEL_ROUTING_CITATIONS,
   };
 
   if (input.action !== "route_to_model") {

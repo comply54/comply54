@@ -1,6 +1,6 @@
 ---
 title: Introduction
-description: African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, KDPA, POPIA and 15+ African regulatory frameworks.
+description: African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, NHA 2014, NAICOM, KDPA, POPIA and 21 policy packs covering 10+ African regulatory frameworks.
 ---
 
 <img
@@ -16,7 +16,7 @@ Comply54 is the African AI compliance infrastructure layer. It enforces African 
 **One import. Zero Rego knowledge required.**
 
 ```python
-from comply54 import NigeriaFintechCompliance
+from comply54.sectors import NigeriaFintechCompliance
 
 compliance = NigeriaFintechCompliance()
 result = compliance.check(
@@ -72,11 +72,11 @@ Agent decides to take an action
   <Card title="No OPA required" icon="shield-check">
     Built on `regopy` — evaluates Rego policies in-process. No binary to install, works in Lambda and Edge functions.
   </Card>
-  <Card title="19 policy packs" icon="scale-balanced">
-    NDPA, CBN, KDPA, POPIA, Ghana DPA, Rwanda DPA, Egypt PDPL and 12 more — all with exact regulatory citations.
+  <Card title="21 policy packs" icon="scale-balanced">
+    NDPA, CBN, NHA 2014, NAICOM, KDPA, POPIA, Ghana DPA, Rwanda DPA, Egypt PDPL and 12 more — all with exact regulatory citations.
   </Card>
   <Card title="Sector packs" icon="building-columns">
-    `NigeriaFintechCompliance`, `KenyaFintechCompliance`, `PanAfricanFintechCompliance` — pre-composed for your vertical.
+    `NigeriaFintechCompliance`, `NigeriaHealthcareCompliance`, `NigeriaInsuranceCompliance`, `KenyaFintechCompliance`, `PanAfricanFintechCompliance` — pre-composed for your vertical.
   </Card>
   <Card title="Framework adapters" icon="plug">
     Native integration with LangChain, CrewAI, AutoGen, and Vercel Eve via `comply54-adapter-eve`.
@@ -87,7 +87,7 @@ Agent decides to take an action
 
 | Region | Frameworks |
 |--------|-----------|
-| Nigeria | NDPA 2023, CBN Transaction Controls, BVN/NIN Framework, NFIU/MLPPA 2022 |
+| Nigeria | NDPA 2023, CBN Transaction Controls, BVN/NIN Framework, NFIU/MLPPA 2022, National Health Act 2014, Insurance Act 2003 / NAICOM |
 | Kenya | Kenya Data Protection Act 2019 |
 | South Africa | POPIA (Protection of Personal Information Act) |
 | Ghana | Ghana Data Protection Act 2012 |

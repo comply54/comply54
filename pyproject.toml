@@ -1,11 +1,11 @@
 [project]
 name = "comply54"
-version = "0.1.0"
-description = "African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, KDPA, POPIA and 15+ African regulatory frameworks."
+version = "0.2.0"
+description = "African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, NHA, NAICOM, KDPA, POPIA and 15+ African regulatory frameworks. LangGraph-native guard node included."
 authors = [
-    { name = "Oluwajuwon Omotayo", email = "oluwajuwon.falore@sagegreytech.com" }
+    { name = "Oluwajuwon Omotayo", email = "ginuxtechacademy@gmail.com" }
 ]
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = [
@@ -29,11 +29,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-langchain = ["langchain-core>=0.1.0"]
-crewai    = ["crewai>=0.28.0"]
-autogen   = ["pyautogen>=0.2.0"]
-all       = ["langchain-core>=0.1.0", "crewai>=0.28.0", "pyautogen>=0.2.0"]
-dev       = ["pytest>=8.0", "pytest-cov", "ruff", "pyright"]
+langchain  = ["langchain-core>=0.1.0"]
+langgraph  = ["langchain-core>=0.1.0", "langgraph>=0.2.0", "langchain-anthropic>=0.2.0"]
+crewai     = ["crewai>=0.28.0"]
+autogen    = ["pyautogen>=0.2.0"]
+all        = ["langchain-core>=0.1.0", "langgraph>=0.2.0", "langchain-anthropic>=0.2.0", "crewai>=0.28.0", "pyautogen>=0.2.0"]
+dev        = ["pytest>=8.0", "pytest-cov", "ruff", "pyright"]
 
 [project.urls]
 Homepage   = "https://comply54.io"

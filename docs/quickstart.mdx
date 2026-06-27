@@ -14,7 +14,7 @@ No OPA binary required. comply54 evaluates Rego policies in-process using `regop
 ## Your first compliance check
 
 ```python
-from comply54 import NigeriaFintechCompliance
+from comply54.sectors import NigeriaFintechCompliance
 
 compliance = NigeriaFintechCompliance()
 
@@ -31,27 +31,42 @@ print(result.primary_violation.regulation)   # "CBN NIP Framework"
 print(result.primary_violation.messages[0])  # "Transaction of ₦15,000,000 exceeds ..."
 ```
 
-## Integrate with LangChain
+## Integrate with LangGraph (ReAct agents)
+
+`Comply54Guard` intercepts every tool call a ReAct agent makes and blocks it before execution if any pack returns `deny`.
 
 ```python
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, MessagesState
-from comply54 import NigeriaFintechCompliance
-from comply54.langchain import compliance_node, comply54_tool
+from langgraph.prebuilt import ToolNode
+from comply54.sectors import NigeriaFintechCompliance
+from comply54.langchain import Comply54Guard, comply54_route
 
 compliance = NigeriaFintechCompliance()
+tools = [transfer_funds_tool, check_balance_tool]  # your LangChain tools
 
-# As a LangGraph node
-def build_graph():
+def build_agent():
+    llm = ChatAnthropic(model="claude-haiku-4-5-20251001").bind_tools(tools)
+
+    def agent_node(state):
+        return {"messages": [llm.invoke(state["messages"])]}
+
+    guard = Comply54Guard(compliance, tools)
+
     graph = StateGraph(MessagesState)
-    graph.add_node("compliance", compliance_node(compliance))
-    graph.add_node("agent", your_agent_node)
-    graph.add_edge("compliance", "agent")
+    graph.add_node("agent", agent_node)
+    graph.add_node("guard", guard)
+    graph.add_node("tools", ToolNode(tools))
+
+    graph.set_entry_point("agent")
+    graph.add_conditional_edges("agent", comply54_route, {"guard": "guard", "__end__": "__end__"})
+    graph.add_edge("guard", "tools")
+    graph.add_edge("tools", "agent")
+
     return graph.compile()
 
-# As a tool the agent calls itself
-tools = [comply54_tool(compliance)]
-llm = ChatOpenAI(model="gpt-4o").bind_tools(tools)
+app = build_agent()
+result = app.invoke({"messages": [("user", "Transfer ₦15,000,000 to account 0123456789")]})
 ```
 
 ## Check output for PII leakage
@@ -98,8 +113,14 @@ universal/pii-leakage: allow
   <Card title="Nigeria Fintech Pack" icon="naira-sign" href="/sector-packs/nigeria-fintech">
     Full pack reference
   </Card>
-  <Card title="LangChain Guide" icon="link" href="/guides/langchain-integration">
-    Advanced LangGraph patterns
+  <Card title="Nigeria Health Pack" icon="heart-pulse" href="/sector-packs/nigeria-health">
+    NHA 2014 + FMOH AI Policy
+  </Card>
+  <Card title="Nigeria Insurance Pack" icon="shield" href="/sector-packs/nigeria-insurance">
+    Insurance Act + NAICOM
+  </Card>
+  <Card title="LangGraph Guide" icon="link" href="/guides/langchain-integration">
+    Comply54Guard patterns
   </Card>
   <Card title="Understanding Decisions" icon="magnifying-glass" href="/guides/understanding-decisions">
     How results are structured

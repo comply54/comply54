@@ -93,6 +93,7 @@ export class Comply54Engine {
       jurisdiction: v.jurisdiction,
       action: v.action,
       messages: v.messages,
+      citations: v.citations,
     }));
 
     const hashPayload = JSON.stringify(

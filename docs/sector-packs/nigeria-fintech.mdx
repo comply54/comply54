@@ -8,7 +8,7 @@ description: Pre-composed compliance for AI agents operating in Nigerian financi
 `NigeriaFintechCompliance` is the canonical pack for AI agents in Nigerian financial services. It enforces all four Nigerian regulatory frameworks simultaneously, plus five universal agent-safety policies.
 
 ```python
-from comply54 import NigeriaFintechCompliance
+from comply54.sectors import NigeriaFintechCompliance
 
 compliance = NigeriaFintechCompliance()
 result = compliance.check(
@@ -66,7 +66,7 @@ result = compliance.check(
 ### Standalone check
 
 ```python
-from comply54 import NigeriaFintechCompliance
+from comply54.sectors import NigeriaFintechCompliance
 
 compliance = NigeriaFintechCompliance()
 
@@ -88,22 +88,26 @@ elif result.overall == "escalate":
     print(f"Escalation required — audit ID: {result.audit_id}")
 ```
 
-### With LangGraph
+### With LangGraph (ReAct agent)
 
 ```python
-from comply54.langchain import compliance_node
+from comply54.langchain import Comply54Guard, comply54_route
 from langgraph.graph import StateGraph, MessagesState
+from langgraph.prebuilt import ToolNode
+
+tools = [transfer_funds_tool, check_balance_tool]
+guard = Comply54Guard(compliance, tools)
 
 def build_graph():
     graph = StateGraph(MessagesState)
-    graph.add_node("check_compliance", compliance_node(compliance))
-    graph.add_node("execute_transfer", transfer_node)
+    graph.add_node("agent", agent_node)
+    graph.add_node("guard", guard)
+    graph.add_node("tools", ToolNode(tools))
 
-    graph.add_conditional_edges(
-        "check_compliance",
-        lambda state: "execute" if not state.get("blocked") else "reject",
-        {"execute": "execute_transfer", "reject": "__end__"},
-    )
+    graph.set_entry_point("agent")
+    graph.add_conditional_edges("agent", comply54_route, {"guard": "guard", "__end__": "__end__"})
+    graph.add_edge("guard", "tools")
+    graph.add_edge("tools", "agent")
     return graph.compile()
 ```
 

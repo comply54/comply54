@@ -59,14 +59,17 @@ class NigeriaFintechCompliance(SectorCompliance):
         "OWASP Agentic AI",
     ]
 
-    def __init__(self) -> None:
-        super().__init__(packs=[
-            NDPA,
-            CBN,
-            BVN_NIN,
-            NFIU_AML,
-            PII_LEAKAGE,
-            PROMPT_INJECTION,
-            TOOL_PERMISSIONS,
-            HUMAN_APPROVAL,
-        ])
+    def __init__(self, strict_mode: bool = False) -> None:
+        super().__init__(
+            packs=[
+                NDPA,
+                CBN,
+                BVN_NIN,
+                NFIU_AML,
+                PII_LEAKAGE,
+                PROMPT_INJECTION,
+                TOOL_PERMISSIONS,
+                HUMAN_APPROVAL,
+            ],
+            strict_mode=strict_mode,
+        )

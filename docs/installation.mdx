@@ -14,7 +14,7 @@ description: Install comply54 and its framework adapters.
 pip install comply54
 ```
 
-This installs the evaluation engine, all 19 policy packs, and the sector packs for Nigeria, Kenya, and Pan-African coverage.
+This installs the evaluation engine, all 21 policy packs, and the sector packs for Nigeria (fintech, healthcare, insurance), Kenya, and Pan-African coverage.
 
 ## Framework adapters
 
@@ -27,7 +27,7 @@ Install the adapter for your AI framework alongside the core:
     ```
 
     ```python
-    from comply54.langchain import compliance_node, comply54_tool
+    from comply54.langchain import Comply54Guard, comply54_route, compliance_node, comply54_tool
     ```
   </Tab>
   <Tab title="CrewAI">
@@ -63,7 +63,7 @@ Install the adapter for your AI framework alongside the core:
 import comply54
 
 # Check package version
-print(comply54.__version__)   # 0.1.0
+print(comply54.__version__)   # 0.2.0
 
 # List all available packs
 from comply54 import list_packs
@@ -77,6 +77,8 @@ nigeria/ndpa        (NG)  — NDPA 2023
 nigeria/cbn         (NG)  — CBN Transaction Controls
 nigeria/bvn-nin     (NG)  — BVN/NIN Framework
 nigeria/nfiu-aml    (NG)  — NFIU/MLPPA 2022
+nigeria/nha         (NG)  — National Health Act 2014
+nigeria/naicom      (NG)  — Insurance Act 2003 / NAICOM Guidelines
 kenya/kdpa          (KE)  — Kenya Data Protection Act 2019
 south-africa/popia  (ZA)  — POPIA
 ghana/dpa           (GH)  — Ghana Data Protection Act 2012

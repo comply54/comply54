@@ -1,6 +1,6 @@
 # Comply54
 
-**Open-source AI governance registry and tooling for African regulatory compliance.**
+**Open-source AI governance enforcement for African regulatory compliance.**
 
 [![CI](https://github.com/comply54/comply54/actions/workflows/ci.yml/badge.svg)](https://github.com/comply54/comply54/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/comply54/comply54/branch/main/graph/badge.svg)](https://codecov.io/gh/comply54/comply54)
@@ -11,112 +11,246 @@
 
 ---
 
+## What it does
+
+Comply54 intercepts AI agent tool calls and evaluates them against African regulatory frameworks — CBN, NDPA, NHA, NAICOM, KDPA, POPIA, and more — **before execution**. Blocked calls never reach the tool.
+
+```
+Agent decides to call transfer_funds(amount=15_000_000)
+         │
+         ▼
+   comply54 guard  ──► CBN NIP cap exceeded ──► ToolMessage error returned
+         │                                       Agent explains to user
+         ✗ tool never executes
+```
+
+No OPA binary required. No subprocess. Works in serverless environments.
+
+---
+
 ## How it relates to agt-policies-nigeria
 
 ```
 kingztech2019/agt-policies-nigeria          comply54
 ──────────────────────────────────          ────────────────────────────────────
-The policy SOURCE.                          The registry and tooling LAYER.
+The policy SOURCE.                          The enforcement and tooling LAYER.
 
-• 12 policy packs (YAML + Rego)    ──▶     • registry.json indexes them by URL
-• Cited in Microsoft AGT main      ──▶     • adapters load them into any framework
-• OPA tests (306 passing)          ──▶     • schema validates them on every PR
-• Stays at kingztech2019 forever   ──▶     • comply54 never duplicates them
+• Rego policy packs (NDPA, CBN, ...)  ──▶  • PackSpec registry indexes them
+• Cited in Microsoft AGT main         ──▶  • Sector classes compose them
+• OPA tests (306 passing)             ──▶  • LangGraph / CrewAI / AutoGen adapters
+• Stays at kingztech2019 forever      ──▶  • regopy evaluates in-process (no binary)
 ```
 
-`agt-policies-nigeria` is where the policy files live — it is permanently cited in
-[Microsoft Agent-OS](https://github.com/microsoft/agent-governance-toolkit). That repo
-will never move.
+`agt-policies-nigeria` is where the policy files live — permanently cited in
+[Microsoft Agent-OS](https://github.com/microsoft/agent-governance-toolkit).
 
-`comply54` is where the ecosystem lives — the registry, framework adapters, JSON Schema
-validator, and CI tooling that makes those policies consumable from LangChain, CrewAI,
-AutoGen, and any OPA pipeline. When new packs are contributed (Ghana DPA, Rwanda DPA,
-ECOWAS), their policy files will live under `packages/` in this repo.
-
----
-
-## Policy Packs (current)
-
-All 12 current packs are sourced from `kingztech2019/agt-policies-nigeria`.
-`registry.json` has the direct raw GitHub URLs for each.
-
-### Universal Agent Safety Controls
-
-| Pack | Regulation | OWASP Ref |
-|------|-----------|-----------|
-| prompt-injection | OWASP Agentic AI — LLM01/ASI01 | LLM01 |
-| pii-leakage | OWASP LLM06 | LLM06 |
-| tool-permissions | OWASP LLM08 | LLM08 |
-| human-approval | OWASP LLM09 | LLM09 |
-| model-routing | OWASP LLM03/LLM05 | LLM03/LLM05 |
-
-### Nigerian Regulatory Packs
-
-| Pack | Regulation | Authority |
-|------|-----------|----------|
-| nigeria/ndpa | Nigeria Data Protection Act 2023 | NDPC |
-| nigeria/cbn | CBN Transaction Limits & Tiered KYC | CBN |
-| nigeria/bvn-nin | CBN BVN Framework; NIBSS Rules | CBN / NIBSS |
-| nigeria/nfiu-aml | MLPPA 2022 / NFIU AML Guidelines | NFIU |
-| nigeria/pos-geofencing | CBN Agent Banking Guidelines 2020 | CBN |
-
-### East Africa
-
-| Pack | Regulation | Authority |
-|------|-----------|----------|
-| kenya/kdpa | Kenya Data Protection Act 2019 | ODPC |
-
-### Southern Africa
-
-| Pack | Regulation | Authority |
-|------|-----------|----------|
-| south-africa/popia | POPIA Act 4 of 2013 | Information Regulator ZA |
+`comply54` is where the ecosystem lives — the enforcement engine, sector compositions,
+framework adapters, and CI tooling that make those policies consumable from LangChain,
+LangGraph, CrewAI, AutoGen, and any OPA pipeline.
 
 ---
 
 ## Quick Start
 
-### With Microsoft Agent-OS (AGT)
+### Install
 
-```python
-from adapters.agt import load_jurisdiction
+```bash
+# Core (no framework)
+pip install comply54
 
-# Loads all packs for Nigeria + universal from agt-policies-nigeria (via raw GitHub URL)
-policies = load_jurisdiction("NG")
+# With LangGraph / LangChain
+pip install "comply54[langgraph]"
 
-for policy in policies:
-    result = policy.evaluate({"action": "export_data", "output": ""})
+# With CrewAI
+pip install "comply54[crewai]"
+
+# Everything
+pip install "comply54[all]"
 ```
 
-### With LangChain / LangGraph
+### Nigerian Fintech Agent (LangGraph)
 
 ```python
-from adapters.langchain import compliance_node
+from comply54.sectors import NigeriaFintechCompliance
+from comply54.langchain import Comply54Guard, comply54_route
+from langgraph.graph import END, StateGraph
+from langgraph.prebuilt import ToolNode
 
-# Pack source URL from registry.json
-node = compliance_node([
-    "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/ndpa-data-residency.yaml",
-    "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/agent-pii-leakage.yaml",
-])
-graph.add_node("compliance", node)
+compliance = NigeriaFintechCompliance()
+guard = Comply54Guard(compliance, context={"kyc_tier": 3})
+
+graph = StateGraph(AgentState)
+graph.add_node("agent", call_model)
+graph.add_node("comply54_guard", guard)       # intercepts before tools run
+graph.add_node("tools", ToolNode(tools))
+
+graph.add_conditional_edges("agent", should_continue,
+    {"comply54_guard": "comply54_guard", END: END})
+graph.add_conditional_edges("comply54_guard", comply54_route,
+    {"tools": "tools", "agent": "agent"})     # blocked → agent, clear → tools
+graph.add_edge("tools", "agent")
 ```
 
-### With CrewAI
+### Direct check (no framework)
 
 ```python
-from adapters.crewai import build_tools_for_jurisdiction
+from comply54.sectors import NigeriaFintechCompliance
 
-tools = build_tools_for_jurisdiction("NG")
+compliance = NigeriaFintechCompliance()
+
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 15_000_000, "currency": "NGN"},
+    context={"kyc_tier": 3},
+)
+
+print(result.overall)                          # "deny"
+print(result.primary_violation.messages[0])   # "CBN NIP Framework: ..."
+```
+
+### Compliance certificate (for auditors)
+
+```python
+cert = compliance.certificate(
+    action="transfer_funds",
+    params={"amount": 5_000_000, "currency": "NGN"},
+    context={"kyc_tier": 3},
+)
+print(cert.to_json())   # tamper-evident JSON with SHA-256 integrity hash
+```
+
+---
+
+## Sector Packs
+
+Sector packs are the main entry point. One import wires up all relevant regulatory frameworks for your use case.
+
+### Nigerian Sector Packs
+
+| Sector class | Regulations covered | Use case |
+|---|---|---|
+| `NigeriaFintechCompliance` | NDPA + CBN + BVN/NIN + NFIU AML + OWASP | Payment agents, digital banking |
+| `NigeriaHealthcareCompliance` | NHA 2014 + NDPA (special-category) + FMOH AI Policy + OWASP | EHR agents, clinical decision support |
+| `NigeriaInsuranceCompliance` | Insurance Act 2003 + NAICOM Guidelines + NFIU AML + NDPA + OWASP | Claims processing, underwriting |
+
+### Other Sector Packs
+
+| Sector class | Jurisdictions | Use case |
+|---|---|---|
+| `KenyaFintechCompliance` | KE | Kenyan payment agents |
+| `PanAfricanFintechCompliance` | NG, KE, ZA, GH, RW, EG, ET, MU, TZ, UG | Multi-market agents |
+
+```python
+from comply54.sectors import (
+    NigeriaFintechCompliance,
+    NigeriaHealthcareCompliance,
+    NigeriaInsuranceCompliance,
+    KenyaFintechCompliance,
+    PanAfricanFintechCompliance,
+)
+```
+
+---
+
+## Policy Packs
+
+All packs use in-process Rego evaluation via `regopy` — no OPA binary required.
+
+### Universal Agent Safety Controls
+
+| Pack ID | Regulation | OWASP Ref |
+|---|---|---|
+| `universal/prompt-injection` | OWASP Agentic AI — LLM01/ASI01 | LLM01 |
+| `universal/pii-leakage` | OWASP LLM06 — Sensitive Information Disclosure | LLM06 |
+| `universal/tool-permissions` | OWASP LLM08 — Excessive Agency | LLM08 |
+| `universal/human-approval` | OWASP LLM09 — Overreliance | LLM09 |
+| `universal/model-routing` | OWASP LLM03/LLM05 — Model Selection Controls | LLM03/LLM05 |
+
+### Nigerian Regulatory Packs
+
+| Pack ID | Regulation | Authority |
+|---|---|---|
+| `nigeria/ndpa` | Nigeria Data Protection Act 2023 | NDPC |
+| `nigeria/cbn` | CBN Transaction Limits & Tiered KYC (FPR/DIR/GEN/CIR/07/003) | CBN |
+| `nigeria/bvn-nin` | CBN BVN Framework & NIBSS Scheme Rules | CBN / NIBSS |
+| `nigeria/nfiu-aml` | MLPPA 2022 / NFIU AML Guidelines | NFIU |
+| `nigeria/nha` | Nigeria National Health Act 2014 / FMOH AI Policy | FMOH / MDCN |
+| `nigeria/naicom` | Insurance Act 2003 / NAICOM Operational Guidelines 2021 / Market Conduct 2023 | NAICOM |
+
+### East Africa
+
+| Pack ID | Regulation | Authority |
+|---|---|---|
+| `kenya/kdpa` | Kenya Data Protection Act 2019 | ODPC |
+| `mauritius/dpa` | Mauritius Data Protection Act 2017 | DPC Mauritius |
+| `tanzania/pdpa` | Tanzania Personal Data Protection Act 2022 | PDPC Tanzania |
+| `uganda/dppa` | Uganda Data Protection and Privacy Act 2019 | PDPO Uganda |
+| `ethiopia/pdp` | Ethiopia Personal Data Protection Proclamation 1321/2024 | ECA |
+| `rwanda/dpa` | Rwanda Law No. 058/2021 on Personal Data Protection | RISA |
+
+### Southern Africa
+
+| Pack ID | Regulation | Authority |
+|---|---|---|
+| `south-africa/popia` | Protection of Personal Information Act 4 of 2013 | Information Regulator ZA |
+
+### West Africa
+
+| Pack ID | Regulation | Authority |
+|---|---|---|
+| `ghana/dpa` | Ghana Data Protection Act 843 of 2012 | DPC Ghana |
+
+### North Africa
+
+| Pack ID | Regulation | Authority |
+|---|---|---|
+| `egypt/pdpl` | Egypt Personal Data Protection Law No. 151/2020 | PDPRL Egypt |
+
+---
+
+## Framework Adapters
+
+### LangGraph (recommended)
+
+```python
+from comply54.langchain import Comply54Guard, comply54_route
+
+# Comply54Guard is a callable LangGraph node.
+# It reads AIMessage.tool_calls, evaluates each via comply54,
+# and injects ToolMessage errors for any blocked calls.
+
+guard = Comply54Guard(
+    NigeriaFintechCompliance(),
+    context={"kyc_tier": 3},
+    block_on_escalate=False,   # True = escalate decisions also block
+)
+```
+
+### LangChain StructuredTool
+
+```python
+from comply54.langchain import comply54_tool
+
+# Exposes comply54 as a tool the agent can call to self-check
+tool = comply54_tool(NigeriaFintechCompliance())
+agent = create_react_agent(llm, tools=[*my_tools, tool])
+```
+
+### CrewAI
+
+```python
+from comply54.crewai import build_compliance_tools
+
+tools = build_compliance_tools(NigeriaFintechCompliance())
 agent = Agent(role="Fintech Agent", tools=tools, ...)
 ```
 
-### With AutoGen
+### AutoGen
 
 ```python
-from adapters.autogen import check_all_packs
+from comply54.autogen import ComplianceMiddleware
 
-result = check_all_packs(jurisdiction="NG", action="send_to_external", output="user@example.com")
-# {"overall": "block", "results": [...]}
+middleware = ComplianceMiddleware(NigeriaFintechCompliance())
 ```
 
 ### Direct OPA (from agt-policies-nigeria)
@@ -129,61 +263,53 @@ opa test policies/rego/ -v   # 306 tests
 
 ---
 
-## Consuming the Registry
+## Example Agents
 
-```python
-import json, urllib.request
+Three complete LangGraph demo agents are in `examples/`:
 
-registry = json.loads(
-    urllib.request.urlopen(
-        "https://raw.githubusercontent.com/kingztech2019/comply54/main/registry.json"
-    ).read()
-)
+| Example | Sector | Regulations demonstrated |
+|---|---|---|
+| `examples/nigeria_fintech_agent/` | Fintech | CBN NIP cap, Tier KYC limits, Maker-Checker, NFIU AML |
+| `examples/nigeria_health_agent/` | Healthcare | NHA patient consent, AI diagnosis oversight, NDPA special-category |
+| `examples/nigeria_insurance_agent/` | Insurance | NAICOM auto-denial cap, anti-discrimination, life underwriting, fraud |
 
-# Get all packs for Nigeria
-ng_pack_ids = registry["jurisdiction_map"]["NG"]
-ng_packs = [p for p in registry["packs"] if p["id"] in ng_pack_ids]
-
-# Fetch a policy YAML directly
-import yaml, urllib.request
-policy_yaml = yaml.safe_load(
-    urllib.request.urlopen(ng_packs[0]["source_yaml"]).read()
-)
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+cd examples/nigeria_fintech_agent && python agent.py
+cd examples/nigeria_health_agent  && python agent.py
+cd examples/nigeria_insurance_agent && python agent.py
 ```
 
 ---
 
 ## Adding a New Pack
 
-New packs that are NOT part of `agt-policies-nigeria` (e.g. Ghana DPA, Rwanda DPA,
-ECOWAS) go into `packages/<jurisdiction>/<slug>/` in this repo. See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. Quick summary:
 
-Packs already in `agt-policies-nigeria` do not need to be duplicated here — add a
-registry entry in `registry.json` with the `source_yaml` URL.
+1. Write `comply54/packs/<jurisdiction>/<pack>.rego` with Rego `deny`, `escalate`, `audit`, `allow` rules
+2. Add a `PackSpec` entry in `comply54/core/packs.py`
+3. Compose it into a sector class in `comply54/sectors/`
+4. Add tests in `tests/`
 
 ---
 
 ## Validation & CI
 
 ```bash
-pip install pyyaml jsonschema
+pip install -e ".[dev]"
 
-# Validate all packs in registry.json (fetches remote ones over HTTPS)
+# Run all tests
+pytest tests/ -v
+
+# Validate pack registry
 python tools/validate.py
 
-# Skip remote packs (offline mode)
-python tools/validate.py --local-only
+# OPA tests (requires opa binary)
+opa test comply54/packs/ -v
 
-# Validate a single local pack
-python tools/validate.py packages/ghana/gdpa
+# Lint Rego
+regal lint comply54/packs/
 ```
-
-CI runs on every push and PR:
-1. Schema validation (all registry packs — remote + local)
-2. OPA tests (local packs only — remote packs tested in agt-policies-nigeria)
-3. Regal lint (local packs only)
-4. meta.json completeness (local packs)
-5. Registry source URL reachability check
 
 ---
 

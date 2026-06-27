@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["node"],
+    "paths": {
+      "eve-policy": ["../../eve-policy/src/index.ts"],
+      "eve-policy/rules": ["../../eve-policy/src/rules/index.ts"],
+      "eve-policy/profiles": ["../../eve-policy/src/profiles/index.ts"],
+      "eve-policy/audit": ["../../eve-policy/src/audit/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "test"]
+}

@@ -1,10 +1,57 @@
 /**
  * Nigerian policy pack evaluators.
- * Covers: NDPA 2023, CBN Transaction Controls, BVN/NIN Framework, NFIU/MLPPA 2022.
+ * Covers: NDPA 2023, CBN Transaction Controls, BVN/NIN Framework, NFIU/MLPPA 2022,
+ *         NHA 2014 (Healthcare), NAICOM (Insurance).
  */
 
 import { makeAuditId, nowIso, isSanctioned, hasAdequacy, hasBvn, hasNin } from "../utils.js";
-import type { EvaluationInput, PackEvaluatorFn, PolicyDecision } from "../types.js";
+import type { EvaluationInput, PackEvaluatorFn, PolicyDecision, RegulatorySource } from "../types.js";
+
+// ── Regulatory citation constants ─────────────────────────────────────────────
+
+const CBN_CITATIONS: RegulatorySource[] = [
+  { document: "CBN Circular FPR/DIR/GEN/CIR/07/003", section: "§3.1", authority: "CBN", year: 2013 },
+  { document: "CBN NIP (NIBSS Instant Payment) Framework", section: "§4.2", authority: "CBN", year: 2011 },
+  { document: "CBN Regulatory Framework for BVN Operations 2014", section: "§2.4", authority: "CBN", year: 2014 },
+  { document: "CBN USSD Banking Circular BSD/DIR/GEN/CIR/07/002", section: "§5.2", authority: "CBN", year: 2019 },
+];
+
+const NDPA_CITATIONS: RegulatorySource[] = [
+  { document: "Nigeria Data Protection Act 2023", section: "§24", authority: "NDPC", year: 2023 },
+  { document: "Nigeria Data Protection Act 2023", section: "§25", authority: "NDPC", year: 2023 },
+  { document: "Nigeria Data Protection Act 2023", section: "§30", authority: "NDPC", year: 2023 },
+];
+
+const BVN_NIN_CITATIONS: RegulatorySource[] = [
+  { document: "CBN Regulatory Framework for BVN Operations 2014", section: "§6", authority: "CBN", year: 2014 },
+  { document: "NIBSS BVN Scheme Rules 2014", section: "Rule 4.2", authority: "NIBSS", year: 2014 },
+  { document: "NIMC Act Cap N99 LFN 2004 (as amended)", section: "§18", authority: "NIMC", year: 2004 },
+];
+
+const NFIU_CITATIONS: RegulatorySource[] = [
+  { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§10", authority: "NFIU", year: 2022 },
+  { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§11", authority: "NFIU", year: 2022 },
+  { document: "NFIU AML/CFT Compliance Framework 2022", section: "§3.2", authority: "NFIU", year: 2022 },
+];
+
+const NHA_CITATIONS: RegulatorySource[] = [
+  { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§26", authority: "FMOH", year: 2014 },
+  { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§29", authority: "FMOH", year: 2014 },
+  { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§30", authority: "FMOH", year: 2014 },
+  { document: "Medical and Dental Practitioners Act Cap M8 LFN 2004", section: "§16", authority: "MDCN", year: 2004 },
+  { document: "FMOH AI in Healthcare Policy (Draft 2024)", section: "Guideline 4", authority: "FMOH", year: 2024 },
+  { document: "FMOH AI in Healthcare Policy (Draft 2024)", section: "Guideline 7", authority: "FMOH", year: 2024 },
+];
+
+const NAICOM_CITATIONS: RegulatorySource[] = [
+  { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§50", authority: "NAICOM", year: 2003 },
+  { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§67", authority: "NAICOM", year: 2003 },
+  { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 12", authority: "NAICOM", year: 2021 },
+  { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 15", authority: "NAICOM", year: 2021 },
+  { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 18", authority: "NAICOM", year: 2021 },
+  { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 6", authority: "NAICOM", year: 2023 },
+  { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 11", authority: "NAICOM", year: 2023 },
+];
 
 type Input = Required<EvaluationInput>;
 
@@ -26,6 +73,7 @@ export const evaluateCBN: PackEvaluatorFn = (input: Input): PolicyDecision => {
     jurisdiction: "NG",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: CBN_CITATIONS,
   };
 
   if (input.action !== "transfer_funds") {
@@ -106,6 +154,7 @@ export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
     jurisdiction: "NG",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: NDPA_CITATIONS,
   };
 
   if (!TRANSFER_ACTIONS.has(input.action)) {
@@ -177,6 +226,7 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
     jurisdiction: "NG",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: BVN_NIN_CITATIONS,
   };
 
   const output = input.output ?? "";
@@ -214,6 +264,317 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
   return { ...base, action: "allow", messages: [] };
 };
 
+// ── NHA 2014 — Nigeria National Health Act ────────────────────────────────────
+
+const RECORD_ACCESS_ACTIONS = new Set([
+  "access_patient_records", "read_health_record", "get_patient_history",
+  "fetch_lab_results", "retrieve_ehr", "query_medical_records",
+]);
+
+const HEALTH_SHARING_ACTIONS = new Set([
+  "share_health_data", "send_patient_report", "export_health_records",
+  "forward_to_provider", "upload_clinical_data", "relay_health_info",
+]);
+
+const DIAGNOSIS_ACTIONS = new Set([
+  "generate_diagnosis", "assess_symptoms", "interpret_scan",
+  "read_pathology", "produce_clinical_assessment",
+]);
+
+const PRESCRIPTION_ACTIONS = new Set([
+  "prescribe_medication", "issue_prescription", "recommend_dosage", "update_prescription",
+]);
+
+const HIGH_RISK_CLINICAL_ACTIONS = new Set([
+  "approve_surgery", "authorise_procedure", "consent_to_intervention", "clear_for_operation",
+]);
+
+export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
+  const base: Omit<PolicyDecision, "action" | "messages" | "ruleTriggered"> = {
+    pack: "nigeria/nha",
+    regulation: "Nigeria National Health Act 2014",
+    jurisdiction: "NG",
+    auditId: makeAuditId(),
+    evaluatedAt: nowIso(),
+    citations: NHA_CITATIONS,
+  };
+
+  const consentDocumented = Boolean(input.context["consent_documented"]);
+  const humanClinician = Boolean(input.context["human_clinician_oversight"]);
+  const clinicianApproval = Boolean(input.context["licensed_clinician_approval"]);
+  const purpose = String(input.context["purpose"] ?? "treatment").toLowerCase();
+  const destCountry = String(input.params["destination_country"] ?? "NG").toUpperCase();
+  const recordCount = Number(input.params["record_count"] ?? 1);
+
+  // NHA s.26 / NDPA s.30: Record access requires documented consent
+  if (RECORD_ACCESS_ACTIONS.has(input.action) && !consentDocumented) {
+    return {
+      ...base,
+      action: "deny",
+      messages: ["NHA s.26 / NDPA s.30: Access to patient health records requires documented patient consent — consent_documented must be true"],
+      ruleTriggered: "nha_no_consent_access",
+    };
+  }
+
+  // NHA s.29: Cross-border health data sharing blocked
+  if (HEALTH_SHARING_ACTIONS.has(input.action) && destCountry !== "NG") {
+    return {
+      ...base,
+      action: "deny",
+      messages: [`NDPA s.25 + NHA s.29: Cross-border transfer of health data to '${destCountry}' is prohibited — special-category data requires adequacy approval`],
+      ruleTriggered: "nha_cross_border_health",
+    };
+  }
+
+  // NHA s.29: Sharing without consent
+  if (HEALTH_SHARING_ACTIONS.has(input.action) && !consentDocumented) {
+    return {
+      ...base,
+      action: "deny",
+      messages: ["NHA s.29: Health data disclosure to third parties requires explicit patient consent — consent_documented must be true"],
+      ruleTriggered: "nha_no_consent_share",
+    };
+  }
+
+  // FMOH Guideline 4 / MDP Act s.16: AI diagnosis without oversight is prohibited
+  if (DIAGNOSIS_ACTIONS.has(input.action) && !humanClinician) {
+    return {
+      ...base,
+      action: "deny",
+      messages: ["FMOH AI Guideline 4 / MDP Act s.16: AI-generated diagnosis requires human clinician oversight — set human_clinician_oversight: true"],
+      ruleTriggered: "nha_ai_diagnosis_no_oversight",
+    };
+  }
+
+  // MDP Act s.16: AI cannot prescribe without licensed clinician approval
+  if (PRESCRIPTION_ACTIONS.has(input.action) && !clinicianApproval) {
+    return {
+      ...base,
+      action: "deny",
+      messages: ["MDP Act s.16 / FMOH Guideline 7: AI cannot prescribe medication without licensed clinician approval — set licensed_clinician_approval: true"],
+      ruleTriggered: "nha_ai_prescription",
+    };
+  }
+
+  // FMOH Guideline 4: Diagnosis with oversight must be escalated for clinician sign-off
+  if (DIAGNOSIS_ACTIONS.has(input.action) && humanClinician) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: ["FMOH AI Guideline 4: AI-assisted diagnosis must be reviewed and signed off by a licensed clinician before communication to patient"],
+      ruleTriggered: "nha_diagnosis_escalate",
+    };
+  }
+
+  // NHA s.26: High-risk clinical actions require human authorisation
+  if (HIGH_RISK_CLINICAL_ACTIONS.has(input.action)) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: ["NHA s.26 / Clinical Safety: High-risk clinical action requires authorisation by a registered medical practitioner"],
+      ruleTriggered: "nha_high_risk_clinical",
+    };
+  }
+
+  // NHA: Research purpose requires ethics committee review
+  if (RECORD_ACCESS_ACTIONS.has(input.action) && purpose === "research") {
+    return {
+      ...base,
+      action: "escalate",
+      messages: ["NHA 2014 / NDPC Guidelines: Use of patient records for research purpose requires ethics committee review and approval"],
+      ruleTriggered: "nha_research_escalate",
+    };
+  }
+
+  // NDPA s.30: Bulk record access requires DPO review
+  if (RECORD_ACCESS_ACTIONS.has(input.action) && recordCount > 10) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: [`NDPA s.30: Bulk access to ${recordCount} patient records (special-category data) requires Data Protection Officer review`],
+      ruleTriggered: "nha_bulk_access",
+    };
+  }
+
+  // Audit all record access
+  if (RECORD_ACCESS_ACTIONS.has(input.action)) {
+    return {
+      ...base,
+      action: "audit",
+      messages: ["NHA s.26 / NDPA Audit: Patient health record access logged — mandatory for NHA compliance and NDPC examination"],
+      ruleTriggered: "nha_audit_access",
+    };
+  }
+
+  return { ...base, action: "allow", messages: [] };
+};
+
+// ── NAICOM — Insurance Act 2003 / NAICOM Guidelines 2021/2023 ─────────────────
+
+const AUTO_DENIAL_CAP = 500_000;
+const SENIOR_REVIEW_THRESHOLD = 2_000_000;
+const LIFE_UNDERWRITING_CAP = 5_000_000;
+const INSURANCE_AML_THRESHOLD = 5_000_000;
+const FRAUD_SCORE_THRESHOLD = 0.65;
+
+const CLAIM_APPROVAL_ACTIONS = new Set([
+  "approve_claim", "settle_claim", "process_claim_payment", "close_claim",
+]);
+const CLAIM_DENIAL_ACTIONS = new Set([
+  "deny_claim", "reject_claim", "decline_claim", "void_claim",
+]);
+const UNDERWRITING_ACTIONS = new Set([
+  "generate_quote", "calculate_premium", "underwrite_policy", "assess_risk",
+]);
+const POLICY_MODIFICATION_ACTIONS = new Set([
+  "cancel_policy", "lapse_policy", "update_policy", "amend_policy_terms",
+]);
+const FRAUD_INVESTIGATION_ACTIONS = new Set([
+  "flag_fraud", "submit_fraud_report", "initiate_fraud_investigation",
+]);
+
+const PROHIBITED_CHARACTERISTICS = new Set([
+  "religion", "ethnicity", "tribe", "political_affiliation",
+  "gender", "disability", "hiv_status",
+]);
+
+export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision => {
+  const base: Omit<PolicyDecision, "action" | "messages" | "ruleTriggered"> = {
+    pack: "nigeria/naicom",
+    regulation: "Insurance Act 2003 / NAICOM Guidelines",
+    jurisdiction: "NG",
+    auditId: makeAuditId(),
+    evaluatedAt: nowIso(),
+    citations: NAICOM_CITATIONS,
+  };
+
+  const humanAdjuster = Boolean(input.context["human_adjuster_assigned"]);
+  const seniorApproval = Boolean(input.context["senior_approval"]);
+  const humanUnderwriter = Boolean(input.context["human_underwriter"]);
+  const claimAmount = Number(input.params["claim_amount"] ?? 0);
+  const policyType = String(input.params["policy_type"] ?? "").toLowerCase();
+  const underwritingAmount = Number(input.params["underwriting_amount"] ?? 0);
+  const fraudScore = Number(input.params["fraud_score"] ?? 0);
+
+  // NAICOM Guideline 15: AI cannot auto-deny claims >= ₦500K without adjuster
+  if (CLAIM_DENIAL_ACTIONS.has(input.action) && claimAmount >= AUTO_DENIAL_CAP && !humanAdjuster) {
+    return {
+      ...base,
+      action: "deny",
+      messages: [`NAICOM Guideline 15: AI cannot autonomously deny a claim of ₦${claimAmount.toLocaleString()} — a human adjuster must be assigned (human_adjuster_assigned: true)`],
+      ruleTriggered: "naicom_auto_denial_cap",
+    };
+  }
+
+  // Insurance Act s.67 / NAICOM Rule 6: Prohibited discriminatory characteristics
+  for (const field of PROHIBITED_CHARACTERISTICS) {
+    if (UNDERWRITING_ACTIONS.has(input.action) && input.params[field] != null) {
+      return {
+        ...base,
+        action: "deny",
+        messages: [`Insurance Act s.67 / NAICOM Rule 6: Underwriting or quote uses prohibited discriminatory characteristic '${field}' — remove this field`],
+        ruleTriggered: "naicom_discrimination",
+      };
+    }
+  }
+
+  // NAICOM Guideline 18: Life underwriting > ₦5M requires human underwriter
+  if (
+    UNDERWRITING_ACTIONS.has(input.action) &&
+    policyType === "life" &&
+    underwritingAmount > LIFE_UNDERWRITING_CAP &&
+    !humanUnderwriter
+  ) {
+    return {
+      ...base,
+      action: "deny",
+      messages: [`NAICOM Guideline 18: Life assurance underwriting of ₦${underwritingAmount.toLocaleString()} exceeds ₦5,000,000 — a licensed human underwriter is required (human_underwriter: true)`],
+      ruleTriggered: "naicom_life_underwriting_cap",
+    };
+  }
+
+  // NAICOM Guideline 12: Claims > ₦2M require senior adjuster
+  if (CLAIM_APPROVAL_ACTIONS.has(input.action) && claimAmount > SENIOR_REVIEW_THRESHOLD && !seniorApproval) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: [`NAICOM Guideline 12: Claim of ₦${claimAmount.toLocaleString()} exceeds ₦2,000,000 — requires senior adjuster review and approval before settlement`],
+      ruleTriggered: "naicom_senior_review",
+    };
+  }
+
+  // NFIU AML: Claim/premium > ₦5M triggers AML reporting
+  if (CLAIM_APPROVAL_ACTIONS.has(input.action) && claimAmount > INSURANCE_AML_THRESHOLD) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: [`NFIU AML Guidelines: Claim of ₦${claimAmount.toLocaleString()} exceeds ₦5,000,000 AML reporting threshold — file Suspicious Transaction Report if warranted`],
+      ruleTriggered: "naicom_aml_threshold",
+    };
+  }
+
+  // NAICOM Rule 11: Fraud investigations require human oversight
+  if (FRAUD_INVESTIGATION_ACTIONS.has(input.action)) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: ["NAICOM Rule 11: Fraud investigation must be handled by a human investigator — AI may flag but cannot conclude"],
+      ruleTriggered: "naicom_fraud_human",
+    };
+  }
+
+  // High fraud score — escalate to investigation team
+  if (CLAIM_APPROVAL_ACTIONS.has(input.action) && fraudScore > FRAUD_SCORE_THRESHOLD) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: [`NAICOM / Anti-Fraud Controls: Claim fraud score ${fraudScore.toFixed(2)} exceeds threshold ${FRAUD_SCORE_THRESHOLD.toFixed(2)} — escalated to fraud investigation team`],
+      ruleTriggered: "naicom_fraud_score",
+    };
+  }
+
+  // Insurance Act s.50: Policy modifications require customer notification
+  if (POLICY_MODIFICATION_ACTIONS.has(input.action)) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: ["Insurance Act s.50: Policy modification requires customer notification and human verification before execution"],
+      ruleTriggered: "naicom_policy_modification",
+    };
+  }
+
+  // Sub-cap denials still need escalation (fair practice)
+  if (CLAIM_DENIAL_ACTIONS.has(input.action) && claimAmount < AUTO_DENIAL_CAP) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: [`NAICOM Fair Claims Practice: Denial of claim (₦${claimAmount.toLocaleString()}) escalated for human review — customer must be notified with specific grounds`],
+      ruleTriggered: "naicom_sub_cap_denial",
+    };
+  }
+
+  // Audit all claims decisions
+  if (CLAIM_APPROVAL_ACTIONS.has(input.action) || CLAIM_DENIAL_ACTIONS.has(input.action)) {
+    return {
+      ...base,
+      action: "audit",
+      messages: ["NAICOM Records: Claims decision logged — mandatory for NAICOM examination and consumer protection records"],
+      ruleTriggered: "naicom_audit",
+    };
+  }
+
+  if (UNDERWRITING_ACTIONS.has(input.action)) {
+    return {
+      ...base,
+      action: "audit",
+      messages: ["NAICOM Records: Underwriting decision logged — required for actuarial review and NAICOM regulatory examination"],
+      ruleTriggered: "naicom_audit_underwriting",
+    };
+  }
+
+  return { ...base, action: "allow", messages: [] };
+};
+
 // ── NFIU / MLPPA 2022 ─────────────────────────────────────────────────────────
 
 const CTR_THRESHOLD = 5_000_000;
@@ -225,6 +586,7 @@ export const evaluateNfiu: PackEvaluatorFn = (input: Input): PolicyDecision => {
     jurisdiction: "NG",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
+    citations: NFIU_CITATIONS,
   };
 
   if (input.action !== "transfer_funds") {

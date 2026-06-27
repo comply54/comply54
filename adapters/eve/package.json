@@ -1,0 +1,71 @@
+{
+  "name": "comply54-adapter-eve",
+  "version": "0.1.0",
+  "description": "African regulatory compliance profiles for Vercel Eve agents — NDPA, CBN, Kenya DPA, POPIA, Mauritius DPA, Ghana DPPA implemented as eve-policy rules",
+  "type": "module",
+  "license": "MIT",
+  "author": "Oluwajuwon Omotayo <kingztech2019>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/comply54/comply54.git",
+    "directory": "adapters/eve"
+  },
+  "keywords": [
+    "comply54",
+    "eve",
+    "vercel",
+    "africa",
+    "compliance",
+    "ndpa",
+    "cbn",
+    "popia",
+    "kenya-dpa",
+    "mauritius-dpa",
+    "ghana-dppa",
+    "gdpr",
+    "data-protection",
+    "ai-governance",
+    "fintech"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./profiles": {
+      "import": "./dist/profiles/index.js",
+      "types": "./dist/profiles/index.d.ts"
+    },
+    "./compose": {
+      "import": "./dist/compose/index.js",
+      "types": "./dist/compose/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --passWithNoTests",
+    "prepublishOnly": "pnpm build"
+  },
+  "peerDependencies": {
+    "eve-policy": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.0.0",
+    "eve-policy": "link:../../../eve-policy",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.0"
+  }
+}

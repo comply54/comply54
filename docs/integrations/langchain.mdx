@@ -1,26 +1,56 @@
 ---
 title: LangChain
-description: comply54 adapters for LangChain tools and LangGraph state nodes.
+description: comply54 adapters for LangChain tools and LangGraph ReAct agents.
 ---
 
 ## Install
 
 ```bash
-pip install comply54 langchain-core langgraph
+pip install comply54 langchain-core langgraph langchain-anthropic
 ```
 
 ## Imports
 
 ```python
-from comply54.langchain import compliance_node, comply54_tool
+from comply54.langchain import Comply54Guard, comply54_route, compliance_node, comply54_tool
 ```
 
-## `compliance_node(compliance)`
+## `Comply54Guard` (recommended for ReAct agents)
 
-Returns a LangGraph-compatible state node function. Add it to your graph as a mandatory step before action execution.
+`Comply54Guard` is a LangGraph node that intercepts every tool call from an `AIMessage` and blocks it if any compliance pack returns `deny`. Blocked calls inject a `ToolMessage` error back to the agent; the agent then explains the refusal to the user.
 
 ```python
-from comply54 import NigeriaFintechCompliance
+from comply54.sectors import NigeriaFintechCompliance
+from comply54.langchain import Comply54Guard, comply54_route
+from langgraph.graph import StateGraph, MessagesState
+from langgraph.prebuilt import ToolNode
+
+compliance = NigeriaFintechCompliance()
+tools = [your_tool_1, your_tool_2]
+
+guard = Comply54Guard(compliance, tools)
+
+graph = StateGraph(MessagesState)
+graph.add_node("agent", agent_node)
+graph.add_node("guard", guard)
+graph.add_node("tools", ToolNode(tools))
+
+graph.set_entry_point("agent")
+graph.add_conditional_edges("agent", comply54_route, {"guard": "guard", "__end__": "__end__"})
+graph.add_edge("guard", "tools")
+graph.add_edge("tools", "agent")
+```
+
+**`comply54_route(state)`** routes to `"guard"` if the last message has tool calls, or `"__end__"` otherwise.
+
+The guard reads compliance context from `state["compliance_context"]` — pass KYC tier, consent flags, etc. as a dict in this state key.
+
+## `compliance_node(compliance)` (legacy pattern)
+
+Returns a LangGraph-compatible state node function for pipelines where compliance is a mandatory explicit step (not tool-call-level):
+
+```python
+from comply54.sectors import NigeriaFintechCompliance
 from comply54.langchain import compliance_node
 from langgraph.graph import StateGraph
 
@@ -31,39 +61,33 @@ graph = StateGraph(YourState)
 graph.add_node("check_compliance", node)
 ```
 
-**State keys read:**
-- `state["action"]` — the action string
-- `state["params"]` — dict of action parameters
-- `state["output"]` — agent output string (for output guards)
-- `state["context"]` — dict of contextual metadata
+**State keys read:** `state["action"]`, `state["params"]`, `state["output"]`, `state["context"]`
 
-**State keys written:**
-- `state["compliance_result"]` — `ComplianceResult` object
-- `state["blocked"]` — `True` if `result.blocked`
+**State keys written:** `state["compliance_result"]`, `state["blocked"]`
 
 ## `comply54_tool(compliance)`
 
-Returns a `langchain_core.tools.StructuredTool` the LLM can call:
+Returns a `langchain_core.tools.StructuredTool` the LLM can call when compliance checking should be model-driven:
 
 ```python
 from comply54.langchain import comply54_tool
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 compliance = NigeriaFintechCompliance()
 tools = [comply54_tool(compliance)]
 
-llm = ChatOpenAI(model="claude-sonnet-4-6").bind_tools(tools)
+llm = ChatAnthropic(model="claude-sonnet-4-6").bind_tools(tools)
 ```
-
-The tool is named `check_compliance` and accepts `action`, `params`, `output`, and `context`.
 
 ## Full LangGraph example
 
-See the [LangChain integration guide](/guides/langchain-integration) for a complete working example with conditional routing and output guards.
+See the [LangChain integration guide](/guides/langchain-integration) for a complete working example with `Comply54Guard`, conditional routing, and output guards.
 
 ## API reference
 
 ```python
+Comply54Guard(compliance: SectorCompliance, tools: list) -> Callable[[MessagesState], MessagesState]
+comply54_route(state: MessagesState) -> str  # "guard" | "__end__"
 compliance_node(compliance: SectorCompliance) -> Callable[[dict], dict]
 comply54_tool(compliance: SectorCompliance, name: str = "check_compliance") -> StructuredTool
 ```
