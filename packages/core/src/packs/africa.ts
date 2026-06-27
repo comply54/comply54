@@ -38,6 +38,25 @@ const EGYPT_PDPL_CITATIONS: RegulatorySource[] = [
   { document: "Personal Data Protection Law No. 151 of 2020", section: "Art. 24", authority: "PDPRL Egypt", year: 2020 },
 ];
 
+const EGYPT_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  egypt_localisation: [
+    { document: "Personal Data Protection Law No. 151 of 2020", section: "Art. 3 — Data Localisation for Financial Data", authority: "PDPRL Egypt", year: 2020 },
+  ],
+  biometric_export: [
+    { document: "Personal Data Protection Law No. 151 of 2020", section: "Art. 24 — Sensitive Data Cross-Border Ban", authority: "PDPRL Egypt", year: 2020 },
+  ],
+  cross_border_consent: [
+    { document: "Personal Data Protection Law No. 151 of 2020", section: "Art. 3 — Consent", authority: "PDPRL Egypt", year: 2020 },
+    { document: "Personal Data Protection Law No. 151 of 2020", section: "Art. 24 — Cross-Border Transfer", authority: "PDPRL Egypt", year: 2020 },
+  ],
+  non_adequate_escalate: [
+    { document: "Personal Data Protection Law No. 151 of 2020", section: "Art. 24 — Cross-Border Safeguards", authority: "PDPRL Egypt", year: 2020 },
+  ],
+  non_adequate_deny: [
+    { document: "Personal Data Protection Law No. 151 of 2020", section: "Art. 24 — Cross-Border Safeguards", authority: "PDPRL Egypt", year: 2020 },
+  ],
+};
+
 const ETHIOPIA_PDP_CITATIONS: RegulatorySource[] = [
   { document: "Personal Data Protection Proclamation No. 1321/2024", section: "Art. 22", authority: "ECA", year: 2024 },
 ];
@@ -65,6 +84,7 @@ function evaluateCrossBorder(
     biometricRule?: "deny" | "escalate";
     adequatePartners?: Set<string>;
     citations?: RegulatorySource[];
+    ruleCitations?: Record<string, RegulatorySource[]>;
   }
 ): PolicyDecision {
   const base: Omit<PolicyDecision, "action" | "messages" | "ruleTriggered"> = {
@@ -97,6 +117,7 @@ function evaluateCrossBorder(
       action: biometricAction,
       messages: [`${regulation}: Biometric/sensitive data cross-border transfer prohibited`],
       ruleTriggered: "biometric_export",
+      citations: options.ruleCitations?.["biometric_export"] ?? base.citations,
     };
   }
 
@@ -113,6 +134,7 @@ function evaluateCrossBorder(
       action: "escalate",
       messages: [`${regulation}: Cross-border transfer to ${dest} requires consent or adequacy confirmation`],
       ruleTriggered: "cross_border_consent",
+      citations: options.ruleCitations?.["cross_border_consent"] ?? base.citations,
     };
   }
 
@@ -123,6 +145,7 @@ function evaluateCrossBorder(
       action: "escalate",
       messages: [`${regulation}: Transfer to ${dest} — no adequacy. Consent documented but regulator notification required`],
       ruleTriggered: "non_adequate_escalate",
+      citations: options.ruleCitations?.["non_adequate_escalate"] ?? base.citations,
     };
   }
 
@@ -131,6 +154,7 @@ function evaluateCrossBorder(
     action: "deny",
     messages: [`${regulation}: Transfer to ${dest} — no adequacy and no consent. Transfer prohibited`],
     ruleTriggered: "non_adequate_deny",
+    citations: options.ruleCitations?.["non_adequate_deny"] ?? base.citations,
   };
 }
 
@@ -180,10 +204,11 @@ export const evaluateEgyptPDPL: PackEvaluatorFn = (input: Input): PolicyDecision
       action: "deny",
       messages: ["Egypt PDPL No. 151/2020: Financial data must be stored within Egypt (data localisation)"],
       ruleTriggered: "egypt_localisation",
+      citations: EGYPT_RULE_CITATIONS["egypt_localisation"] ?? EGYPT_PDPL_CITATIONS,
     };
   }
 
-  return evaluateCrossBorder(input, "egypt/pdpl", "Egypt PDPL No. 151/2020", "EG", { domesticCountry: "EG", citations: EGYPT_PDPL_CITATIONS });
+  return evaluateCrossBorder(input, "egypt/pdpl", "Egypt PDPL No. 151/2020", "EG", { domesticCountry: "EG", citations: EGYPT_PDPL_CITATIONS, ruleCitations: EGYPT_RULE_CITATIONS });
 };
 
 // ── Ethiopia PDP 2024 ─────────────────────────────────────────────────────────

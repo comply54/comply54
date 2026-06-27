@@ -127,6 +127,34 @@ audit contains msg if {
 	)
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	_requested_model in _banned_models
+	key := "model_routing_region"
+}
+
+deny_citations contains key if {
+	_is_sensitive_task
+	_model_specified
+	not _model_is_approved_for_sensitive
+	not _requested_model in _banned_models
+	key := "model_routing_biometric"
+}
+
+escalate_citations contains key if {
+	_is_sensitive_task
+	not _model_specified
+	key := "model_routing_no_dpa"
+}
+
+audit_citations contains key if {
+	_is_sensitive_task
+	_model_specified
+	_model_is_approved_for_sensitive
+	key := "model_routing_region"
+}
+
 # ── Decision: most restrictive wins ──────────────────────────────────
 
 decision := "deny" if {

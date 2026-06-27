@@ -7,6 +7,42 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.2] — 2026-06-27
+
+### Added
+
+**Per-rule regulatory source traceability (Phase 2)**
+
+- `PolicyDecision.rule_triggered: str | None` — each decision now names the exact rule that
+  fired (e.g. `"nip_cap"`, `"no_consent_access"`, `"ctr_threshold"`). Available on both the
+  Python and TypeScript models.
+- `PolicyDecision.citations` is now **rule-level**, not pack-level. The engine resolves the
+  `rule_triggered` key against `comply54.core.citations.RULE_CITATIONS` and returns only the
+  citations directly relevant to the triggered rule. Falls back to `PackSpec.sources` when no
+  per-rule entry is registered.
+- `comply54.core.citations.RULE_CITATIONS` — internal registry mapping
+  `"{pack_id}.{rule_key}"` → `list[RegulatorySource]`. 200+ entries covering all 21 packs.
+- All 6 Nigeria Rego packs now emit `deny_citations`, `escalate_citations`, and
+  `audit_citations` sets alongside the existing message sets. The engine queries these in Pass 2
+  of its two-pass evaluation strategy (no extra round-trip).
+- All 5 Universal OWASP packs emit citation key sets (Rego) and per-rule maps (TypeScript).
+- All 9 Africa DPA packs emit citation key sets (Rego) and per-rule maps (TypeScript).
+- TypeScript packs (`nigeria.ts`, `universal.ts`, `africa.ts`) now carry `RULE_CITATIONS` maps
+  and override `citations` on every non-allow return.
+
+**Example output delta (v0.2.1 → v0.2.2):**
+
+```python
+# v0.2.1 — pack-level (4 sources for all CBN rules)
+decision.citations  # [CBN Circular §3.1, CBN NIP §4.2, CBN BVN §2.4, CBN USSD §5.2]
+
+# v0.2.2 — rule-level (1 source for this specific rule)
+decision.rule_triggered  # "nip_cap"
+decision.citations  # [CBN NIP Framework §4.2 — Per-Transaction Cap]
+```
+
+---
+
 ## [0.2.1] — 2026-06-27
 
 ### Added

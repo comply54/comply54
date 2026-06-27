@@ -111,6 +111,31 @@ escalate contains msg if {
 	)
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+escalate_citations contains key if {
+	input.action in _required_actions
+	key := "human_approval_irreversible"
+}
+
+escalate_citations contains key if {
+	_risk_level in _risk_levels
+	not input.action in _required_actions
+	key := "human_approval_irreversible"
+}
+
+escalate_citations contains key if {
+	_amount > _amount_threshold
+	not input.action in _required_actions
+	key := "human_approval_high_value"
+}
+
+escalate_citations contains key if {
+	_record_count > _bulk_threshold
+	not input.action in _required_actions
+	key := "human_approval_bulk"
+}
+
 # ── Decision: most restrictive wins ──────────────────────────────────
 
 decision := "escalate" if {

@@ -121,6 +121,65 @@ audit contains msg if {
 	msg := "BVN/NIN Audit: Identity-related action logged — NDPA s.30 and CBN BVN audit trail requirement"
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	regex.match(`(?i)(bvn\s+is|bvn:\s*|bvn\s*=|your\s+bvn|the\s+bvn)[\s:]*[0-9]{10,11}`, input.output)
+	key := "bvn_label_pattern"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(bvn|bank\s+verification).{0,20}\b[0-9]{11}\b`, input.output)
+	key := "bvn_contextual_pattern"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(nin\s+is|nin:\s*|nin\s*=|your\s+nin|the\s+nin)[\s:]*[0-9]{10,11}`, input.output)
+	key := "nin_label_pattern"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(vnin|virtual\s+nin)[\s:=]+[A-Z0-9]{16}`, input.output)
+	key := "vnin_pattern"
+}
+
+deny_citations contains key if {
+	input.action in transmission_actions
+	key := "bvn_nin_transmission"
+}
+
+deny_citations contains key if {
+	input.params.bvn_present == true
+	input.action in transmission_actions
+	key := "bvn_in_params"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(customer\s+(wants|needs|asked|requested).{0,30}(bvn|nin)|confirm.{0,20}(bvn|nin).{0,20}(over|via|through)\s+(chat|call|whatsapp|email|sms))`, input.output)
+	key := "bvn_social_engineering"
+}
+
+escalate_citations contains key if {
+	input.action in bvn_verification_actions
+	key := "bvn_verification"
+}
+
+escalate_citations contains key if {
+	input.action in nin_verification_actions
+	key := "nin_verification"
+}
+
+escalate_citations contains key if {
+	input.params.identifier_type in {"BVN", "NIN", "bvn", "nin"}
+	not input.action in transmission_actions
+	key := "identifier_gate"
+}
+
+audit_citations contains key if {
+	_action_has_identity_pattern
+	key := "identity_action_log"
+}
+
 # ── Decision summary ─────────────────────────────────────────────
 decision := "deny" if count(deny) > 0
 

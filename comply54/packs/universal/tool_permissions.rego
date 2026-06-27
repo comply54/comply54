@@ -81,6 +81,26 @@ escalate contains msg if {
 	msg := sprintf("Tool requires human approval: '%v' is a restricted tool — route to authorization queue.", [input.action])
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	input.action in _denied_tools
+	key := "tool_out_of_scope"
+}
+
+deny_citations contains key if {
+	_allowlist_active
+	not input.action in _allowed_tools
+	not input.action in _denied_tools
+	key := "tool_out_of_scope"
+}
+
+escalate_citations contains key if {
+	input.action in _restricted_tools
+	not input.action in _denied_tools
+	key := "tool_bulk_read"
+}
+
 # ── Decision: most restrictive wins ──────────────────────────────────
 
 decision := "deny" if {

@@ -166,6 +166,72 @@ audit contains msg if {
 	msg := "FMOH AI Policy: AI clinical decision logged — required for regulatory review and medical audit trail"
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	input.action in record_access_actions
+	not input.context.consent_documented == true
+	key := "no_consent_access"
+}
+
+deny_citations contains key if {
+	input.action in data_sharing_actions
+	not input.context.consent_documented == true
+	key := "no_consent_share"
+}
+
+deny_citations contains key if {
+	input.action in cross_border_sharing_actions
+	input.params.destination_country != null
+	not input.params.destination_country in {"NG", "ng"}
+	key := "cross_border_health"
+}
+
+deny_citations contains key if {
+	input.action in diagnosis_actions
+	not input.context.human_clinician_oversight == true
+	key := "ai_diagnosis_no_oversight"
+}
+
+deny_citations contains key if {
+	input.action in prescription_actions
+	not input.context.licensed_clinician_approval == true
+	key := "ai_prescription"
+}
+
+escalate_citations contains key if {
+	input.action in diagnosis_actions
+	input.context.human_clinician_oversight == true
+	key := "diagnosis_with_oversight"
+}
+
+escalate_citations contains key if {
+	input.action in high_risk_clinical_actions
+	key := "high_risk_clinical"
+}
+
+escalate_citations contains key if {
+	input.action in record_access_actions
+	input.context.purpose == "research"
+	key := "research_purpose"
+}
+
+escalate_citations contains key if {
+	input.action in record_access_actions
+	input.params.record_count > 10
+	key := "bulk_access"
+}
+
+audit_citations contains key if {
+	input.action in record_access_actions
+	key := "record_access"
+}
+
+audit_citations contains key if {
+	input.action in diagnosis_actions
+	key := "clinical_decision"
+}
+
 # ── Decision summary ──────────────────────────────────────────────
 
 decision := "deny" if count(deny) > 0

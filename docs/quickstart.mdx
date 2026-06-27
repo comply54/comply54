@@ -27,8 +27,12 @@ result = compliance.check(
 
 print(result.overall)          # "deny"
 print(result.blocked)          # True
-print(result.primary_violation.regulation)   # "CBN NIP Framework"
-print(result.primary_violation.messages[0])  # "Transaction of ₦15,000,000 exceeds ..."
+pv = result.primary_violation
+print(pv.regulation)           # "CBN NIP Framework"
+print(pv.messages[0])          # "Transaction of ₦15,000,000 exceeds ..."
+print(pv.rule_triggered)       # "nip_cap"
+print(pv.citations[0].document)  # "CBN NIP (NIBSS Instant Payment) Framework"
+print(pv.citations[0].section)   # "§4.2 — Per-Transaction Cap"
 ```
 
 ## Integrate with LangGraph (ReAct agents)
@@ -93,16 +97,24 @@ for decision in result.decisions:
     print(f"{decision.pack}: {decision.action}")
     for msg in decision.messages:
         print(f"  → {msg}")
+    if decision.rule_triggered:
+        print(f"  rule: {decision.rule_triggered}")
+        for c in decision.citations:
+            print(f"  cite: {c.document} {c.section}")
 ```
 
 Output:
 ```
 nigeria/cbn: deny
   → CBN NIP Framework §4.2: Single transaction of ₦15,000,000 exceeds the ₦10,000,000 cap
+  rule: nip_cap
+  cite: CBN NIP (NIBSS Instant Payment) Framework §4.2 — Per-Transaction Cap
 nigeria/ndpa: allow
 nigeria/bvn-nin: allow
 nigeria/nfiu-aml: escalate
-  → NFIU/MLPPA 2022: Transaction ≥ ₦5,000,000 — Currency Transaction Report required within 24 hours
+  → NFIU/MLPPA 2022: Transaction ≥ ₦5,000,000 — CTR required within 24 hours
+  rule: ctr_threshold
+  cite: Money Laundering (Prevention and Prohibition) Act 2022 §10 — CTR Obligation
 universal/pii-leakage: allow
 ...
 ```

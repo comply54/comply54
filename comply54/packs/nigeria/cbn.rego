@@ -142,6 +142,67 @@ audit contains msg if {
 	msg := "CBN Record-Keeping: Financial transaction action logged — required for CBN examination and NFIU reporting"
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+# These mirror the conditions of the deny/escalate/audit rules above
+# and emit short string keys resolved by comply54.core.citations.RULE_CITATIONS.
+
+deny_citations contains key if {
+	input.action in self_approval_actions
+	key := "maker_checker"
+}
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.amount > nip_cap
+	key := "nip_cap"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(₦|NGN|naira)\s*1[0-9],?[0-9]{3},?[0-9]{3}`, input.output)
+	key := "nip_output"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	input.params.amount >= tier3_ceiling
+	input.params.amount <= nip_cap
+	key := "tier3_daily"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	input.params.amount > tier2_ceiling
+	input.context.kyc_tier == 2
+	key := "tier2_limit"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	input.params.amount > tier1_ceiling
+	input.context.kyc_tier == 1
+	key := "tier1_limit"
+}
+
+escalate_citations contains key if {
+	input.action in refund_actions
+	key := "refund_approval"
+}
+
+escalate_citations contains key if {
+	input.action in bulk_actions
+	key := "bulk_payment"
+}
+
+escalate_citations contains key if {
+	startswith(input.action, "ussd_")
+	key := "ussd_review"
+}
+
+audit_citations contains key if {
+	_action_has_financial_prefix
+	key := "financial_action_log"
+}
+
 # ── Decision summary (top-level output) ──────────────────────────
 # Callers can query: data.agt_policies_nigeria.cbn.decision
 

@@ -202,6 +202,80 @@ audit contains msg if {
 	msg := "NAICOM Records: Underwriting decision logged — required for actuarial review and NAICOM regulatory examination"
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	input.action in claim_denial_actions
+	input.params.claim_amount >= auto_denial_cap
+	not input.context.human_adjuster_assigned == true
+	key := "auto_denial_cap"
+}
+
+deny_citations contains key if {
+	input.action in underwriting_actions
+	some field in prohibited_characteristics
+	input.params[field] != null
+	key := "discrimination"
+}
+
+deny_citations contains key if {
+	input.action in underwriting_actions
+	input.params.policy_type == "life"
+	input.params.underwriting_amount > life_underwriting_cap
+	not input.context.human_underwriter == true
+	key := "life_underwriting_cap"
+}
+
+escalate_citations contains key if {
+	input.action in claim_actions
+	input.params.claim_amount > senior_review_threshold
+	not input.context.senior_approval == true
+	key := "senior_review"
+}
+
+escalate_citations contains key if {
+	input.action in fraud_actions
+	key := "fraud_human"
+}
+
+escalate_citations contains key if {
+	input.action in claim_actions
+	input.params.fraud_score > fraud_score_threshold
+	key := "fraud_score"
+}
+
+escalate_citations contains key if {
+	input.action in policy_actions
+	key := "policy_modification"
+}
+
+escalate_citations contains key if {
+	input.action in claim_actions
+	input.params.claim_amount > aml_reporting_threshold
+	key := "aml_threshold"
+}
+
+escalate_citations contains key if {
+	input.action in claim_denial_actions
+	input.params.claim_amount < auto_denial_cap
+	key := "sub_cap_denial"
+}
+
+audit_citations contains key if {
+	input.action in claim_actions
+	key := "claims_decision"
+}
+
+audit_citations contains key if {
+	input.action in claim_denial_actions
+	key := "claims_denial_log"
+}
+
+audit_citations contains key if {
+	input.action in underwriting_actions
+	key := "underwriting_decision"
+}
+
 # ── Decision summary ──────────────────────────────────────────────
 
 decision := "deny" if count(deny) > 0

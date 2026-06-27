@@ -44,7 +44,7 @@ from .sectors import (
     SectorCompliance,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.2"
 __all__ = [
     # Sector packs (recommended entry point)
     "NigeriaFintechCompliance",

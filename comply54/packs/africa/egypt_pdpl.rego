@@ -198,6 +198,110 @@ audit contains msg if {
 	msg := "Egypt PDPL No. 151/2020 Art. 2: Personal data modification/erasure logged — data subject rights (correction, deletion, objection) and PDPC accountability"
 }
 
+# ── Citation key sets ────────────────────────────────────────────
+
+deny_citations contains key if {
+	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, input.output)
+	key := "breach_suppression"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	key := "biometric_output"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(egypt(ian)?\s+(national\s+)?(id|identity|card)|national\s+id\s+(no|number|#)|رقم\s+قومي)[\s:=]{0,5}[23][0-9]{13}`, input.output)
+	key := "national_id_output"
+}
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.destination_region != null
+	not input.params.destination_region in permitted_regions
+	key := "cross_border_region"
+}
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.destination_country != null
+	input.params.destination_country != "EG"
+	not input.context.consent_documented == true
+	key := "cross_border_country"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(licen(s|c)e|PDPC|permit|registr)|no\s+need\s+(to\s+)?(register|licen(s|c)e|notify\s+PDPC))`, input.output)
+	key := "no_lawful_basis"
+}
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.record_count > 1000
+	key := "large_record_export"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(assessment|report|status))`, input.output)
+	key := "health_data_output"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(account\s+(balance|statement|number)|credit\s+(score|report|history)|loan\s+(default|history|status)|salary\s+(slip|detail)|tax\s+(return|record)|financial\s+(statement|profile|data))`, input.output)
+	key := "special_category_output"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(religious\s+belief|political\s+(view|opinion)|criminal\s+(record|conviction|offence)|ethnic\s+origin|race|sexual\s+(orientation|life))`, input.output)
+	key := "special_category_output"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(child(ren)?'?s?\s+(data|record|profile|information)|minor\s+(data|record|profile)|under(\s+|-)(18|sixteen|eighteen)|student\s+(record|data|profile)|guardian\s+consent)`, input.output)
+	key := "special_category_output"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+egypt|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	key := "cross_border_output_pattern"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	not input.params.destination_region
+	not input.params.destination_country
+	key := "missing_destination"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	input.params.record_count > 100
+	input.params.record_count <= 1000
+	key := "moderate_record_export"
+}
+
+escalate_citations contains key if {
+	input.action in bulk_export_actions
+	key := "bulk_export_action"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer)`, input.output)
+	key := "dpo_bypass_signal"
+}
+
+audit_citations contains key if {
+	pii_actions := {"read_user", "get_customer", "lookup_account", "fetch_profile", "query_personal", "access_pii"}
+	input.action in pii_actions
+	key := "pii_access_log"
+}
+
+audit_citations contains key if {
+	pii_update_actions := {"update_user", "modify_profile", "patch_account", "edit_customer", "change_personal", "delete_user", "erase_data"}
+	input.action in pii_update_actions
+	key := "pii_modification_log"
+}
+
 # ── Decision summary ─────────────────────────────────────────────
 decision := "deny" if count(deny) > 0
 

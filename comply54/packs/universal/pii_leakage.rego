@@ -142,6 +142,60 @@ audit contains msg if {
 	msg := "PII audit: action may produce personal data — output logged for compliance review."
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	_contains_credit_card
+	not _action_is_pii_allowed
+	key := "pii_pan"
+}
+
+deny_citations contains key if {
+	_contains_bvn_nin
+	not _action_is_pii_allowed
+	key := "pii_bvn"
+}
+
+deny_citations contains key if {
+	_contains_sa_id
+	not _action_is_pii_allowed
+	key := "pii_id_number"
+}
+
+deny_citations contains key if {
+	_has_extra_pattern
+	not _action_is_pii_allowed
+	key := "pii_passport"
+}
+
+escalate_citations contains key if {
+	_contains_email
+	not _contains_credit_card
+	not _contains_bvn_nin
+	not _contains_sa_id
+	not _action_is_pii_allowed
+	key := "pii_moderate"
+}
+
+escalate_citations contains key if {
+	_contains_phone
+	not _contains_credit_card
+	not _contains_bvn_nin
+	not _contains_sa_id
+	not _action_is_pii_allowed
+	key := "pii_moderate"
+}
+
+audit_citations contains key if {
+	_is_pii_capable_action
+	not _contains_credit_card
+	not _contains_bvn_nin
+	not _contains_sa_id
+	not _contains_email
+	not _contains_phone
+	key := "pii_moderate"
+}
+
 # ── Decision: most restrictive wins ──────────────────────────────────
 
 decision := "deny" if {

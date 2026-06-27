@@ -153,6 +153,80 @@ audit contains msg if {
 	msg := "NDPA s.30: Personal data modification logged — accountability audit trail for NDPC compliance"
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.destination_region != null
+	not input.params.destination_region in permitted_regions
+	key := "cross_border_region"
+}
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.destination_country != null
+	input.params.destination_country != "NG"
+	not input.context.consent_documented == true
+	key := "cross_border_country"
+}
+
+deny_citations contains key if {
+	input.action in bulk_export_actions
+	key := "bulk_export_action"
+}
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.record_count > 1000
+	key := "large_record_export"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	key := "biometric_output"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	key := "breach_suppression"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	not input.params.destination_region
+	not input.params.destination_country
+	key := "missing_destination"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+nigeria|cross.?border|international\s+transfer|offshore)`, input.output)
+	key := "cross_border_output_pattern"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|mental\s+health|disability|prescription)`, input.output)
+	key := "health_data_output"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	input.params.record_count > 100
+	input.params.record_count <= 1000
+	key := "moderate_record_export"
+}
+
+audit_citations contains key if {
+	pii_actions := {"read_user", "get_customer", "lookup_account", "fetch_profile", "query_personal", "access_pii"}
+	input.action in pii_actions
+	key := "pii_access_log"
+}
+
+audit_citations contains key if {
+	pii_update_actions := {"update_user", "modify_profile", "patch_account", "edit_customer", "change_personal"}
+	input.action in pii_update_actions
+	key := "pii_modification_log"
+}
+
 # ── Decision summary ─────────────────────────────────────────────
 decision := "deny" if count(deny) > 0
 

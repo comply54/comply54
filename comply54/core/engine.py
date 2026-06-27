@@ -18,7 +18,8 @@ import threading
 
 from regopy import Interpreter
 
-from .models import Action, ComplianceResult, EvaluationInput, PolicyDecision
+from .citations import RULE_CITATIONS
+from .models import Action, ComplianceResult, EvaluationInput, PolicyDecision, RegulatorySource
 from .packs import PackSpec
 
 
@@ -107,32 +108,40 @@ class Comply54Engine:
             for i, p in enumerate(self._packs)
         ]
 
-        # ── Pass 2: get messages only for non-allow packs ─────────────────────
+        # ── Pass 2: get messages + citation keys for non-allow packs ─────────
         non_allow = [(i, p, a) for i, p, a in decisions_step1 if a != "allow"]
         messages_by_index: dict[int, list[str]] = {}
+        rule_keys_by_index: dict[int, list[str]] = {}
 
         if non_allow:
-            q2 = "; ".join(
-                f"p{i}_msgs := {p.query_prefix}.{action}"
-                for i, p, action in non_allow
-            )
-            bindings2 = _query(interp, input_json, q2)
+            q2_parts: list[str] = []
+            for i, p, action in non_allow:
+                q2_parts.append(f"p{i}_msgs := {p.query_prefix}.{action}")
+                q2_parts.append(f"p{i}_cites := {p.query_prefix}.{action}_citations")
+            bindings2 = _query(interp, input_json, "; ".join(q2_parts))
             for i, p, action in non_allow:
                 raw_msgs = bindings2.get(f"p{i}_msgs", []) or []
+                raw_cites = bindings2.get(f"p{i}_cites", []) or []
                 messages_by_index[i] = list(raw_msgs)
+                rule_keys_by_index[i] = sorted(raw_cites)  # deterministic order
 
         # ── Build PolicyDecision objects ──────────────────────────────────────
-        decisions: list[PolicyDecision] = [
-            PolicyDecision(
+        decisions: list[PolicyDecision] = []
+        for i, p, action in decisions_step1:
+            rule_keys = rule_keys_by_index.get(i, [])
+            rule_triggered = rule_keys[0] if rule_keys else None
+            specific: list[RegulatorySource] = []
+            for key in rule_keys:
+                specific.extend(RULE_CITATIONS.get(f"{p.id}.{key}", []))
+            decisions.append(PolicyDecision(
                 pack=p.id,
                 regulation=p.regulation,
                 jurisdiction=p.jurisdiction,
                 action=action,
                 messages=messages_by_index.get(i, []),
-                citations=list(p.sources),
-            )
-            for i, p, action in decisions_step1
-        ]
+                citations=specific if specific else list(p.sources),
+                rule_triggered=rule_triggered,
+            ))
 
         return ComplianceResult.from_decisions(decisions)
 
@@ -148,10 +157,17 @@ class Comply54Engine:
             action: Action = b.get("d", "allow")
 
             messages: list[str] = []
+            rule_keys: list[str] = []
             if action != "allow":
-                q_m = f"msgs := {pack.query_prefix}.{action}"
+                q_m = f"msgs := {pack.query_prefix}.{action}; cites := {pack.query_prefix}.{action}_citations"
                 bm = _query(interp, input_json, q_m)
                 messages = list(bm.get("msgs", []) or [])
+                rule_keys = sorted(bm.get("cites", []) or [])
+
+            rule_triggered = rule_keys[0] if rule_keys else None
+            specific: list[RegulatorySource] = []
+            for key in rule_keys:
+                specific.extend(RULE_CITATIONS.get(f"{pack.id}.{key}", []))
 
             decisions.append(PolicyDecision(
                 pack=pack.id,
@@ -159,7 +175,8 @@ class Comply54Engine:
                 jurisdiction=pack.jurisdiction,
                 action=action,
                 messages=messages,
-                citations=list(pack.sources),
+                citations=specific if specific else list(pack.sources),
+                rule_triggered=rule_triggered,
             ))
         return ComplianceResult.from_decisions(decisions)
 

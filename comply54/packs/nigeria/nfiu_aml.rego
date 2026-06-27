@@ -132,6 +132,68 @@ audit contains msg if {
 	)
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	input.params.amount > nip_cap
+	key := "nip_cap_block"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(split(ting)?|break(ing)?\s+(up|down)|divide|multiple\s+(transfers|payments|transactions)).{0,60}(avoid|under|below).{0,30}(threshold|limit|reporting|₦5|5\s*million)`, input.output)
+	key := "structuring_pattern"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(skip\s+(kyc|verification|identity\s+check)|proceed\s+without\s+(verification|kyc)|waive\s+(kyc|due\s+diligence)|bypass\s+(kyc|customer\s+verification))`, input.output)
+	key := "kyc_bypass"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(unverified\s+customer|customer\s+not\s+verified|no\s+kyc|kyc\s+(pending|incomplete|failed)).{0,40}(proceed|transfer|payment|transaction)`, input.output)
+	key := "unverified_customer"
+}
+
+escalate_citations contains key if {
+	input.action in transfer_actions
+	input.params.amount >= ctr_threshold
+	input.params.amount <= nip_cap
+	key := "ctr_threshold"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(transfer.{0,30}back|send.{0,20}return|round.?trip|circular.{0,20}transfer|layering)`, input.output)
+	key := "str_roundtrip"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(unknown\s+(account|beneficiary|recipient)|unverified\s+(account|party)|no\s+(kyc|verification)\s+on\s+(file|record))`, input.output)
+	key := "str_unknown_counterparty"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(gift\s+card|crypto|bitcoin|usdt|stable.?coin|mobile\s+money\s+to\s+cash|convert.{0,20}to\s+cash)`, input.output)
+	key := "str_crypto"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(PEP|politically\s+exposed|government\s+official|public\s+servant|elected\s+official|minister|senator|governor).{0,40}(transfer|payment|account|transaction)`, input.output)
+	key := "pep_transaction"
+}
+
+audit_citations contains key if {
+	_action_has_financial_prefix
+	key := "financial_action_log"
+}
+
+audit_citations contains key if {
+	input.action in transfer_actions
+	input.params.amount >= structuring_zone_low
+	input.params.amount < ctr_threshold
+	key := "structuring_zone"
+}
+
 # ── Decision summary ──────────────────────────────────────────────
 # Callers query: data.agt_policies_nigeria.nfiu.decision
 decision := "deny" if count(deny) > 0

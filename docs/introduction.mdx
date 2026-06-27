@@ -58,12 +58,14 @@ Agent decides to take an action
            │
            ▼
     PolicyDecision
-    ┌──────────────────────────────────┐
-    │ overall:   "deny"                │
-    │ regulation: "CBN NIP Framework"  │
-    │ message:   "₦15M exceeds cap"    │
-    │ audit_id:  "aud_abc123"          │
-    └──────────────────────────────────┘
+    ┌─────────────────────────────────────────────────────────┐
+    │ overall:        "deny"                                  │
+    │ regulation:     "CBN NIP Framework"                     │
+    │ message:        "₦15M exceeds cap"                      │
+    │ rule_triggered: "nip_cap"                               │
+    │ citations:      [CBN NIP Framework §4.2 — Tx Cap]       │
+    │ audit_id:       "aud_abc123"                            │
+    └─────────────────────────────────────────────────────────┘
 ```
 
 ## Key features
@@ -73,7 +75,7 @@ Agent decides to take an action
     Built on `regopy` — evaluates Rego policies in-process. No binary to install, works in Lambda and Edge functions.
   </Card>
   <Card title="21 policy packs" icon="scale-balanced">
-    NDPA, CBN, NHA 2014, NAICOM, KDPA, POPIA, Ghana DPA, Rwanda DPA, Egypt PDPL and 12 more — all with exact regulatory citations.
+    NDPA, CBN, NHA 2014, NAICOM, KDPA, POPIA, Ghana DPA, Rwanda DPA, Egypt PDPL and 12 more — with per-rule regulatory citations on every decision.
   </Card>
   <Card title="Sector packs" icon="building-columns">
     `NigeriaFintechCompliance`, `NigeriaHealthcareCompliance`, `NigeriaInsuranceCompliance`, `KenyaFintechCompliance`, `PanAfricanFintechCompliance` — pre-composed for your vertical.

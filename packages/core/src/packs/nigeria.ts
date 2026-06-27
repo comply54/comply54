@@ -53,6 +53,145 @@ const NAICOM_CITATIONS: RegulatorySource[] = [
   { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 11", authority: "NAICOM", year: 2023 },
 ];
 
+// ── Per-rule citation maps ─────────────────────────────────────────────────────
+
+const CBN_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  cbn_no_kyc: [
+    { document: "CBN Circular FPR/DIR/GEN/CIR/07/003", section: "§2.1 — KYC Requirements", authority: "CBN", year: 2013 },
+  ],
+  cbn_nip_cap: [
+    { document: "CBN NIP (NIBSS Instant Payment) Framework", section: "§4.2 — Per-Transaction Cap", authority: "CBN", year: 2011 },
+  ],
+  cbn_tier_limit: [
+    { document: "CBN Circular FPR/DIR/GEN/CIR/07/003", section: "§3.1 — Tiered KYC Limits", authority: "CBN", year: 2013 },
+  ],
+  cbn_pep: [
+    { document: "NFIU AML/CFT Compliance Framework 2022", section: "§5.1 — PEP Enhanced Due Diligence", authority: "NFIU", year: 2022 },
+    { document: "CBN Circular FPR/DIR/GEN/CIR/07/003", section: "§4.3 — PEP Controls", authority: "CBN", year: 2013 },
+  ],
+  cbn_fx: [
+    { document: "CBN Foreign Exchange (Monitoring and Miscellaneous Provisions) Act 2004", section: "§3 — FX Compliance", authority: "CBN", year: 2004 },
+  ],
+};
+
+const NDPA_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  ndpa_biometric_export: [
+    { document: "Nigeria Data Protection Act 2023", section: "§25 — Biometric Cross-Border Ban", authority: "NDPC", year: 2023 },
+  ],
+  ndpa_cross_border_consent: [
+    { document: "Nigeria Data Protection Act 2023", section: "§25 — Cross-Border Consent", authority: "NDPC", year: 2023 },
+  ],
+  ndpa_non_adequate_escalate: [
+    { document: "Nigeria Data Protection Act 2023", section: "§25 — Non-Adequate Transfer", authority: "NDPC", year: 2023 },
+  ],
+  ndpa_non_adequate_deny: [
+    { document: "Nigeria Data Protection Act 2023", section: "§25 — Non-Adequate No-Consent", authority: "NDPC", year: 2023 },
+  ],
+};
+
+const BVN_NIN_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  bvn_in_output: [
+    { document: "CBN Regulatory Framework for BVN Operations 2014", section: "§6", authority: "CBN", year: 2014 },
+  ],
+  nin_in_output: [
+    { document: "NIMC Act Cap N99 LFN 2004 (as amended)", section: "§18", authority: "NIMC", year: 2004 },
+    { document: "Nigeria Data Protection Act 2023", section: "Schedule 1", authority: "NDPC", year: 2023 },
+  ],
+  biometric_export: [
+    { document: "NIMC Act Cap N99 LFN 2004 (as amended)", section: "§18", authority: "NIMC", year: 2004 },
+  ],
+};
+
+const NHA_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  nha_no_consent_access: [
+    { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§26", authority: "FMOH", year: 2014 },
+    { document: "Nigeria Data Protection Act 2023", section: "§30", authority: "NDPC", year: 2023 },
+  ],
+  nha_cross_border_health: [
+    { document: "Nigeria Data Protection Act 2023", section: "§25", authority: "NDPC", year: 2023 },
+    { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§29", authority: "FMOH", year: 2014 },
+  ],
+  nha_no_consent_share: [
+    { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§29", authority: "FMOH", year: 2014 },
+  ],
+  nha_ai_diagnosis_no_oversight: [
+    { document: "FMOH AI in Healthcare Policy (Draft 2024)", section: "Guideline 4", authority: "FMOH", year: 2024 },
+    { document: "Medical and Dental Practitioners Act Cap M8 LFN 2004", section: "§16", authority: "MDCN", year: 2004 },
+  ],
+  nha_ai_prescription: [
+    { document: "Medical and Dental Practitioners Act Cap M8 LFN 2004", section: "§16", authority: "MDCN", year: 2004 },
+    { document: "FMOH AI in Healthcare Policy (Draft 2024)", section: "Guideline 7", authority: "FMOH", year: 2024 },
+  ],
+  nha_diagnosis_escalate: [
+    { document: "FMOH AI in Healthcare Policy (Draft 2024)", section: "Guideline 4", authority: "FMOH", year: 2024 },
+  ],
+  nha_high_risk_clinical: [
+    { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§26", authority: "FMOH", year: 2014 },
+  ],
+  nha_research_escalate: [
+    { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§26", authority: "FMOH", year: 2014 },
+  ],
+  nha_bulk_access: [
+    { document: "Nigeria Data Protection Act 2023", section: "§30", authority: "NDPC", year: 2023 },
+  ],
+  nha_audit_access: [
+    { document: "National Health Act 2014 (Act No. 8 of 2014)", section: "§26", authority: "FMOH", year: 2014 },
+    { document: "Nigeria Data Protection Act 2023", section: "§30", authority: "NDPC", year: 2023 },
+  ],
+};
+
+const NAICOM_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  naicom_auto_denial_cap: [
+    { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 15", authority: "NAICOM", year: 2021 },
+  ],
+  naicom_discrimination: [
+    { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§67", authority: "NAICOM", year: 2003 },
+    { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 6", authority: "NAICOM", year: 2023 },
+  ],
+  naicom_life_underwriting_cap: [
+    { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 18", authority: "NAICOM", year: 2021 },
+  ],
+  naicom_senior_review: [
+    { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 12", authority: "NAICOM", year: 2021 },
+  ],
+  naicom_aml_threshold: [
+    { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§10", authority: "NFIU", year: 2022 },
+    { document: "NFIU AML/CFT Compliance Framework 2022", section: "§6.1", authority: "NFIU", year: 2022 },
+  ],
+  naicom_fraud_human: [
+    { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 11", authority: "NAICOM", year: 2023 },
+  ],
+  naicom_fraud_score: [
+    { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 11", authority: "NAICOM", year: 2023 },
+  ],
+  naicom_policy_modification: [
+    { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§50", authority: "NAICOM", year: 2003 },
+  ],
+  naicom_sub_cap_denial: [
+    { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 15", authority: "NAICOM", year: 2021 },
+  ],
+  naicom_audit: [
+    { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 12", authority: "NAICOM", year: 2021 },
+    { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§70", authority: "NAICOM", year: 2003 },
+  ],
+  naicom_audit_underwriting: [
+    { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 18", authority: "NAICOM", year: 2021 },
+  ],
+};
+
+const NFIU_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  nfiu_sanctions: [
+    { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§10", authority: "NFIU", year: 2022 },
+    { document: "Terrorism (Prevention and Prohibition) Act 2022", section: "§16", authority: "NFIU", year: 2022 },
+  ],
+  nfiu_structuring: [
+    { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§14", authority: "NFIU", year: 2022 },
+  ],
+  nfiu_ctr: [
+    { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§10 — CTR Filing", authority: "NFIU", year: 2022 },
+  ],
+};
+
 type Input = Required<EvaluationInput>;
 
 // ── CBN Transaction Controls ──────────────────────────────────────────────────
@@ -92,6 +231,7 @@ export const evaluateCBN: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: ["CBN KYC Framework: No verified identity — transaction blocked pending KYC"],
       ruleTriggered: "cbn_no_kyc",
+      citations: CBN_RULE_CITATIONS["cbn_no_kyc"] ?? CBN_CITATIONS,
     };
   }
 
@@ -104,6 +244,7 @@ export const evaluateCBN: PackEvaluatorFn = (input: Input): PolicyDecision => {
         `CBN NIP Framework §4.2: Transaction of ₦${amount.toLocaleString()} exceeds the ₦${CBN_NIP_CAP.toLocaleString()} single-transaction cap`,
       ],
       ruleTriggered: "cbn_nip_cap",
+      citations: CBN_RULE_CITATIONS["cbn_nip_cap"] ?? CBN_CITATIONS,
     };
   }
 
@@ -117,6 +258,7 @@ export const evaluateCBN: PackEvaluatorFn = (input: Input): PolicyDecision => {
         `CBN KYC Framework: Tier ${kyc} single-transaction limit is ₦${tierLimit.toLocaleString()} — ₦${amount.toLocaleString()} exceeds limit`,
       ],
       ruleTriggered: "cbn_tier_limit",
+      citations: CBN_RULE_CITATIONS["cbn_tier_limit"] ?? CBN_CITATIONS,
     };
   }
 
@@ -127,6 +269,7 @@ export const evaluateCBN: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "escalate",
       messages: ["CBN AML/CFT: PEP flag set — transaction requires compliance officer approval"],
       ruleTriggered: "cbn_pep",
+      citations: CBN_RULE_CITATIONS["cbn_pep"] ?? CBN_CITATIONS,
     };
   }
 
@@ -137,6 +280,7 @@ export const evaluateCBN: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "escalate",
       messages: ["CBN FX Policy: Non-NGN transfer requires CBN FX compliance review"],
       ruleTriggered: "cbn_fx",
+      citations: CBN_RULE_CITATIONS["cbn_fx"] ?? CBN_CITATIONS,
     };
   }
 
@@ -177,6 +321,7 @@ export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: ["NDPA 2023 §25: Biometric data transfer outside Nigeria is prohibited"],
       ruleTriggered: "ndpa_biometric_export",
+      citations: NDPA_RULE_CITATIONS["ndpa_biometric_export"] ?? NDPA_CITATIONS,
     };
   }
 
@@ -192,6 +337,7 @@ export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
         `NDPA 2023 §25: Cross-border transfer to ${dest} requires explicit consent or adequacy confirmation`,
       ],
       ruleTriggered: "ndpa_cross_border_consent",
+      citations: NDPA_RULE_CITATIONS["ndpa_cross_border_consent"] ?? NDPA_CITATIONS,
     };
   }
 
@@ -204,6 +350,7 @@ export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
         `NDPA 2023 §25: Transfer to ${dest} — no adequacy. Consent documented but NITDA notification required`,
       ],
       ruleTriggered: "ndpa_non_adequate_escalate",
+      citations: NDPA_RULE_CITATIONS["ndpa_non_adequate_escalate"] ?? NDPA_CITATIONS,
     };
   }
 
@@ -214,6 +361,7 @@ export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       `NDPA 2023 §25: Transfer to ${dest} — no adequacy and no consent. Transfer prohibited`,
     ],
     ruleTriggered: "ndpa_non_adequate_deny",
+    citations: NDPA_RULE_CITATIONS["ndpa_non_adequate_deny"] ?? NDPA_CITATIONS,
   };
 };
 
@@ -237,6 +385,7 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "deny",
       messages: ["BVN/NIN Framework: BVN detected in agent output — must not be exposed in plaintext"],
       ruleTriggered: "bvn_in_output",
+      citations: BVN_NIN_RULE_CITATIONS["bvn_in_output"] ?? BVN_NIN_CITATIONS,
     };
   }
 
@@ -246,6 +395,7 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "deny",
       messages: ["BVN/NIN Framework: NIN detected in agent output — sharing NIN values is prohibited"],
       ruleTriggered: "nin_in_output",
+      citations: BVN_NIN_RULE_CITATIONS["nin_in_output"] ?? BVN_NIN_CITATIONS,
     };
   }
 
@@ -258,6 +408,7 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "deny",
       messages: ["BVN/NIN Framework: Biometric data export outside Nigeria is prohibited under NIMC Act"],
       ruleTriggered: "biometric_export",
+      citations: BVN_NIN_RULE_CITATIONS["biometric_export"] ?? BVN_NIN_CITATIONS,
     };
   }
 
@@ -313,6 +464,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: ["NHA s.26 / NDPA s.30: Access to patient health records requires documented patient consent — consent_documented must be true"],
       ruleTriggered: "nha_no_consent_access",
+      citations: NHA_RULE_CITATIONS["nha_no_consent_access"] ?? NHA_CITATIONS,
     };
   }
 
@@ -323,6 +475,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: [`NDPA s.25 + NHA s.29: Cross-border transfer of health data to '${destCountry}' is prohibited — special-category data requires adequacy approval`],
       ruleTriggered: "nha_cross_border_health",
+      citations: NHA_RULE_CITATIONS["nha_cross_border_health"] ?? NHA_CITATIONS,
     };
   }
 
@@ -333,6 +486,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: ["NHA s.29: Health data disclosure to third parties requires explicit patient consent — consent_documented must be true"],
       ruleTriggered: "nha_no_consent_share",
+      citations: NHA_RULE_CITATIONS["nha_no_consent_share"] ?? NHA_CITATIONS,
     };
   }
 
@@ -343,6 +497,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: ["FMOH AI Guideline 4 / MDP Act s.16: AI-generated diagnosis requires human clinician oversight — set human_clinician_oversight: true"],
       ruleTriggered: "nha_ai_diagnosis_no_oversight",
+      citations: NHA_RULE_CITATIONS["nha_ai_diagnosis_no_oversight"] ?? NHA_CITATIONS,
     };
   }
 
@@ -353,6 +508,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: ["MDP Act s.16 / FMOH Guideline 7: AI cannot prescribe medication without licensed clinician approval — set licensed_clinician_approval: true"],
       ruleTriggered: "nha_ai_prescription",
+      citations: NHA_RULE_CITATIONS["nha_ai_prescription"] ?? NHA_CITATIONS,
     };
   }
 
@@ -363,6 +519,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "escalate",
       messages: ["FMOH AI Guideline 4: AI-assisted diagnosis must be reviewed and signed off by a licensed clinician before communication to patient"],
       ruleTriggered: "nha_diagnosis_escalate",
+      citations: NHA_RULE_CITATIONS["nha_diagnosis_escalate"] ?? NHA_CITATIONS,
     };
   }
 
@@ -373,6 +530,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "escalate",
       messages: ["NHA s.26 / Clinical Safety: High-risk clinical action requires authorisation by a registered medical practitioner"],
       ruleTriggered: "nha_high_risk_clinical",
+      citations: NHA_RULE_CITATIONS["nha_high_risk_clinical"] ?? NHA_CITATIONS,
     };
   }
 
@@ -383,6 +541,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "escalate",
       messages: ["NHA 2014 / NDPC Guidelines: Use of patient records for research purpose requires ethics committee review and approval"],
       ruleTriggered: "nha_research_escalate",
+      citations: NHA_RULE_CITATIONS["nha_research_escalate"] ?? NHA_CITATIONS,
     };
   }
 
@@ -393,6 +552,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "escalate",
       messages: [`NDPA s.30: Bulk access to ${recordCount} patient records (special-category data) requires Data Protection Officer review`],
       ruleTriggered: "nha_bulk_access",
+      citations: NHA_RULE_CITATIONS["nha_bulk_access"] ?? NHA_CITATIONS,
     };
   }
 
@@ -403,6 +563,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "audit",
       messages: ["NHA s.26 / NDPA Audit: Patient health record access logged — mandatory for NHA compliance and NDPC examination"],
       ruleTriggered: "nha_audit_access",
+      citations: NHA_RULE_CITATIONS["nha_audit_access"] ?? NHA_CITATIONS,
     };
   }
 
@@ -463,6 +624,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "deny",
       messages: [`NAICOM Guideline 15: AI cannot autonomously deny a claim of ₦${claimAmount.toLocaleString()} — a human adjuster must be assigned (human_adjuster_assigned: true)`],
       ruleTriggered: "naicom_auto_denial_cap",
+      citations: NAICOM_RULE_CITATIONS["naicom_auto_denial_cap"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -474,6 +636,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
         action: "deny",
         messages: [`Insurance Act s.67 / NAICOM Rule 6: Underwriting or quote uses prohibited discriminatory characteristic '${field}' — remove this field`],
         ruleTriggered: "naicom_discrimination",
+        citations: NAICOM_RULE_CITATIONS["naicom_discrimination"] ?? NAICOM_CITATIONS,
       };
     }
   }
@@ -490,6 +653,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "deny",
       messages: [`NAICOM Guideline 18: Life assurance underwriting of ₦${underwritingAmount.toLocaleString()} exceeds ₦5,000,000 — a licensed human underwriter is required (human_underwriter: true)`],
       ruleTriggered: "naicom_life_underwriting_cap",
+      citations: NAICOM_RULE_CITATIONS["naicom_life_underwriting_cap"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -500,6 +664,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "escalate",
       messages: [`NAICOM Guideline 12: Claim of ₦${claimAmount.toLocaleString()} exceeds ₦2,000,000 — requires senior adjuster review and approval before settlement`],
       ruleTriggered: "naicom_senior_review",
+      citations: NAICOM_RULE_CITATIONS["naicom_senior_review"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -510,6 +675,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "escalate",
       messages: [`NFIU AML Guidelines: Claim of ₦${claimAmount.toLocaleString()} exceeds ₦5,000,000 AML reporting threshold — file Suspicious Transaction Report if warranted`],
       ruleTriggered: "naicom_aml_threshold",
+      citations: NAICOM_RULE_CITATIONS["naicom_aml_threshold"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -520,6 +686,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "escalate",
       messages: ["NAICOM Rule 11: Fraud investigation must be handled by a human investigator — AI may flag but cannot conclude"],
       ruleTriggered: "naicom_fraud_human",
+      citations: NAICOM_RULE_CITATIONS["naicom_fraud_human"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -530,6 +697,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "escalate",
       messages: [`NAICOM / Anti-Fraud Controls: Claim fraud score ${fraudScore.toFixed(2)} exceeds threshold ${FRAUD_SCORE_THRESHOLD.toFixed(2)} — escalated to fraud investigation team`],
       ruleTriggered: "naicom_fraud_score",
+      citations: NAICOM_RULE_CITATIONS["naicom_fraud_score"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -540,6 +708,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "escalate",
       messages: ["Insurance Act s.50: Policy modification requires customer notification and human verification before execution"],
       ruleTriggered: "naicom_policy_modification",
+      citations: NAICOM_RULE_CITATIONS["naicom_policy_modification"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -550,6 +719,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "escalate",
       messages: [`NAICOM Fair Claims Practice: Denial of claim (₦${claimAmount.toLocaleString()}) escalated for human review — customer must be notified with specific grounds`],
       ruleTriggered: "naicom_sub_cap_denial",
+      citations: NAICOM_RULE_CITATIONS["naicom_sub_cap_denial"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -560,6 +730,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "audit",
       messages: ["NAICOM Records: Claims decision logged — mandatory for NAICOM examination and consumer protection records"],
       ruleTriggered: "naicom_audit",
+      citations: NAICOM_RULE_CITATIONS["naicom_audit"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -569,6 +740,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       action: "audit",
       messages: ["NAICOM Records: Underwriting decision logged — required for actuarial review and NAICOM regulatory examination"],
       ruleTriggered: "naicom_audit_underwriting",
+      citations: NAICOM_RULE_CITATIONS["naicom_audit_underwriting"] ?? NAICOM_CITATIONS,
     };
   }
 
@@ -604,6 +776,7 @@ export const evaluateNfiu: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "deny",
       messages: [`NFIU/MLPPA 2022: Transfer to sanctioned jurisdiction (${dest}) — blocked per UN/OFAC sanctions`],
       ruleTriggered: "nfiu_sanctions",
+      citations: NFIU_RULE_CITATIONS["nfiu_sanctions"] ?? NFIU_CITATIONS,
     };
   }
 
@@ -614,6 +787,7 @@ export const evaluateNfiu: PackEvaluatorFn = (input: Input): PolicyDecision => {
       action: "escalate",
       messages: ["NFIU/MLPPA 2022: STR pattern detected — possible structuring below CTR threshold"],
       ruleTriggered: "nfiu_structuring",
+      citations: NFIU_RULE_CITATIONS["nfiu_structuring"] ?? NFIU_CITATIONS,
     };
   }
 
@@ -626,6 +800,7 @@ export const evaluateNfiu: PackEvaluatorFn = (input: Input): PolicyDecision => {
         `NFIU/MLPPA 2022: Transaction ₦${amount.toLocaleString()} ≥ ₦${CTR_THRESHOLD.toLocaleString()} — Currency Transaction Report required within 24 hours`,
       ],
       ruleTriggered: "nfiu_ctr",
+      citations: NFIU_RULE_CITATIONS["nfiu_ctr"] ?? NFIU_CITATIONS,
     };
   }
 

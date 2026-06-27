@@ -94,6 +94,19 @@ escalate contains msg if {
 	msg := "Potential prompt injection: structural injection marker detected — route to review."
 }
 
+# ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	_has_injection_pattern
+	key := "prompt_injection"
+}
+
+escalate_citations contains key if {
+	_has_structural_indicator
+	not _has_injection_pattern
+	key := "indirect_injection"
+}
+
 # ── Decision: most restrictive wins ──────────────────────────────────
 
 decision := "deny" if {

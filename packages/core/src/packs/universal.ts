@@ -33,6 +33,68 @@ const MODEL_ROUTING_CITATIONS: RegulatorySource[] = [
   { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM09:2025 — Misinformation", authority: "OWASP", year: 2025, url: _OWASP_URL },
 ];
 
+// ── Per-rule regulatory citation maps ────────────────────────────────────────
+
+const PII_LEAKAGE_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  pii_bvn: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM06:2025 — Sensitive Information Disclosure", authority: "OWASP", year: 2025, url: _OWASP_URL },
+    { document: "CBN Regulatory Framework for BVN Operations 2014", section: "§6 — BVN Confidentiality Obligations", authority: "CBN", year: 2014 },
+  ],
+  pii_nin: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM06:2025 — Sensitive Information Disclosure", authority: "OWASP", year: 2025, url: _OWASP_URL },
+    { document: "NIMC Act Cap N99 LFN 2004 (as amended)", section: "§18 — NIN Confidentiality", authority: "NIMC", year: 2004 },
+  ],
+  pii_pan: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM06:2025 — Sensitive Information Disclosure", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+  pii_passport: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM06:2025 — Sensitive Information Disclosure", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+};
+
+const PROMPT_INJECTION_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  prompt_injection: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM01:2025 — Prompt Injection", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+};
+
+const TOOL_PERMISSIONS_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  tool_out_of_scope: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency (Scope)", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+  tool_idor: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency (IDOR)", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+  tool_bulk_read: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency (Bulk Operations)", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+};
+
+const HUMAN_APPROVAL_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  human_approval_irreversible: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency (Irreversible Actions)", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+  human_approval_high_value: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency (High-Value Transfers)", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+  human_approval_bulk: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM08:2025 — Excessive Agency (Bulk Messaging)", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+};
+
+const MODEL_ROUTING_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  model_routing_biometric: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM09:2025 — Misinformation", authority: "OWASP", year: 2025, url: _OWASP_URL },
+    { document: "Nigeria Data Protection Act 2023", section: "Schedule 1 — Biometric Data", authority: "NDPC", year: 2023 },
+  ],
+  model_routing_region: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM09:2025 — Misinformation", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+  model_routing_no_dpa: [
+    { document: "OWASP Top 10 for LLM Applications 2025", section: "LLM09:2025 — Misinformation", authority: "OWASP", year: 2025, url: _OWASP_URL },
+  ],
+};
+
 // ── PII Leakage (OWASP LLM06) ────────────────────────────────────────────────
 
 export const evaluatePiiLeakage: PackEvaluatorFn = (input: Input): PolicyDecision => {
@@ -53,6 +115,7 @@ export const evaluatePiiLeakage: PackEvaluatorFn = (input: Input): PolicyDecisio
       action: "deny",
       messages: ["OWASP LLM06: BVN detected in agent output — must not be exposed in plaintext"],
       ruleTriggered: "pii_bvn",
+      citations: PII_LEAKAGE_RULE_CITATIONS["pii_bvn"] ?? PII_LEAKAGE_CITATIONS,
     };
   }
   if (hasNin(output)) {
@@ -61,6 +124,7 @@ export const evaluatePiiLeakage: PackEvaluatorFn = (input: Input): PolicyDecisio
       action: "deny",
       messages: ["OWASP LLM06: NIN detected in agent output — sharing NIN values is prohibited"],
       ruleTriggered: "pii_nin",
+      citations: PII_LEAKAGE_RULE_CITATIONS["pii_nin"] ?? PII_LEAKAGE_CITATIONS,
     };
   }
   if (hasPan(output)) {
@@ -69,6 +133,7 @@ export const evaluatePiiLeakage: PackEvaluatorFn = (input: Input): PolicyDecisio
       action: "deny",
       messages: ["OWASP LLM06: Payment card number (PAN) detected in agent output"],
       ruleTriggered: "pii_pan",
+      citations: PII_LEAKAGE_RULE_CITATIONS["pii_pan"] ?? PII_LEAKAGE_CITATIONS,
     };
   }
   if (hasPassport(output)) {
@@ -77,6 +142,7 @@ export const evaluatePiiLeakage: PackEvaluatorFn = (input: Input): PolicyDecisio
       action: "deny",
       messages: ["OWASP LLM06: Passport number pattern detected in response"],
       ruleTriggered: "pii_passport",
+      citations: PII_LEAKAGE_RULE_CITATIONS["pii_passport"] ?? PII_LEAKAGE_CITATIONS,
     };
   }
 
@@ -116,6 +182,7 @@ export const evaluatePromptInjection: PackEvaluatorFn = (input: Input): PolicyDe
         action: "deny",
         messages: ["OWASP LLM01: Prompt injection pattern detected — instruction override attempt"],
         ruleTriggered: "prompt_injection",
+        citations: PROMPT_INJECTION_RULE_CITATIONS["prompt_injection"] ?? PROMPT_INJECTION_CITATIONS,
       };
     }
   }
@@ -147,6 +214,7 @@ export const evaluateToolPermissions: PackEvaluatorFn = (input: Input): PolicyDe
       action: "deny",
       messages: [`OWASP LLM08: Tool '${toolName}' is not in the agent's declared tool scope`],
       ruleTriggered: "tool_out_of_scope",
+      citations: TOOL_PERMISSIONS_RULE_CITATIONS["tool_out_of_scope"] ?? TOOL_PERMISSIONS_CITATIONS,
     };
   }
 
@@ -158,6 +226,7 @@ export const evaluateToolPermissions: PackEvaluatorFn = (input: Input): PolicyDe
       action: "deny",
       messages: ["OWASP LLM08: Tool call references resource owned by a different user — possible IDOR"],
       ruleTriggered: "tool_idor",
+      citations: TOOL_PERMISSIONS_RULE_CITATIONS["tool_idor"] ?? TOOL_PERMISSIONS_CITATIONS,
     };
   }
 
@@ -169,6 +238,7 @@ export const evaluateToolPermissions: PackEvaluatorFn = (input: Input): PolicyDe
       action: "escalate",
       messages: [`OWASP LLM08: Bulk read of ${recordCount} records without admin scope — escalation required`],
       ruleTriggered: "tool_bulk_read",
+      citations: TOOL_PERMISSIONS_RULE_CITATIONS["tool_bulk_read"] ?? TOOL_PERMISSIONS_CITATIONS,
     };
   }
 
@@ -204,6 +274,7 @@ export const evaluateHumanApproval: PackEvaluatorFn = (input: Input): PolicyDeci
       action: "escalate",
       messages: [`OWASP LLM08: '${input.action}' is an irreversible operation — human sign-off required`],
       ruleTriggered: "human_approval_irreversible",
+      citations: HUMAN_APPROVAL_RULE_CITATIONS["human_approval_irreversible"] ?? HUMAN_APPROVAL_CITATIONS,
     };
   }
 
@@ -218,6 +289,7 @@ export const evaluateHumanApproval: PackEvaluatorFn = (input: Input): PolicyDeci
           `OWASP LLM08: Transfer of ₦${amount.toLocaleString()} requires human approval before execution`,
         ],
         ruleTriggered: "human_approval_high_value",
+        citations: HUMAN_APPROVAL_RULE_CITATIONS["human_approval_high_value"] ?? HUMAN_APPROVAL_CITATIONS,
       };
     }
   }
@@ -231,6 +303,7 @@ export const evaluateHumanApproval: PackEvaluatorFn = (input: Input): PolicyDeci
         action: "escalate",
         messages: [`OWASP LLM08: Bulk message to ${recipients} recipients requires human review`],
         ruleTriggered: "human_approval_bulk",
+        citations: HUMAN_APPROVAL_RULE_CITATIONS["human_approval_bulk"] ?? HUMAN_APPROVAL_CITATIONS,
       };
     }
   }
@@ -265,6 +338,7 @@ export const evaluateModelRouting: PackEvaluatorFn = (input: Input): PolicyDecis
       action: "deny",
       messages: ["OWASP LLM09: Biometric data must not be sent to external model APIs"],
       ruleTriggered: "model_routing_biometric",
+      citations: MODEL_ROUTING_RULE_CITATIONS["model_routing_biometric"] ?? MODEL_ROUTING_CITATIONS,
     };
   }
 
@@ -275,6 +349,7 @@ export const evaluateModelRouting: PackEvaluatorFn = (input: Input): PolicyDecis
       action: "deny",
       messages: [`OWASP LLM09: Model region '${modelRegion}' not in approved regions for this data`],
       ruleTriggered: "model_routing_region",
+      citations: MODEL_ROUTING_RULE_CITATIONS["model_routing_region"] ?? MODEL_ROUTING_CITATIONS,
     };
   }
 
@@ -287,6 +362,7 @@ export const evaluateModelRouting: PackEvaluatorFn = (input: Input): PolicyDecis
         action: "escalate",
         messages: ["OWASP LLM09: No data processing agreement recorded for model provider — escalation required"],
         ruleTriggered: "model_routing_no_dpa",
+        citations: MODEL_ROUTING_RULE_CITATIONS["model_routing_no_dpa"] ?? MODEL_ROUTING_CITATIONS,
       };
     }
   }

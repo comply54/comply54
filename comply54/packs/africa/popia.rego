@@ -141,6 +141,80 @@ audit contains msg if {
 	msg := "POPIA s.17: Personal information access logged — RESPONSIBLE PARTY accountability record for Information Regulator"
 }
 
+# ── Citation key sets ────────────────────────────────────────────
+
+deny_citations contains key if {
+	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data|record))`, input.output)
+	key := "biometric_output"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(minor|child\s+(data|record|profile|account)|under\s+(18|sixteen|fourteen)|children'?s\s+(data|information|personal\s+info))`, input.output)
+	key := "children_data_output"
+}
+
+deny_citations contains key if {
+	regex.match(`\b[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{7}\b`, input.output)
+	key := "sa_id_output"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(id\s+number|identity\s+number|sa\s+id|south\s+african\s+id)[\s:=]+[0-9]{13}`, input.output)
+	key := "sa_id_output"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident|leak)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	key := "breach_suppression"
+}
+
+deny_citations contains key if {
+	input.action in cross_border_actions
+	input.params.destination_country != null
+	not input.params.destination_country in adequate_countries
+	not input.context.consent_documented == true
+	key := "cross_border_country"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)(process(ing)?.{0,40}(beyond|outside|new\s+purpose|repurpose|use\s+for\s+something\s+else)|(data|information).{0,30}(without\s+(consent|permission|authorisation)))`, input.output)
+	key := "no_consent_processing"
+}
+
+escalate_citations contains key if {
+	input.action in cross_border_actions
+	key := "cross_border_output_pattern"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?|upload(ing)?).{0,60}(outside\s+south\s+africa|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	key := "cross_border_output_pattern"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|mental\s+health|disability|chronic\s+illness|prescription|clinical)`, input.output)
+	key := "health_data_output"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(race|ethnic\s+origin|racial\s+(group|classification)|coloured|population\s+group)`, input.output)
+	key := "special_category_output"
+}
+
+escalate_citations contains key if {
+	regex.match(`(?i)(criminal\s+(record|history|conviction|background)|prior\s+(offence|offense|conviction)|police\s+clearance)`, input.output)
+	key := "special_category_output"
+}
+
+audit_citations contains key if {
+	pii_actions := {
+		"read_customer", "get_profile", "lookup_account",
+		"fetch_record", "query_personal", "access_data",
+	}
+	input.action in pii_actions
+	key := "pii_access_log"
+}
+
 # ── Decision summary ──────────────────────────────────────────────
 # Callers query: data.agt_policies_africa.popia.decision
 decision := "deny" if count(deny) > 0

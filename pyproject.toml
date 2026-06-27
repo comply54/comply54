@@ -1,6 +1,6 @@
 [project]
 name = "comply54"
-version = "0.2.0"
+version = "0.2.2"
 description = "African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, NHA, NAICOM, KDPA, POPIA and 15+ African regulatory frameworks. LangGraph-native guard node included."
 authors = [
     { name = "Oluwajuwon Omotayo", email = "ginuxtechacademy@gmail.com" }
