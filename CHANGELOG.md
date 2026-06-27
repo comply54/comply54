@@ -7,6 +7,44 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.3] — 2026-06-27
+
+### Added
+
+**Full CrewAI adapter — pre-execution enforcement and output guardrails**
+
+- `Comply54GuardedTool` — wraps any CrewAI `BaseTool` with comply54 pre-execution
+  enforcement. The inner tool's original `name`, `description`, and `args_schema` are
+  preserved so the agent's interface is unchanged. Blocked calls return structured JSON
+  (`blocked`, `decision`, `reason`, `regulation`, `rule_triggered`, `citations`,
+  `audit_id`) without executing the inner tool.
+- `comply54_guard_tools(compliance, tools, context, block_on_escalate)` — convenience
+  function that wraps a list of tools and returns guarded versions. Drop-in replacement
+  at the `Agent(tools=...)` call site.
+- `Comply54TaskGuardrail` — implements the CrewAI guardrail protocol
+  `(TaskOutput) → (bool, Any)`. Checks task output text for PII leakage, BVN/NIN
+  exposure, and other output-level violations before the task result is delivered.
+- `Comply54CrewTool` now includes `rule_triggered` and `citations` in its JSON output
+  (was missing in v0.2.1).
+
+**Full AutoGen adapter — proxy-level pre-execution enforcement**
+
+- `Comply54UserProxy` — drop-in replacement for `autogen.UserProxyAgent`. Overrides
+  `execute_function` to evaluate every function/tool call against comply54 before
+  execution. Blocked calls inject a structured error dict into the conversation thread
+  without running the function — the assistant sees the error and responds to the user.
+- `register_compliance_guard(proxy, compliance, context, block_on_escalate)` — patches
+  any existing `UserProxyAgent` in-place when you cannot control proxy construction
+  (e.g. third-party scaffolding).
+- `register_compliance` now includes `rule_triggered` and `citations` in its JSON output
+  (was missing in v0.2.1).
+
+All three adapters now return the same `_result_to_dict` shape:
+`overall · blocked · audit_id · violations[pack, regulation, jurisdiction, action,
+messages, rule_triggered, citations[document, section, authority, year]]`
+
+---
+
 ## [0.2.2] — 2026-06-27
 
 ### Added
