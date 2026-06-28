@@ -4,10 +4,14 @@ comply54.sectors.nigeria_insurance
 Nigerian insurance compliance sector pack.
 
 Composes:
-  - NAICOM 2021/2023      — claims adjudication, underwriting controls, anti-discrimination,
-                            fraud escalation, policy modification notification
-  - NDPA 2023             — personal data including health/biometric used in underwriting
-  - NFIU AML              — large premium / claim AML reporting duty
+  - NIIRA 2025            — Nigerian Insurance Industry Reform Act 2025 (signed August 2025).
+                            Replaces Insurance Act 2003 (Cap I17 LFN 2004). Key provisions:
+                            §210 mandatory 60-day claims settlement, §212 Policyholders'
+                            Protection Fund, Part V market conduct and anti-discrimination rules.
+  - NAICOM 2021/2023      — Claims adjudication thresholds, underwriting controls, fraud
+                            escalation (remain in force under NIIRA 2025 pending new guidelines)
+  - NDPA 2023             — Personal data including health/biometric used in underwriting
+  - NFIU AML              — Large premium / claim AML reporting duty
   - OWASP Universal       — PII leakage, prompt injection, tool permissions, human approval
 
 Covers AI agents operating in:
@@ -47,15 +51,18 @@ class NigeriaInsuranceCompliance(SectorCompliance):
     """
     Full Nigerian insurance compliance pack.
 
-    Covers Insurance Act 2003 ss.50/67/70, NAICOM Operational Guidelines 2021
-    (Guidelines 12, 15, 18), NAICOM Market Conduct Guidelines 2023 (Rules 6, 11),
-    NFIU AML Guidelines (insurance sector), NDPA 2023, and OWASP Agentic AI.
+    Covers Nigerian Insurance Industry Reform Act 2025 (NIIRA 2025) §§210, 212, Part V,
+    NAICOM Operational Guidelines 2021 (Guidelines 12, 15, 18), NAICOM Market Conduct
+    Guidelines 2023 (Rules 6, 11), NFIU AML Guidelines (insurance sector), NDPA 2023,
+    and OWASP Agentic AI.
+
+    NIIRA 2025 replaced the Insurance Act 2003 (Cap I17 LFN 2004) in August 2025.
     """
 
     name = "Nigeria Insurance Compliance"
     jurisdictions = ["NG"]
     regulations = [
-        "Insurance Act 2003 (Cap I17 LFN 2004)",
+        "Nigerian Insurance Industry Reform Act 2025 (NIIRA 2025)",
         "NAICOM Operational Guidelines 2021",
         "NAICOM Market Conduct Guidelines 2023",
         "Nigeria Data Protection Act 2023",

@@ -7,6 +7,43 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.5] — 2026-06-28
+
+### Changed
+
+**NIIRA 2025 — Nigerian Insurance Industry Reform Act 2025 (replaces Insurance Act 2003)**
+
+President Tinubu signed the **Nigerian Insurance Industry Reform Act 2025 (NIIRA 2025)**
+into law in August 2025, repealing and consolidating five legacy statutes including the
+Insurance Act 2003 (Cap I17 LFN 2004). The `nigeria/naicom` pack and `NigeriaInsuranceCompliance`
+sector pack have been updated accordingly.
+
+**Policy changes in `nigeria/naicom`:**
+
+| Change | Detail |
+|---|---|
+| Citation update | All `Insurance Act 2003` section references updated to `NIIRA 2025` |
+| New rule: `niira_60day_deadline` | Claims pending beyond 60 days must be escalated — NIIRA 2025 §210 mandatory settlement deadline |
+| Citation update: s.70 → §210 | Claims settlement cite updated to NIIRA 2025 §210 |
+| Citation update: s.67 → Part V | Anti-discrimination cite updated to NIIRA 2025 Part V (Market Conduct) |
+| Citation update: s.50 → Part V | Policy modification notification cite updated to NIIRA 2025 Part V |
+| Denial message update | All deny/escalate/audit messages now reference `NIIRA 2025` instead of `Insurance Act` |
+
+**`NigeriaInsuranceCompliance.regulations` updated:**
+
+```python
+# Before
+regulations = ["Insurance Act 2003 (Cap I17 LFN 2004)", ...]
+
+# After
+regulations = ["Nigerian Insurance Industry Reform Act 2025 (NIIRA 2025)", ...]
+```
+
+NAICOM Operational Guidelines 2021 and Market Conduct Guidelines 2023 remain in force
+under NIIRA 2025 pending updated NAICOM subsidiary regulations.
+
+---
+
 ## [0.2.4] — 2026-06-27
 
 ### Added

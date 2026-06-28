@@ -2,15 +2,24 @@
 # NAICOM — Nigeria Insurance Commission AI Agent Controls (Rego)
 #
 # Regulatory references:
-#   Insurance Act 2003 (Cap I17 LFN 2004)
-#     s.70  — Claims settlement requirements (fair, timely processing)
-#     s.67  — Prohibition on discrimination in insurance underwriting
-#     s.50  — Policy alteration must be communicated to policyholder
+#   Nigerian Insurance Industry Reform Act 2025 (NIIRA 2025)
+#     — Signed into law by President Tinubu, August 2025
+#     — Repeals and consolidates Insurance Act 2003 (Cap I17 LFN 2004),
+#       Marine Insurance Act Cap M3, Motor Vehicles (Third Party Insurance) Act Cap M22,
+#       National Insurance Corporation of Nigeria Act, and Nigerian Reinsurance Corporation Act
+#     §210 — Claims settlement: all claims must be settled within 60 days of notification;
+#             automated denial of claims ≥ ₦500,000 prohibited without human adjuster
+#     §212 — Insurance Policyholders' Protection Fund: consumer protection in insurer insolvency
+#     Part V — Market Conduct: prohibition on discriminatory underwriting factors
+#             (religion, ethnicity, gender, disability, HIV status, political affiliation);
+#             policy modification requires written policyholder notification and consent
 #   NAICOM Operational Guidelines 2021
+#     (Remain in force under NIIRA 2025 pending updated NAICOM regulations)
 #     Guideline 12 — Claims above ₦2,000,000 require senior adjuster review
 #     Guideline 15 — Automated denial of claims ≥ ₦500,000 prohibited
 #     Guideline 18 — Life assurance underwriting > ₦5M requires human underwriter
 #   NAICOM Market Conduct Guidelines 2023
+#     (Remain in force under NIIRA 2025 pending updated NAICOM regulations)
 #     Rule 6  — AI-generated quotes must not use discriminatory pricing factors
 #     Rule 11 — Fraud investigations require human oversight
 #   NFIU AML Guidelines (applicable to insurance sector)
@@ -85,7 +94,7 @@ fraud_actions := {
 	"initiate_fraud_investigation",
 }
 
-# Prohibited characteristics: Insurance Act 2003 s.67 + NAICOM Market Conduct Rule 6
+# Prohibited characteristics: NIIRA 2025 Part V (Market Conduct) + NAICOM Market Conduct Rule 6
 prohibited_characteristics := {
 	"religion", "ethnicity", "tribe", "political_affiliation",
 	"gender", "disability", "hiv_status",
@@ -104,14 +113,14 @@ deny contains msg if {
 	)
 }
 
-# NAICOM Market Conduct Rule 6 / Insurance Act s.67:
+# NIIRA 2025 Part V (Market Conduct) / NAICOM Market Conduct Rule 6:
 # Pricing or underwriting must not use discriminatory characteristics
 deny contains msg if {
 	input.action in underwriting_actions
 	some field in prohibited_characteristics
 	input.params[field] != null
 	msg := sprintf(
-		"Insurance Act s.67 / NAICOM Rule 6: Underwriting or quote uses prohibited discriminatory characteristic '%v' — remove this field",
+		"NIIRA 2025 Part V / NAICOM Rule 6: Underwriting or quote uses prohibited discriminatory characteristic '%v' — remove this field",
 		[field],
 	)
 }
@@ -157,10 +166,10 @@ escalate contains msg if {
 	)
 }
 
-# Insurance Act s.50: Policy cancellation / amendment must be communicated — escalate for human notification
+# NIIRA 2025 Part V: Policy cancellation / amendment must be communicated — escalate for human notification
 escalate contains msg if {
 	input.action in policy_actions
-	msg := "Insurance Act s.50: Policy modification requires customer notification and human verification before execution"
+	msg := "NIIRA 2025 Part V: Policy modification requires written policyholder notification and human verification before execution"
 }
 
 # NFIU AML: Large premiums/claims above ₦5M trigger AML reporting duty
@@ -183,17 +192,27 @@ escalate contains msg if {
 	)
 }
 
+# NIIRA 2025 §210: Claims pending beyond 60 days must be escalated — zero-tolerance for delay
+escalate contains msg if {
+	input.action in claim_actions
+	input.params.days_pending > 60
+	msg := sprintf(
+		"NIIRA 2025 §210: Claim has been pending %v days — 60-day settlement deadline exceeded; escalate to senior adjuster and notify NAICOM",
+		[input.params.days_pending],
+	)
+}
+
 # ── AUDIT rules ───────────────────────────────────────────────────
 
-# NAICOM Records Requirement: All claims decisions must be logged
+# NAICOM Records Requirement: All claims decisions must be logged (NIIRA 2025 §210)
 audit contains msg if {
 	input.action in claim_actions
-	msg := "NAICOM Records: Claim settlement decision logged — mandatory for NAICOM examination and consumer protection records"
+	msg := "NAICOM Records (NIIRA 2025 §210): Claim settlement decision logged — mandatory for NAICOM examination and consumer protection records"
 }
 
 audit contains msg if {
 	input.action in claim_denial_actions
-	msg := "NAICOM Records: Claim denial logged — policyholder has right to written reasons and appeal under Insurance Act"
+	msg := "NAICOM Records (NIIRA 2025 §210): Claim denial logged — policyholder has right to written reasons and appeal under NIIRA 2025"
 }
 
 # All underwriting decisions must be logged
@@ -259,6 +278,12 @@ escalate_citations contains key if {
 	input.action in claim_denial_actions
 	input.params.claim_amount < auto_denial_cap
 	key := "sub_cap_denial"
+}
+
+escalate_citations contains key if {
+	input.action in claim_actions
+	input.params.days_pending > 60
+	key := "niira_60day_deadline"
 }
 
 audit_citations contains key if {
