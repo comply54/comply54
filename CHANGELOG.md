@@ -7,6 +7,44 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.4] — 2026-06-27
+
+### Added
+
+**NIMC Act 2026 — Nigeria BVN/NIN pack updated (signed 26 June 2026)**
+
+The NIMC Act 2026 repeals and replaces the NIMC Act Cap N99 LFN 2004. Four new
+enforcement rules added to `nigeria/bvn-nin`:
+
+| Rule key | Action | Obligation |
+|---|---|---|
+| `nimc_nin_persistence` | deny | Storing NIN/BVN data after verification is prohibited — NIMC Act 2026 illegal data persistence clause (₦20M corporate / 5yr individual) |
+| `nimc_nin_bulk_export` | deny | Bulk NIN/identity data extraction or export is blocked |
+| `nimc_purpose_limitation` | escalate | NIN/BVN lookup without a declared purpose, or use for a purpose other than the one consented to, must be escalated |
+| `nimc_mandatory_service` | audit | Bank accounts, SIM registration, passports, land transactions, pension enrollment, insurance enrollment, and consumer credit require verified NIN (`context.nin_verified = true`) |
+
+**Citation updates across `nigeria/bvn-nin`:**
+
+All existing NIN rules (`nin_label_pattern`, `vnin_pattern`, `bvn_nin_transmission`,
+`nin_verification`, `identifier_gate`) now cite **NIMC Act 2026** instead of the
+repealed NIMC Act Cap N99 LFN 2004.
+
+**Pack metadata updated:**
+
+- `regulation`: `"CBN BVN Framework, NIBSS BVN Scheme Rules & NIMC Act 2026"`
+- `authority`: `"CBN/NIBSS/NIMC"`
+- Pack-level `sources` updated to reference NIMC Act 2026
+
+**TypeScript (`nigeria.ts`):**
+
+- `BVN_NIN_CITATIONS` updated
+- `BVN_NIN_RULE_CITATIONS` extended with 4 new entries
+- `evaluateBvnNin` extended with `PERSIST_ACTIONS`, `BULK_EXPORT_ACTIONS`,
+  `MANDATORY_NIN_ACTIONS` sets and corresponding return paths
+- `regulation` field on the base decision updated
+
+---
+
 ## [0.2.3] — 2026-06-27
 
 ### Added

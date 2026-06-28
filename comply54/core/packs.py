@@ -74,16 +74,16 @@ CBN = PackSpec(
 
 BVN_NIN = PackSpec(
     id="nigeria/bvn-nin",
-    regulation="CBN BVN Framework & NIBSS BVN Scheme Rules",
+    regulation="CBN BVN Framework, NIBSS BVN Scheme Rules & NIMC Act 2026",
     jurisdiction="NG",
-    authority="CBN/NIBSS",
+    authority="CBN/NIBSS/NIMC",
     rego_path=_PACKS_DIR / "nigeria" / "bvn_nin.rego",
     query_prefix="data.agt_policies_nigeria.bvn_nin",
     tags=["identity", "biometric", "pii"],
     sources=[
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§6", authority="CBN", year=2014),
         RegulatorySource(document="NIBSS BVN Scheme Rules 2014", section="Rule 4.2", authority="NIBSS", year=2014),
-        RegulatorySource(document="NIMC Act Cap N99 LFN 2004 (as amended)", section="§18", authority="NIMC", year=2004),
+        RegulatorySource(document="NIMC Act 2026", section="Purpose Limitation & Data Persistence Prohibition", authority="NIMC", year=2026),
     ],
 )
 

@@ -3,7 +3,11 @@
 #
 # Regulatory references:
 #   CBN BVN Policy Framework (2014, updated 2023)
-#   National Identity Management Commission (NIMC) Act
+#   NIMC Act 2026 (signed 26 June 2026 — repeals NIMC Act Cap N99 LFN 2004)
+#     - Purpose limitation: NIN may only be used for the stated purpose at collection
+#     - Illegal data persistence: NIN must not be stored after verification completes
+#     - Mandatory NIN: bank accounts, SIM, passports, land, pensions, insurance, credit
+#     - Penalties: ₦20 million (corporate) / 5 years min. imprisonment (individual)
 #   NDPA 2023 Schedule 1 — biometric data as sensitive personal data
 #
 # Rego advantage over YAML:
@@ -15,7 +19,8 @@
 #     "action":  "verify_bvn",
 #     "params":  { "bvn": "22345678901", "bvn_present": true, "identifier_type": "BVN" },
 #     "output":  "agent output text",
-#     "context": { "channel": "whatsapp", "purpose": "refund_verification" }
+#     "context": { "channel": "whatsapp", "purpose": "refund_verification",
+#                  "nin_verified": true, "nin_consented_purpose": "account_opening" }
 #   }
 
 package agt_policies_nigeria.bvn_nin
@@ -37,6 +42,27 @@ transmission_actions := {
 	"send_bvn", "transmit_bvn", "share_bvn",
 	"send_nin", "transmit_nin", "share_nin",
 	"post_identity", "relay_kyc",
+}
+
+# NIMC Act 2026: illegal data persistence actions
+persist_actions := {
+	"store_nin", "save_nin_data", "persist_identity",
+	"cache_nin", "log_nin", "record_nin", "write_nin_record",
+	"store_bvn", "save_bvn_data", "cache_bvn",
+}
+
+# NIMC Act 2026: services requiring verified NIN before proceeding
+mandatory_nin_service_actions := {
+	"open_account", "create_account", "register_voter",
+	"apply_passport", "sim_registration", "land_registration",
+	"pension_enrollment", "insurance_enrollment", "apply_credit",
+	"tax_registration", "apply_government_service",
+}
+
+# NIMC Act 2026: bulk NIN / identity data export
+bulk_export_actions := {
+	"export_nin_data", "bulk_nin_export", "download_nin_records",
+	"extract_identity_records", "bulk_identity_export",
 }
 
 # ── Deny rules ────────────────────────────────────────────────────
@@ -121,6 +147,66 @@ audit contains msg if {
 	msg := "BVN/NIN Audit: Identity-related action logged — NDPA s.30 and CBN BVN audit trail requirement"
 }
 
+# ── NIMC Act 2026: New obligations ───────────────────────────────
+
+# Deny: illegal NIN/BVN data persistence (NIMC Act 2026)
+deny contains msg if {
+	input.action in persist_actions
+	msg := "NIMC Act 2026: Storing NIN/BVN data after verification is prohibited — illegal data persistence (₦20M corporate / 5yr individual penalty)"
+}
+
+# Deny: illegal NIN/BVN data persistence via params flag
+deny contains msg if {
+	input.params.persist_nin == true
+	msg := "NIMC Act 2026: persist_nin=true flag detected — NIN data may not be stored after verification completes"
+}
+
+# Deny: bulk NIN/identity data export (NIMC Act 2026)
+deny contains msg if {
+	input.action in bulk_export_actions
+	msg := "NIMC Act 2026: Bulk NIN/identity data export is prohibited — only individual authorised verifications are permitted"
+}
+
+# Deny: bulk export via params flag
+deny contains msg if {
+	input.params.bulk_identity_export == true
+	msg := "NIMC Act 2026: bulk_identity_export=true detected — bulk NIN data extraction is prohibited"
+}
+
+# Escalate: NIN/BVN access without a declared purpose (NIMC Act 2026 purpose limitation)
+escalate contains msg if {
+	input.action in nin_verification_actions
+	not input.context.nin_purpose
+	msg := "NIMC Act 2026: NIN lookup attempted without a declared purpose — purpose limitation requires stating the reason before each verification"
+}
+
+escalate contains msg if {
+	input.action in bvn_verification_actions
+	not input.context.nin_purpose
+	msg := "NIMC Act 2026: BVN/NIN lookup attempted without a declared purpose — purpose limitation requires stating the reason before each verification"
+}
+
+# Escalate: NIN used for a purpose that differs from the one consented to
+escalate contains msg if {
+	input.context.nin_consented_purpose != ""
+	input.context.purpose != ""
+	input.context.nin_consented_purpose != input.context.purpose
+	msg := sprintf(
+		"NIMC Act 2026: Purpose mismatch — NIN consent was granted for '%v' but action context declares purpose '%v'",
+		[input.context.nin_consented_purpose, input.context.purpose],
+	)
+}
+
+# Audit: mandatory-NIN service attempted without verified NIN (NIMC Act 2026)
+audit contains msg if {
+	input.action in mandatory_nin_service_actions
+	not input.context.nin_verified
+	msg := sprintf(
+		"NIMC Act 2026: Action '%v' is a mandatory-NIN service — NIN must be verified before proceeding (bank accounts, SIM, passports, land, pension, insurance, credit)",
+		[input.action],
+	)
+}
+
 # ── Citation key sets ─────────────────────────────────────────────
 
 deny_citations contains key if {
@@ -159,6 +245,26 @@ deny_citations contains key if {
 	key := "bvn_social_engineering"
 }
 
+deny_citations contains key if {
+	input.action in persist_actions
+	key := "nimc_nin_persistence"
+}
+
+deny_citations contains key if {
+	input.params.persist_nin == true
+	key := "nimc_nin_persistence"
+}
+
+deny_citations contains key if {
+	input.action in bulk_export_actions
+	key := "nimc_nin_bulk_export"
+}
+
+deny_citations contains key if {
+	input.params.bulk_identity_export == true
+	key := "nimc_nin_bulk_export"
+}
+
 escalate_citations contains key if {
 	input.action in bvn_verification_actions
 	key := "bvn_verification"
@@ -175,9 +281,34 @@ escalate_citations contains key if {
 	key := "identifier_gate"
 }
 
+escalate_citations contains key if {
+	input.action in nin_verification_actions
+	not input.context.nin_purpose
+	key := "nimc_purpose_limitation"
+}
+
+escalate_citations contains key if {
+	input.action in bvn_verification_actions
+	not input.context.nin_purpose
+	key := "nimc_purpose_limitation"
+}
+
+escalate_citations contains key if {
+	input.context.nin_consented_purpose != ""
+	input.context.purpose != ""
+	input.context.nin_consented_purpose != input.context.purpose
+	key := "nimc_purpose_limitation"
+}
+
 audit_citations contains key if {
 	_action_has_identity_pattern
 	key := "identity_action_log"
+}
+
+audit_citations contains key if {
+	input.action in mandatory_nin_service_actions
+	not input.context.nin_verified
+	key := "nimc_mandatory_service"
 }
 
 # ── Decision summary ─────────────────────────────────────────────

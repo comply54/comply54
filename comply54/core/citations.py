@@ -96,15 +96,15 @@ RULE_CITATIONS: dict[str, list[RegulatorySource]] = {
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§6 — BVN Confidentiality Obligations", authority="CBN", year=2014),
     ],
     "nigeria/bvn-nin.nin_label_pattern": [
-        RegulatorySource(document="NIMC Act Cap N99 LFN 2004 (as amended)", section="§18 — NIN Confidentiality", authority="NIMC", year=2004),
+        RegulatorySource(document="NIMC Act 2026", section="Prohibition on Unauthorized NIN Disclosure", authority="NIMC", year=2026),
         RegulatorySource(document="Nigeria Data Protection Act 2023", section="Schedule 1 — Biometric Data", authority="NDPC", year=2023),
     ],
     "nigeria/bvn-nin.vnin_pattern": [
-        RegulatorySource(document="NIMC Act Cap N99 LFN 2004 (as amended)", section="§18 — NIN Confidentiality", authority="NIMC", year=2004),
+        RegulatorySource(document="NIMC Act 2026", section="Prohibition on Unauthorized NIN Disclosure", authority="NIMC", year=2026),
     ],
     "nigeria/bvn-nin.bvn_nin_transmission": [
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§6 — BVN Confidentiality Obligations", authority="CBN", year=2014),
-        RegulatorySource(document="NIMC Act Cap N99 LFN 2004 (as amended)", section="§18 — NIN Confidentiality", authority="NIMC", year=2004),
+        RegulatorySource(document="NIMC Act 2026", section="Prohibition on Unauthorized NIN Disclosure", authority="NIMC", year=2026),
     ],
     "nigeria/bvn-nin.bvn_in_params": [
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§6 — BVN Confidentiality Obligations", authority="CBN", year=2014),
@@ -115,17 +115,34 @@ RULE_CITATIONS: dict[str, list[RegulatorySource]] = {
     ],
     "nigeria/bvn-nin.bvn_verification": [
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§5 — BVN Lookup Audit Obligation", authority="CBN", year=2014),
+        RegulatorySource(document="NIMC Act 2026", section="Purpose Limitation — Authorised Verification Only", authority="NIMC", year=2026),
     ],
     "nigeria/bvn-nin.nin_verification": [
-        RegulatorySource(document="NIMC Act Cap N99 LFN 2004 (as amended)", section="§16 — NIN Verification Controls", authority="NIMC", year=2004),
+        RegulatorySource(document="NIMC Act 2026", section="Purpose Limitation — Authorised Verification Only", authority="NIMC", year=2026),
     ],
     "nigeria/bvn-nin.identifier_gate": [
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§5 — BVN Lookup Audit Obligation", authority="CBN", year=2014),
-        RegulatorySource(document="NIMC Act Cap N99 LFN 2004 (as amended)", section="§16 — NIN Verification Controls", authority="NIMC", year=2004),
+        RegulatorySource(document="NIMC Act 2026", section="Purpose Limitation — Authorised Verification Only", authority="NIMC", year=2026),
     ],
     "nigeria/bvn-nin.identity_action_log": [
         RegulatorySource(document="Nigeria Data Protection Act 2023", section="§30 — Controller Accountability", authority="NDPC", year=2023),
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§7 — Audit Trail Requirement", authority="CBN", year=2014),
+    ],
+    # ── nigeria/bvn-nin — NIMC Act 2026 new rules ─────────────────────────────
+    "nigeria/bvn-nin.nimc_nin_persistence": [
+        RegulatorySource(document="NIMC Act 2026", section="Prohibition of Illegal Data Persistence", authority="NIMC", year=2026),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§26 — Storage Limitation", authority="NDPC", year=2023),
+    ],
+    "nigeria/bvn-nin.nimc_nin_bulk_export": [
+        RegulatorySource(document="NIMC Act 2026", section="Prohibition on Bulk NIN Data Extraction", authority="NIMC", year=2026),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§25 — Cross-Border & Bulk Transfer Controls", authority="NDPC", year=2023),
+    ],
+    "nigeria/bvn-nin.nimc_purpose_limitation": [
+        RegulatorySource(document="NIMC Act 2026", section="Purpose Limitation — NIN Use Restricted to Stated Purpose", authority="NIMC", year=2026),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§24 — Purpose Limitation", authority="NDPC", year=2023),
+    ],
+    "nigeria/bvn-nin.nimc_mandatory_service": [
+        RegulatorySource(document="NIMC Act 2026", section="NIN as Mandatory Prerequisite for Regulated Services", authority="NIMC", year=2026),
     ],
 
     # ── nigeria/nfiu-aml ──────────────────────────────────────────────────────

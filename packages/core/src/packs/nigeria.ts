@@ -25,7 +25,7 @@ const NDPA_CITATIONS: RegulatorySource[] = [
 const BVN_NIN_CITATIONS: RegulatorySource[] = [
   { document: "CBN Regulatory Framework for BVN Operations 2014", section: "§6", authority: "CBN", year: 2014 },
   { document: "NIBSS BVN Scheme Rules 2014", section: "Rule 4.2", authority: "NIBSS", year: 2014 },
-  { document: "NIMC Act Cap N99 LFN 2004 (as amended)", section: "§18", authority: "NIMC", year: 2004 },
+  { document: "NIMC Act 2026", section: "Purpose Limitation & Data Persistence Prohibition", authority: "NIMC", year: 2026 },
 ];
 
 const NFIU_CITATIONS: RegulatorySource[] = [
@@ -94,11 +94,26 @@ const BVN_NIN_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
     { document: "CBN Regulatory Framework for BVN Operations 2014", section: "§6", authority: "CBN", year: 2014 },
   ],
   nin_in_output: [
-    { document: "NIMC Act Cap N99 LFN 2004 (as amended)", section: "§18", authority: "NIMC", year: 2004 },
+    { document: "NIMC Act 2026", section: "Prohibition on Unauthorized NIN Disclosure", authority: "NIMC", year: 2026 },
     { document: "Nigeria Data Protection Act 2023", section: "Schedule 1", authority: "NDPC", year: 2023 },
   ],
   biometric_export: [
-    { document: "NIMC Act Cap N99 LFN 2004 (as amended)", section: "§18", authority: "NIMC", year: 2004 },
+    { document: "NIMC Act 2026", section: "Prohibition on Unauthorized NIN Disclosure", authority: "NIMC", year: 2026 },
+  ],
+  nimc_nin_persistence: [
+    { document: "NIMC Act 2026", section: "Prohibition of Illegal Data Persistence", authority: "NIMC", year: 2026 },
+    { document: "Nigeria Data Protection Act 2023", section: "§26 — Storage Limitation", authority: "NDPC", year: 2023 },
+  ],
+  nimc_nin_bulk_export: [
+    { document: "NIMC Act 2026", section: "Prohibition on Bulk NIN Data Extraction", authority: "NIMC", year: 2026 },
+    { document: "Nigeria Data Protection Act 2023", section: "§25 — Bulk Transfer Controls", authority: "NDPC", year: 2023 },
+  ],
+  nimc_purpose_limitation: [
+    { document: "NIMC Act 2026", section: "Purpose Limitation — NIN Use Restricted to Stated Purpose", authority: "NIMC", year: 2026 },
+    { document: "Nigeria Data Protection Act 2023", section: "§24 — Purpose Limitation", authority: "NDPC", year: 2023 },
+  ],
+  nimc_mandatory_service: [
+    { document: "NIMC Act 2026", section: "NIN as Mandatory Prerequisite for Regulated Services", authority: "NIMC", year: 2026 },
   ],
 };
 
@@ -367,10 +382,27 @@ export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
 
 // ── BVN/NIN Framework ─────────────────────────────────────────────────────────
 
+const PERSIST_ACTIONS = new Set([
+  "store_nin", "save_nin_data", "persist_identity", "cache_nin", "log_nin",
+  "record_nin", "write_nin_record", "store_bvn", "save_bvn_data", "cache_bvn",
+]);
+
+const BULK_EXPORT_ACTIONS = new Set([
+  "export_nin_data", "bulk_nin_export", "download_nin_records",
+  "extract_identity_records", "bulk_identity_export",
+]);
+
+const MANDATORY_NIN_ACTIONS = new Set([
+  "open_account", "create_account", "register_voter", "apply_passport",
+  "sim_registration", "land_registration", "pension_enrollment",
+  "insurance_enrollment", "apply_credit", "tax_registration",
+  "apply_government_service",
+]);
+
 export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision => {
   const base: Omit<PolicyDecision, "action" | "messages" | "ruleTriggered"> = {
     pack: "nigeria/bvn-nin",
-    regulation: "BVN/NIN Framework",
+    regulation: "CBN BVN Framework, NIBSS BVN Scheme Rules & NIMC Act 2026",
     jurisdiction: "NG",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
@@ -378,7 +410,11 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
   };
 
   const output = input.output ?? "";
+  const action = input.action ?? "";
+  const params = input.params ?? {};
+  const context = input.context ?? {};
 
+  // ── Output-level deny ─────────────────────────────────────────────────────
   if (hasBvn(output)) {
     return {
       ...base,
@@ -399,16 +435,63 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
     };
   }
 
-  const dataType = String(input.params["data_type"] ?? "").toLowerCase();
-  const dest = String(input.params["destination_country"] ?? "NG").toUpperCase();
+  // ── NIMC Act 2026: Biometric export ───────────────────────────────────────
+  const dataType = String(params["data_type"] ?? "").toLowerCase();
+  const dest = String(params["destination_country"] ?? "NG").toUpperCase();
 
   if (dataType === "biometric" && dest !== "NG") {
     return {
       ...base,
       action: "deny",
-      messages: ["BVN/NIN Framework: Biometric data export outside Nigeria is prohibited under NIMC Act"],
+      messages: ["NIMC Act 2026: Biometric/NIN data export outside Nigeria is prohibited"],
       ruleTriggered: "biometric_export",
       citations: BVN_NIN_RULE_CITATIONS["biometric_export"] ?? BVN_NIN_CITATIONS,
+    };
+  }
+
+  // ── NIMC Act 2026: Illegal data persistence ───────────────────────────────
+  if (PERSIST_ACTIONS.has(action) || params["persist_nin"] === true) {
+    return {
+      ...base,
+      action: "deny",
+      messages: ["NIMC Act 2026: Storing NIN/BVN data after verification is prohibited — illegal data persistence (₦20M corporate / 5yr individual penalty)"],
+      ruleTriggered: "nimc_nin_persistence",
+      citations: BVN_NIN_RULE_CITATIONS["nimc_nin_persistence"] ?? BVN_NIN_CITATIONS,
+    };
+  }
+
+  // ── NIMC Act 2026: Bulk NIN export ────────────────────────────────────────
+  if (BULK_EXPORT_ACTIONS.has(action) || params["bulk_identity_export"] === true) {
+    return {
+      ...base,
+      action: "deny",
+      messages: ["NIMC Act 2026: Bulk NIN/identity data export is prohibited — only individual authorised verifications are permitted"],
+      ruleTriggered: "nimc_nin_bulk_export",
+      citations: BVN_NIN_RULE_CITATIONS["nimc_nin_bulk_export"] ?? BVN_NIN_CITATIONS,
+    };
+  }
+
+  // ── NIMC Act 2026: Purpose limitation ─────────────────────────────────────
+  const ninPurpose = context["nin_consented_purpose"] as string | undefined;
+  const currentPurpose = context["purpose"] as string | undefined;
+  if (ninPurpose && currentPurpose && ninPurpose !== currentPurpose) {
+    return {
+      ...base,
+      action: "escalate",
+      messages: [`NIMC Act 2026: Purpose mismatch — NIN consent was for '${ninPurpose}' but current purpose is '${currentPurpose}'`],
+      ruleTriggered: "nimc_purpose_limitation",
+      citations: BVN_NIN_RULE_CITATIONS["nimc_purpose_limitation"] ?? BVN_NIN_CITATIONS,
+    };
+  }
+
+  // ── NIMC Act 2026: Mandatory NIN prerequisite ─────────────────────────────
+  if (MANDATORY_NIN_ACTIONS.has(action) && !context["nin_verified"]) {
+    return {
+      ...base,
+      action: "audit",
+      messages: [`NIMC Act 2026: '${action}' requires verified NIN — bank accounts, SIM, passports, land, pension, insurance, and credit are mandatory-NIN services`],
+      ruleTriggered: "nimc_mandatory_service",
+      citations: BVN_NIN_RULE_CITATIONS["nimc_mandatory_service"] ?? BVN_NIN_CITATIONS,
     };
   }
 
