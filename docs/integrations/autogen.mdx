@@ -1,72 +1,169 @@
 ---
 title: AutoGen
-description: Register comply54 as a function tool on AutoGen agents.
+description: Wrap AutoGen tools with comply54 pre-execution compliance enforcement.
 ---
 
 ## Install
 
 ```bash
-pip install comply54 pyautogen
+pip install comply54[autogen]
+# Installs autogen-agentchat ≥ 0.4 automatically.
 ```
 
-## Import
+## Automatic enforcement (recommended)
+
+Wrap tools before passing them to `AssistantAgent`. Every tool call is
+evaluated against the compliance pack before execution — blocked calls return
+a structured JSON error to the model without running the function.
 
 ```python
-from comply54.autogen import register_compliance
-```
-
-## Usage
-
-```python
-import autogen
-from comply54 import NigeriaFintechCompliance
-from comply54.autogen import register_compliance
+from autogen_agentchat.agents import AssistantAgent
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+from comply54.autogen import comply54_tools
+from comply54.sectors import NigeriaFintechCompliance
 
 compliance = NigeriaFintechCompliance()
+client = OpenAIChatCompletionClient(model="gpt-4o")
 
-assistant = autogen.AssistantAgent(
-    name="FinancialAgent",
-    llm_config={"model": "claude-sonnet-4-6"},
-)
+async def transfer_funds(recipient: str, amount: float, currency: str) -> str:
+    """Transfer funds between accounts."""
+    ...
 
-# Register comply54 as a callable tool on the assistant
-register_compliance(assistant, compliance)
+async def check_balance(account: str) -> str:
+    """Return account balance."""
+    ...
 
-user_proxy = autogen.UserProxyAgent(
-    name="user_proxy",
-    human_input_mode="NEVER",
-    max_consecutive_auto_reply=3,
-)
-
-user_proxy.initiate_chat(
-    assistant,
-    message="Can I transfer ₦8,000,000 to account 0123456789?",
+agent = AssistantAgent(
+    name="finance_agent",
+    model_client=client,
+    tools=comply54_tools([transfer_funds, check_balance], compliance),
 )
 ```
 
-## What `register_compliance` does
+When a tool call is blocked the model receives:
 
-It registers a `check_compliance(action, params, output, context)` function tool on the agent. The assistant can call it during conversation to validate actions before executing them.
+```json
+{
+  "blocked": true,
+  "decision": "deny",
+  "reason": "CBN NIP: single-transfer limit exceeded",
+  "regulation": "CBN NIP Framework 2023",
+  "rule_triggered": "cbn_nip_single_transfer_limit",
+  "citations": [{ "document": "CBN NIP Framework 2023", "section": "s.4.2", ... }],
+  "audit_id": "aud_f1e2d3",
+  "jurisdictions": ["NG"]
+}
+```
 
-## Return value
-
-The tool returns a Python dict that AutoGen includes in the function call response:
+## Wrap a single tool
 
 ```python
+from comply54.autogen import comply54_tool
+
+safe_transfer = comply54_tool(
+    transfer_funds,
+    compliance,
+    context={"kyc_tier": 3},       # optional — forwarded to every evaluation
+    block_on_escalate=True,        # optional — treat escalate as deny
+)
+
+agent = AssistantAgent(
+    name="finance_agent",
+    model_client=client,
+    tools=[safe_transfer, check_balance],
+)
+```
+
+## Self-check tool (passive)
+
+Add a `compliance_tool` to the agent's tool list. The model decides when to
+call it — useful when you want the LLM to reason about compliance before acting
+rather than having the runtime block automatically.
+
+```python
+from comply54.autogen import comply54_tool, compliance_tool
+
+agent = AssistantAgent(
+    name="finance_agent",
+    model_client=client,
+    tools=[
+        comply54_tool(transfer_funds, compliance),
+        compliance_tool(compliance),       # agent can self-check any action
+    ],
+)
+```
+
+The self-check tool returns:
+
+```json
 {
-    "overall": "escalate",
-    "blocked": True,
-    "audit_id": "aud_f1e2d3",
-    "violations": [...],
+  "overall": "escalate",
+  "blocked": true,
+  "audit_id": "aud_a1b2c3",
+  "violations": [{ "pack": "cbn", "regulation": "CBN NIP Framework 2023", ... }]
 }
+```
+
+## Sector packs
+
+```python
+from comply54.sectors import (
+    NigeriaFintechCompliance,
+    NigeriaHealthcareCompliance,
+    KenyaFintechCompliance,
+    PanAfricanFintechCompliance,
+)
 ```
 
 ## API reference
 
+### `comply54_tool(fn, compliance, *, description, context, block_on_escalate, name)`
+
+Wrap a single callable with pre-execution compliance enforcement.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `fn` | `Callable` | — | The function to wrap (sync or async). |
+| `compliance` | `SectorCompliance` | — | Compliance pack to evaluate against. |
+| `description` | `str` | `fn.__doc__` | Tool description forwarded to `FunctionTool`. |
+| `context` | `dict` | `{}` | Session context for every evaluation (e.g. `{"kyc_tier": 3}`). |
+| `block_on_escalate` | `bool` | `False` | Treat `"escalate"` decisions as blocks. |
+| `name` | `str` | `fn.__name__` | Override the tool name. |
+
+Returns a `FunctionTool` ready for `AssistantAgent(tools=[...])`.
+
+---
+
+### `comply54_tools(tools, compliance, *, context, block_on_escalate)`
+
+Bulk-wrap a list of callables or existing `FunctionTool` instances. All tools
+share the same compliance pack and context.
+
+---
+
+### `compliance_tool(compliance)`
+
+Create a passive self-check `FunctionTool`. The agent must call it explicitly.
+
+---
+
+## Migrating from pyautogen ≤ 0.2
+
+The `UserProxyAgent.execute_function()` override pattern is not supported in
+`autogen-agentchat ≥ 0.4`. Replace the old pattern with `comply54_tools()`:
+
 ```python
-register_compliance(
-    agent: autogen.ConversableAgent,
-    compliance: SectorCompliance,
-    tool_name: str = "check_compliance",
-) -> None
+# Before (pyautogen ≤ 0.2)
+from comply54.autogen import Comply54UserProxy
+proxy = Comply54UserProxy(compliance, name="proxy", human_input_mode="NEVER")
+
+# After (autogen-agentchat ≥ 0.4)
+from comply54.autogen import comply54_tools
+from autogen_agentchat.agents import AssistantAgent
+
+agent = AssistantAgent(
+    name="agent",
+    model_client=client,
+    tools=comply54_tools([your_tool], compliance),
+)
 ```

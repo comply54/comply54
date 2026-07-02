@@ -7,6 +7,45 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.0] — 2026-07-02
+
+### Changed
+
+**AutoGen adapter rewritten for autogen-agentchat ≥ 0.4**
+
+The `comply54.autogen` adapter has been rewritten to target the
+`autogen-agentchat / autogen-core ≥ 0.4` API. The `pyautogen ≤ 0.2`
+dependency has been replaced with `autogen-agentchat>=0.4,<1.0`.
+
+The `UserProxyAgent.execute_function()` override pattern no longer exists in
+autogen v0.4. Compliance enforcement now wraps tools at construction time via
+`FunctionTool`, which is the idiomatic v0.4 pattern.
+
+**New public API:**
+
+| Function | Description |
+|---|---|
+| `comply54_tool(fn, compliance, ...)` | Wrap a single callable. Returns a `FunctionTool` for `AssistantAgent(tools=[...])`. |
+| `comply54_tools(tools, compliance, ...)` | Bulk-wrap a list of callables or existing `FunctionTool` instances. |
+| `compliance_tool(compliance)` | Create a passive self-check tool the agent can call voluntarily. |
+
+**Deprecated / removed API:**
+
+| Symbol | Status | Migration |
+|---|---|---|
+| `Comply54UserProxy` | Raises `ImportError` with migration guide | Use `comply54_tools()` |
+| `register_compliance_guard()` | Raises `ImportError` with migration guide | Use `comply54_tools()` |
+| `register_compliance()` | Emits `DeprecationWarning`, returns `FunctionTool` | Use `compliance_tool()` in `tools=[]` |
+
+**Schema preservation:** The original function's type annotations are forwarded
+to `FunctionTool` via `__signature__` assignment, so AutoGen generates the
+correct JSON schema for the wrapped tool.
+
+**Tests:** 22 unit tests added (`tests/test_autogen.py`); all pass on
+Python 3.9 – 3.14.
+
+---
+
 ## [0.2.5] — 2026-06-28
 
 ### Changed

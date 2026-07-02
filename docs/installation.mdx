@@ -41,11 +41,11 @@ Install the adapter for your AI framework alongside the core:
   </Tab>
   <Tab title="AutoGen">
     ```bash
-    pip install comply54 pyautogen
+    pip install comply54[autogen]
     ```
 
     ```python
-    from comply54.autogen import register_compliance
+    from comply54.autogen import comply54_tools, comply54_tool, compliance_tool
     ```
   </Tab>
   <Tab title="Eve (Vercel)">

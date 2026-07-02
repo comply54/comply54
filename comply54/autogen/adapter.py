@@ -3,312 +3,108 @@ comply54.autogen.adapter
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Microsoft AutoGen integration for comply54.
 
+Targets autogen-agentchat / autogen-core ≥ 0.4 (the ``autogen-agentchat`` package).
+
 Provides:
-  - Comply54UserProxy       — UserProxyAgent subclass that intercepts every
-                              function/tool call and enforces comply54 before execution
-  - register_compliance_guard() — Patch any existing UserProxyAgent in-place
-  - register_compliance()   — Register a self-check compliance tool on an agent
-                              (passive; the LLM must choose to call it)
+  comply54_tool()     — Wrap a single callable with pre-execution compliance enforcement.
+                        Returns a FunctionTool ready for AssistantAgent(tools=[...]).
+  comply54_tools()    — Bulk-wrap a list of callables / FunctionTools.
+  compliance_tool()   — Create a standalone self-check FunctionTool (passive; the LLM
+                        must choose to call it).
 
 Automatic enforcement pattern (recommended):
 
-    from comply54.autogen import Comply54UserProxy
+    from comply54.autogen import comply54_tools
     from comply54.sectors import NigeriaFintechCompliance
+    from autogen_agentchat.agents import AssistantAgent
+    from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-    proxy = Comply54UserProxy(
-        NigeriaFintechCompliance(),
-        name="user_proxy",
-        human_input_mode="NEVER",
-        context={"kyc_tier": 3},
+    compliance = NigeriaFintechCompliance()
+    client = OpenAIChatCompletionClient(model="gpt-4o")
+
+    agent = AssistantAgent(
+        name="finance_agent",
+        model_client=client,
+        tools=comply54_tools([transfer_funds, check_balance], compliance),
     )
-    proxy.initiate_chat(assistant, message="Transfer ₦15,000,000 to 0123456789")
-
-Patch an existing proxy:
-
-    from comply54.autogen import register_compliance_guard
-
-    register_compliance_guard(existing_proxy, NigeriaFintechCompliance())
 
 Self-check tool pattern (agent decides when to call it):
 
-    from comply54.autogen import register_compliance
+    from comply54.autogen import compliance_tool
 
-    register_compliance(assistant, NigeriaFintechCompliance())
-    register_compliance(proxy,     NigeriaFintechCompliance())
+    agent = AssistantAgent(
+        name="finance_agent",
+        model_client=client,
+        tools=[transfer_funds, compliance_tool(NigeriaFintechCompliance())],
+    )
+
+Migrating from autogen-agentchat < 0.4 / pyautogen:
+
+    # Before (pyautogen ≤ 0.2):
+    from comply54.autogen import Comply54UserProxy, register_compliance_guard
+    proxy = Comply54UserProxy(compliance, name="proxy", ...)
+
+    # After (autogen-agentchat ≥ 0.4):
+    from comply54.autogen import comply54_tools
+    agent = AssistantAgent(
+        name="agent", model_client=client,
+        tools=comply54_tools([your_tool], compliance),
+    )
 """
 
 from __future__ import annotations
 
+import functools
+import inspect
 import json
-from typing import Annotated, Any
+import warnings
+from typing import Any, Callable
 
 from ..core.models import ComplianceResult
 from ..sectors._base import SectorCompliance
 
 
-# ─── Comply54UserProxy ────────────────────────────────────────────────────────
+# ─── Lazy import helper ───────────────────────────────────────────────────────
 
-class Comply54UserProxy:
-    """
-    A comply54-aware AutoGen UserProxyAgent that enforces compliance before
-    every function / tool call.
-
-    Drop-in replacement for ``autogen.UserProxyAgent``.  Before executing any
-    registered function, it evaluates the function name and decoded arguments
-    against the configured SectorCompliance pack.  Blocked calls return a
-    structured error dict to the conversation thread without executing the
-    function — the assistant sees the error and can respond to the user.
-
-    Args:
-        compliance:        A SectorCompliance instance.
-        context:           Default session context (e.g. {"kyc_tier": 3}).
-                           Applied to every evaluation.
-        block_on_escalate: Also block "escalate" decisions. Default False —
-                           escalate is flagged but allowed so the assistant
-                           can surface the escalation reason.
-        **kwargs:          All remaining kwargs forwarded to UserProxyAgent.
-
-    Usage:
-        proxy = Comply54UserProxy(
-            NigeriaFintechCompliance(),
-            name="user_proxy",
-            human_input_mode="NEVER",
-            code_execution_config=False,
-            context={"kyc_tier": 3},
-        )
-        proxy.initiate_chat(assistant, message="Transfer ₦20,000,000")
-    """
-
-    def __new__(
-        cls,
-        compliance: SectorCompliance,
-        context: dict | None = None,
-        block_on_escalate: bool = False,
-        **kwargs: Any,
-    ) -> Any:
-        try:
-            from autogen import UserProxyAgent
-        except ImportError as exc:
-            raise ImportError(
-                "pyautogen is required. Install with: pip install comply54[autogen]"
-            ) from exc
-
-        ctx = context or {}
-
-        class _GuardedProxy(UserProxyAgent):
-            """UserProxyAgent with comply54 pre-execution enforcement."""
-
-            def execute_function(
-                self,
-                func_call: dict[str, Any],
-                verbose: bool = False,
-            ) -> tuple[bool, dict[str, Any]]:
-                func_name = func_call.get("name", "")
-                args_raw = func_call.get("arguments", "{}")
-
-                # AutoGen may deliver arguments as a JSON string or a dict.
-                if isinstance(args_raw, str):
-                    try:
-                        args = json.loads(args_raw) if args_raw.strip() else {}
-                    except json.JSONDecodeError:
-                        args = {}
-                else:
-                    args = args_raw or {}
-
-                result = compliance.check(
-                    action=func_name,
-                    params=args,
-                    context=ctx,
-                )
-                is_blocked = result.overall == "deny" or (
-                    block_on_escalate and result.overall == "escalate"
-                )
-
-                if is_blocked:
-                    violation = result.primary_violation
-                    reason = (
-                        violation.messages[0]
-                        if violation and violation.messages
-                        else "Compliance check failed"
-                    )
-                    blocked_content = json.dumps({
-                        "blocked": True,
-                        "decision": result.overall,
-                        "reason": reason,
-                        "regulation": violation.regulation if violation else compliance.name,
-                        "rule_triggered": violation.rule_triggered if violation else None,
-                        "citations": [
-                            {
-                                "document": c.document,
-                                "section": c.section,
-                                "authority": c.authority,
-                                "year": c.year,
-                            }
-                            for c in (violation.citations if violation else [])
-                        ],
-                        "audit_id": result.audit_id,
-                        "jurisdictions": compliance.jurisdictions,
-                    })
-                    return False, {
-                        "name": func_name,
-                        "role": "tool",
-                        "content": blocked_content,
-                    }
-
-                return super().execute_function(func_call, verbose=verbose)
-
-        _GuardedProxy.__name__ = "Comply54UserProxy"
-        _GuardedProxy.__qualname__ = "Comply54UserProxy"
-        return _GuardedProxy(**kwargs)
-
-
-# ─── Patch helper ─────────────────────────────────────────────────────────────
-
-def register_compliance_guard(
-    proxy: Any,
-    compliance: SectorCompliance,
-    context: dict | None = None,
-    block_on_escalate: bool = False,
-) -> None:
-    """
-    Patch an existing AutoGen UserProxyAgent to enforce comply54 before
-    every function call.  Mutates the proxy instance in-place.
-
-    Prefer Comply54UserProxy for new agents.  Use this function when you
-    cannot control proxy construction (e.g. third-party scaffolding).
-
-    Args:
-        proxy:             An existing autogen ConversableAgent / UserProxyAgent.
-        compliance:        A SectorCompliance instance.
-        context:           Default session context.
-        block_on_escalate: Also block "escalate" decisions. Default False.
-
-    Usage:
-        register_compliance_guard(existing_proxy, NigeriaFintechCompliance())
-    """
-    ctx = context or {}
-    original_execute = proxy.execute_function  # already-bound method
-
-    def _guarded_execute(
-        func_call: dict[str, Any],
-        verbose: bool = False,
-    ) -> tuple[bool, dict[str, Any]]:
-        func_name = func_call.get("name", "")
-        args_raw = func_call.get("arguments", "{}")
-
-        if isinstance(args_raw, str):
-            try:
-                args = json.loads(args_raw) if args_raw.strip() else {}
-            except json.JSONDecodeError:
-                args = {}
-        else:
-            args = args_raw or {}
-
-        result = compliance.check(
-            action=func_name,
-            params=args,
-            context=ctx,
-        )
-        is_blocked = result.overall == "deny" or (
-            block_on_escalate and result.overall == "escalate"
-        )
-
-        if is_blocked:
-            violation = result.primary_violation
-            reason = (
-                violation.messages[0]
-                if violation and violation.messages
-                else "Compliance check failed"
-            )
-            blocked_content = json.dumps({
-                "blocked": True,
-                "decision": result.overall,
-                "reason": reason,
-                "regulation": violation.regulation if violation else compliance.name,
-                "rule_triggered": violation.rule_triggered if violation else None,
-                "citations": [
-                    {
-                        "document": c.document,
-                        "section": c.section,
-                        "authority": c.authority,
-                        "year": c.year,
-                    }
-                    for c in (violation.citations if violation else [])
-                ],
-                "audit_id": result.audit_id,
-                "jurisdictions": compliance.jurisdictions,
-            })
-            return False, {
-                "name": func_name,
-                "role": "tool",
-                "content": blocked_content,
-            }
-
-        return original_execute(func_call, verbose)
-
-    # Replace instance-level attribute so super() chains inside the class
-    # still work for other methods while only execute_function is patched.
-    import types
-    proxy.execute_function = types.MethodType(
-        lambda self, fc, v=False: _guarded_execute(fc, v),
-        proxy,
-    )
-
-
-# ─── Self-check tool registration ─────────────────────────────────────────────
-
-def register_compliance(agent: Any, compliance: SectorCompliance) -> None:
-    """
-    Register a comply54 SectorCompliance pack as a callable function tool on
-    an AutoGen ConversableAgent or AssistantAgent.
-
-    The agent can call this function to self-check an action.  For automatic
-    pre-execution enforcement use Comply54UserProxy or register_compliance_guard.
-
-    Args:
-        agent:      An autogen ConversableAgent or AssistantAgent.
-        compliance: A SectorCompliance instance.
-
-    Usage:
-        register_compliance(assistant, NigeriaFintechCompliance())
-        register_compliance(proxy,     NigeriaFintechCompliance())
-    """
-
-    def check_compliance(
-        action: Annotated[str, "The agent action or tool name to evaluate."],
-        params: Annotated[str, "JSON-encoded parameters dict."] = "{}",
-        output: Annotated[str, "The agent's proposed output text."] = "",
-        context: Annotated[str, "JSON-encoded session context dict."] = "{}",
-    ) -> str:
-        result = compliance.check(
-            action=action,
-            params=json.loads(params) if params else {},
-            output=output,
-            context=json.loads(context) if context else {},
-        )
-        return json.dumps(_result_to_dict(result))
-
-    fn_name = f"comply54_{compliance.__class__.__name__.lower()}"
-    check_compliance.__name__ = fn_name
-    check_compliance.__doc__ = (
-        f"comply54 compliance check: {compliance.name}. "
-        f"Jurisdictions: {', '.join(compliance.jurisdictions)}. "
-        "Returns JSON with overall decision (allow/deny/escalate/audit), "
-        "triggered rule, and exact regulatory citations."
-    )
-
+def _require_function_tool() -> type:
     try:
-        agent.register_for_llm(
-            name=fn_name,
-            description=check_compliance.__doc__,
-        )(check_compliance)
-    except AttributeError as exc:
+        from autogen_core.tools import FunctionTool  # type: ignore[import-untyped]
+
+        return FunctionTool
+    except ImportError as exc:
         raise ImportError(
-            "pyautogen is required. Install with: pip install comply54[autogen]"
+            "autogen-agentchat is required. Install with: pip install comply54[autogen]"
         ) from exc
 
 
 # ─── Internal helpers ─────────────────────────────────────────────────────────
+
+def _violation_payload(result: ComplianceResult, compliance: SectorCompliance) -> str:
+    """Serialise a blocked ComplianceResult to a JSON string for the LLM."""
+    violation = result.primary_violation
+    return json.dumps({
+        "blocked": True,
+        "decision": result.overall,
+        "reason": (
+            violation.messages[0]
+            if violation and violation.messages
+            else "Compliance check failed"
+        ),
+        "regulation": violation.regulation if violation else compliance.name,
+        "rule_triggered": violation.rule_triggered if violation else None,
+        "citations": [
+            {
+                "document": c.document,
+                "section": c.section,
+                "authority": c.authority,
+                "year": c.year,
+            }
+            for c in (violation.citations if violation else [])
+        ],
+        "audit_id": result.audit_id,
+        "jurisdictions": compliance.jurisdictions,
+    })
+
 
 def _result_to_dict(result: ComplianceResult) -> dict:
     return {
@@ -336,3 +132,235 @@ def _result_to_dict(result: ComplianceResult) -> dict:
             for d in result.violations
         ],
     }
+
+
+# ─── Primary API ──────────────────────────────────────────────────────────────
+
+def comply54_tool(
+    fn: Callable[..., Any],
+    compliance: SectorCompliance,
+    description: str = "",
+    context: dict | None = None,
+    block_on_escalate: bool = False,
+    name: str | None = None,
+) -> Any:
+    """
+    Wrap a callable with comply54 pre-execution compliance enforcement.
+
+    Before the function executes, the compliance pack evaluates the action name
+    and keyword arguments.  A ``"deny"`` decision (or ``"escalate"`` when
+    ``block_on_escalate=True``) returns a structured JSON error to the model
+    without running the function.  Any other decision allows execution to
+    proceed normally.
+
+    The original function's type annotations are preserved so that AutoGen can
+    generate the correct tool schema.
+
+    Args:
+        fn:                The callable to wrap (sync or async).
+        compliance:        A SectorCompliance instance.
+        description:       Tool description forwarded to FunctionTool. Defaults to
+                           ``fn.__doc__``.
+        context:           Default session context applied to every evaluation
+                           (e.g. ``{"kyc_tier": 3}``).
+        block_on_escalate: Treat ``"escalate"`` decisions as blocks. Default
+                           ``False`` — escalations are flagged but the function
+                           still executes so the agent can surface the reason.
+        name:              Override the tool name. Defaults to ``fn.__name__``.
+
+    Returns:
+        A ``FunctionTool`` ready for ``AssistantAgent(tools=[...])``.
+
+    Usage::
+
+        safe_transfer = comply54_tool(transfer_funds, NigeriaFintechCompliance())
+        agent = AssistantAgent(
+            name="finance_agent", model_client=client,
+            tools=[safe_transfer],
+        )
+    """
+    FunctionTool = _require_function_tool()
+    ctx = context or {}
+    tool_name = name or fn.__name__
+
+    @functools.wraps(fn)
+    async def _guarded(*args: Any, **kwargs: Any) -> Any:
+        result = compliance.check(action=tool_name, params=kwargs, context=ctx)
+        is_blocked = result.overall == "deny" or (
+            block_on_escalate and result.overall == "escalate"
+        )
+        if is_blocked:
+            return _violation_payload(result, compliance)
+        if inspect.iscoroutinefunction(fn):
+            return await fn(*args, **kwargs)
+        return fn(*args, **kwargs)
+
+    # Preserve the original parameter signature so FunctionTool generates the
+    # correct JSON schema from type annotations.
+    _guarded.__signature__ = inspect.signature(fn)  # type: ignore[attr-defined]
+
+    return FunctionTool(
+        _guarded,
+        description=description or fn.__doc__ or tool_name,
+        name=tool_name,
+    )
+
+
+def comply54_tools(
+    tools: list[Callable[..., Any] | Any],
+    compliance: SectorCompliance,
+    context: dict | None = None,
+    block_on_escalate: bool = False,
+) -> list[Any]:
+    """
+    Wrap a list of callables or FunctionTools with comply54 compliance enforcement.
+
+    All tools in the list are wrapped with the same compliance pack and context.
+    Existing ``FunctionTool`` instances are re-wrapped preserving their name and
+    description.
+
+    Args:
+        tools:             List of callables or ``FunctionTool`` instances.
+        compliance:        A SectorCompliance instance.
+        context:           Default session context applied to every evaluation.
+        block_on_escalate: Treat ``"escalate"`` decisions as blocks. Default
+                           ``False``.
+
+    Returns:
+        A list of ``FunctionTool`` instances ready for
+        ``AssistantAgent(tools=[...])``.
+
+    Usage::
+
+        agent = AssistantAgent(
+            name="finance_agent",
+            model_client=client,
+            tools=comply54_tools([transfer_funds, check_balance], compliance),
+        )
+    """
+    FunctionTool = _require_function_tool()
+    guarded: list[Any] = []
+
+    for tool in tools:
+        if isinstance(tool, FunctionTool):
+            # Re-wrap the underlying callable, preserving name and description.
+            guarded.append(
+                comply54_tool(
+                    tool._func,  # internal attr; stable across autogen-core 0.4.x
+                    compliance,
+                    description=tool.description,
+                    context=context,
+                    block_on_escalate=block_on_escalate,
+                    name=tool.name,
+                )
+            )
+        else:
+            guarded.append(
+                comply54_tool(
+                    tool,
+                    compliance,
+                    context=context,
+                    block_on_escalate=block_on_escalate,
+                )
+            )
+
+    return guarded
+
+
+def compliance_tool(compliance: SectorCompliance) -> Any:
+    """
+    Create a standalone comply54 self-check ``FunctionTool``.
+
+    Unlike ``comply54_tool``, this tool is *passive* — the agent must explicitly
+    call it to run a compliance check.  Use this pattern when you want the LLM
+    to reason about compliance before acting rather than having the runtime block
+    the action automatically.
+
+    Args:
+        compliance: A SectorCompliance instance.
+
+    Returns:
+        A ``FunctionTool`` to include in ``AssistantAgent(tools=[...])``.
+
+    Usage::
+
+        agent = AssistantAgent(
+            name="finance_agent",
+            model_client=client,
+            tools=[transfer_funds, compliance_tool(NigeriaFintechCompliance())],
+        )
+    """
+    FunctionTool = _require_function_tool()
+
+    fn_name = f"comply54_{compliance.__class__.__name__.lower()}"
+    doc = (
+        f"comply54 compliance check: {compliance.name}. "
+        f"Jurisdictions: {', '.join(compliance.jurisdictions)}. "
+        "Returns JSON with overall decision (allow/deny/escalate/audit), "
+        "triggered rule, and exact regulatory citations."
+    )
+
+    def _check(
+        action: str,
+        params: str = "{}",
+        output: str = "",
+        context: str = "{}",
+    ) -> str:
+        result = compliance.check(
+            action=action,
+            params=json.loads(params) if params else {},
+            output=output,
+            context=json.loads(context) if context else {},
+        )
+        return json.dumps(_result_to_dict(result))
+
+    _check.__name__ = fn_name
+    _check.__doc__ = doc
+
+    return FunctionTool(_check, description=doc, name=fn_name)
+
+
+# ─── Deprecated v0.2 / pyautogen API ──────────────────────────────────────────
+
+def Comply54UserProxy(*_args: Any, **_kwargs: Any) -> None:  # noqa: N802
+    """Removed. Use comply54_tools() with AssistantAgent instead."""
+    raise ImportError(
+        "Comply54UserProxy requires pyautogen ≤ 0.2 which is incompatible with "
+        "autogen-agentchat ≥ 0.4.\n\n"
+        "Migrate to comply54_tools():\n\n"
+        "    from comply54.autogen import comply54_tools\n"
+        "    from autogen_agentchat.agents import AssistantAgent\n\n"
+        "    agent = AssistantAgent(\n"
+        "        name='agent', model_client=client,\n"
+        "        tools=comply54_tools([your_tool], compliance),\n"
+        "    )\n\n"
+        "See: https://comply54.io/docs/integrations/autogen"
+    )
+
+
+def register_compliance_guard(*_args: Any, **_kwargs: Any) -> None:
+    """Removed. Use comply54_tools() with AssistantAgent instead."""
+    raise ImportError(
+        "register_compliance_guard() requires pyautogen ≤ 0.2 which is incompatible "
+        "with autogen-agentchat ≥ 0.4.\n\n"
+        "Use comply54_tools() when constructing the agent. "
+        "See: https://comply54.io/docs/integrations/autogen"
+    )
+
+
+def register_compliance(agent: Any, compliance: SectorCompliance) -> Any:
+    """
+    Deprecated. Use compliance_tool() and pass it to AssistantAgent(tools=[...]).
+
+    In autogen-agentchat ≥ 0.4 tools cannot be added to an agent after
+    construction.  This function emits a DeprecationWarning and returns the
+    FunctionTool so you can add it yourself.
+    """
+    warnings.warn(
+        "register_compliance() is deprecated for autogen-agentchat ≥ 0.4. "
+        "Use compliance_tool(compliance) and include it in "
+        "AssistantAgent(tools=[..., compliance_tool(compliance)]).",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return compliance_tool(compliance)

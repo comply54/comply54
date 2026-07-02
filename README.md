@@ -248,9 +248,14 @@ agent = Agent(role="Fintech Agent", tools=tools, ...)
 ### AutoGen
 
 ```python
-from comply54.autogen import ComplianceMiddleware
+from comply54.autogen import comply54_tools
+from autogen_agentchat.agents import AssistantAgent
 
-middleware = ComplianceMiddleware(NigeriaFintechCompliance())
+agent = AssistantAgent(
+    name="finance_agent",
+    model_client=client,
+    tools=comply54_tools([transfer_funds, check_balance], NigeriaFintechCompliance()),
+)
 ```
 
 ### Direct OPA (from agt-policies-nigeria)

@@ -1,6 +1,6 @@
 [project]
 name = "comply54"
-version = "0.2.5"
+version = "0.3.0"
 description = "African AI governance compliance — enforcement engine and sector packs for NDPA, CBN, NHA, NAICOM, KDPA, POPIA and 15+ African regulatory frameworks. LangGraph-native guard node included."
 authors = [
     { name = "Oluwajuwon Omotayo", email = "ginuxtechacademy@gmail.com" }
@@ -32,9 +32,9 @@ dependencies = [
 langchain  = ["langchain-core>=0.1.0"]
 langgraph      = ["langchain-core>=0.1.0", "langgraph>=0.2.0", "langchain-anthropic>=0.2.0"]
 crewai         = ["crewai>=0.28.0"]
-autogen        = ["pyautogen>=0.2.0"]
+autogen        = ["autogen-agentchat>=0.4,<1.0"]
 openai-agents  = ["openai-agents>=0.0.17"]
-all            = ["langchain-core>=0.1.0", "langgraph>=0.2.0", "langchain-anthropic>=0.2.0", "crewai>=0.28.0", "pyautogen>=0.2.0", "openai-agents>=0.0.17"]
+all            = ["langchain-core>=0.1.0", "langgraph>=0.2.0", "langchain-anthropic>=0.2.0", "crewai>=0.28.0", "autogen-agentchat>=0.4,<1.0", "openai-agents>=0.0.17"]
 dev        = ["pytest>=8.0", "pytest-cov", "ruff", "pyright"]
 
 [project.urls]
