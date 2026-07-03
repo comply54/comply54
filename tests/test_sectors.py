@@ -37,6 +37,23 @@ class TestNigeriaFintechCompliance:
         )
         assert result.overall in ("deny", "escalate", "audit")
 
+    def test_nip_cap_prefix_in_output_caught(self):
+        # ₦15,000,000 in prefix form should trip the defence-in-depth output rule
+        result = self.compliance.check(
+            action="respond_to_user",
+            output="Transferring ₦15,000,000 to account 0123456789",
+        )
+        assert result.overall in ("deny", "escalate", "audit")
+
+    def test_nip_cap_suffix_in_output_caught(self):
+        # 15,000,001 NGN (suffix form) must also be caught — regression for the
+        # prefix-only gap that existed in the Rego before the suffix rule was added
+        result = self.compliance.check(
+            action="respond_to_user",
+            output="Processing transfer: 15,000,001 NGN to account 0123456789",
+        )
+        assert result.overall in ("deny", "escalate", "audit")
+
     def test_primary_violation_has_message(self):
         result = self.compliance.check(
             action="transfer_funds",

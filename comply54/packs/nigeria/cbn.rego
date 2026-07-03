@@ -70,9 +70,15 @@ deny contains msg if {
 	)
 }
 
-# CBN NIP Cap: detect >₦10M in text output (defence-in-depth)
+# CBN NIP Cap: detect >₦10M in text output (defence-in-depth) — prefix form (₦15M / NGN 15M)
 deny contains msg if {
 	regex.match(`(?i)(₦|NGN|naira)\s*1[0-9],?[0-9]{3},?[0-9]{3}`, input.output)
+	msg := "CBN NIP Framework: Transaction amount exceeding ₦10,000,000 detected in output — blocked"
+}
+
+# CBN NIP Cap: suffix form (e.g. "15,000,001 NGN" / "15000001 naira")
+deny contains msg if {
+	regex.match(`(?i)1[0-9],?[0-9]{3},?[0-9]{3}\s*(NGN|naira)`, input.output)
 	msg := "CBN NIP Framework: Transaction amount exceeding ₦10,000,000 detected in output — blocked"
 }
 
@@ -159,6 +165,11 @@ deny_citations contains key if {
 
 deny_citations contains key if {
 	regex.match(`(?i)(₦|NGN|naira)\s*1[0-9],?[0-9]{3},?[0-9]{3}`, input.output)
+	key := "nip_output"
+}
+
+deny_citations contains key if {
+	regex.match(`(?i)1[0-9],?[0-9]{3},?[0-9]{3}\s*(NGN|naira)`, input.output)
 	key := "nip_output"
 }
 
