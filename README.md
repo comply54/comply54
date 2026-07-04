@@ -8,6 +8,7 @@
 [![npm](https://img.shields.io/npm/v/@comply54/core.svg)](https://www.npmjs.com/package/@comply54/core)
 [![Python](https://img.shields.io/pypi/pyversions/comply54.svg)](https://pypi.org/project/comply54)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![OpenSSF Baseline](https://www.bestpractices.dev/projects/13481/baseline)](https://www.bestpractices.dev/projects/13481)
 
 ---
 
