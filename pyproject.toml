@@ -35,7 +35,7 @@ crewai         = ["crewai>=0.28.0"]
 autogen        = ["autogen-agentchat>=0.4,<1.0"]
 openai-agents  = ["openai-agents>=0.0.17"]
 all            = ["langchain-core>=0.1.0", "langgraph>=0.2.0", "langchain-anthropic>=0.2.0", "crewai>=0.28.0", "autogen-agentchat>=0.4,<1.0", "openai-agents>=0.0.17"]
-dev        = ["pytest>=8.0", "pytest-cov", "ruff", "pyright"]
+dev        = ["pytest>=8.0", "pytest-cov", "ruff", "pyright", "hypothesis>=6.100"]
 
 [project.urls]
 Homepage   = "https://comply54.io"
