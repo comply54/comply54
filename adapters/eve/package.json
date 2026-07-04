@@ -30,6 +30,9 @@
   "engines": {
     "node": ">=24.0.0"
   },
+  "overrides": {
+    "js-yaml": ">=3.15.0"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
