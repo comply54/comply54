@@ -15,6 +15,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytest.importorskip("autogen_agentchat")
+
 from comply54.autogen import (
     Comply54UserProxy,
     comply54_tool,
