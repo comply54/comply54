@@ -22,14 +22,13 @@ import string
 import uuid
 
 import pytest
-from hypothesis import assume, given, settings
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from comply54.core.engine import Comply54Engine
 from comply54.core.models import (
     Action,
     ComplianceResult,
-    EvaluationInput,
     PolicyDecision,
 )
 from comply54.core.packs import CBN

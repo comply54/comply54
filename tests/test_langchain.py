@@ -14,6 +14,9 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
+
+pytest.importorskip("langchain_core")
+
 from langchain_core.messages import AIMessage, ToolMessage
 
 from comply54.core.models import Action, ComplianceResult, PolicyDecision, RegulatorySource
@@ -153,7 +156,6 @@ class TestComply54Guard:
         guard(state)
 
         _, kwargs = mock_compliance.check.call_args
-        ctx = kwargs.get("context", mock_compliance.check.call_args[0][2] if mock_compliance.check.call_args[0] else {})
         called_kwargs = mock_compliance.check.call_args.kwargs
         assert called_kwargs.get("context", {}).get("kyc_tier") == 2
         assert called_kwargs.get("context", {}).get("customer_verified") is True
