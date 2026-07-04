@@ -1,0 +1,20 @@
+# Global owner — all files require review from the maintainer
+* @kingztech2019
+
+# Core engine and models
+comply54/core/ @kingztech2019
+
+# Sector packs and Rego policies
+comply54/packs/ @kingztech2019
+
+# Adapter integrations
+comply54/langchain/ @kingztech2019
+comply54/autogen/ @kingztech2019
+comply54/crewai/ @kingztech2019
+comply54/openai_agents/ @kingztech2019
+
+# Tests
+tests/ @kingztech2019
+
+# CI/CD and GitHub configuration
+.github/ @kingztech2019
