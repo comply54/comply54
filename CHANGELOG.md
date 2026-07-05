@@ -7,6 +7,32 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- `funding.json` manifest (fundingjson.org v1.1.0) at repo root — describes project funding channels and plans for FLOSS/fund and other grant programs.
+
+### Fixed
+
+**`nigeria/nfiu-aml` — sanctions screening is now fail-closed (MLPPA 2022 s.6)**
+
+Added a hard-block deny rule: any transfer action without `context.sanctions_screened == true` is blocked before execution, regardless of amount. Previously, a transfer to a sanctioned entity could only be blocked by the ₦10M NIP cap — an unrelated rule. The new rule enforces the actual MLPPA 2022 s.6 requirement that counterparties must be screened against the OFAC SDN list, UN Security Council Consolidated List, and NFIU Designated Persons List before any payment is executed.
+
+Affected actions: `transfer_funds`, `send_money`, `wire_transfer`, `nip_transfer`, `instant_payment`, `disburse_funds`, `process_corporate_payment`, `initiate_wire_transfer`, `send_international_payment`.
+
+**Migration:** add `"sanctions_screened": True` to your compliance context after screening is confirmed.
+
+**`nigeria/naicom` — `state_of_origin` added to prohibited underwriting characteristics**
+
+`state_of_origin` was not in the `prohibited_characteristics` set in `naicom.rego`, meaning an underwriting denial citing only state of origin was not caught. It is now explicitly included, consistent with NIIRA 2025 Part V. A denial citing religion was still caught before this fix, but only by coincidence if both fields were present.
+
+**KDPA docs — pack ID vs. file path caution block added**
+
+Added a `:::caution` block to `docs/policy-reference/east-africa/kdpa.mdx` explaining that `kenya/kdpa` (SDK pack ID) ≠ `africa/kdpa.rego` (file path). The SDK silently returns `allow` with no violations if an unrecognised pack ID is passed.
+
+---
+
 ## [0.3.0] — 2026-07-02
 
 ### Changed

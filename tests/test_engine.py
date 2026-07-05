@@ -6,7 +6,7 @@ No OPA binary required.
 
 from comply54.core.engine import Comply54Engine
 from comply54.core.models import EvaluationInput
-from comply54.core.packs import CBN, NDPA, BVN_NIN, PII_LEAKAGE, KDPA
+from comply54.core.packs import CBN, NDPA, BVN_NIN, PII_LEAKAGE, KDPA, NFIU_AML, NAICOM
 
 
 # ── CBN transaction limit tests ────────────────────────────────────────────────
@@ -136,6 +136,128 @@ class TestKDPAEngine:
     def test_clean_action_passes(self):
         result = self.engine.check(action="list_transactions", params={})
         assert result.overall == "allow"
+
+
+# ── NFIU sanctions screening (regression: scenario 06) ───────────────────────
+#
+# Before this fix, a ₦8M corporate payment to a sanctioned entity was only
+# *escalated* (CTR threshold), not denied. That made the "sanctioned transfer"
+# scenario a false demo — it blocked at ₦12M only because of the unrelated NIP
+# cap, not because of sanctions screening.
+# The fix adds a deny rule: any transfer_action without sanctions_screened == true
+# is hard-blocked regardless of amount.
+
+class TestNFIUSanctionsScreening:
+    engine = Comply54Engine(packs=[NFIU_AML])
+
+    def test_corporate_payment_without_sanctions_screening_is_denied(self):
+        # ₦8M is below the NIP cap (₦10M) — old code only escalated this.
+        # New sanctions rule must deny it because sanctions_screened is False.
+        result = self.engine.check(
+            action="process_corporate_payment",
+            params={"amount": 8_000_000, "currency": "NGN"},
+            context={"sanctions_screened": False, "aml_check_performed": False},
+        )
+        assert result.blocked
+        assert result.overall == "deny"
+        assert "sanctions" in result.primary_violation.messages[0].lower()
+
+    def test_corporate_payment_with_screening_and_under_nip_cap_escalates_for_ctr(self):
+        # ₦8M with sanctions screening done → not denied by sanctions rule.
+        # Still escalates for CTR (₦5M–₦10M zone). Note: comply54 sets blocked=True for escalate.
+        result = self.engine.check(
+            action="process_corporate_payment",
+            params={"amount": 8_000_000, "currency": "NGN"},
+            context={"sanctions_screened": True},
+        )
+        assert result.overall in ("escalate", "audit")
+        assert result.overall != "deny"
+
+    def test_transfer_funds_without_sanctions_screening_is_denied(self):
+        # The fix also applies to transfer_funds, not just corporate payments.
+        result = self.engine.check(
+            action="transfer_funds",
+            params={"amount": 3_000_000, "currency": "NGN"},
+            context={"sanctions_screened": False},
+        )
+        assert result.blocked
+        assert result.overall == "deny"
+
+    def test_transfer_with_screening_confirmed_is_not_denied_by_sanctions_rule(self):
+        result = self.engine.check(
+            action="transfer_funds",
+            params={"amount": 3_000_000, "currency": "NGN"},
+            context={"sanctions_screened": True},
+        )
+        # May escalate for CTR, but must not be denied by the sanctions rule.
+        assert result.overall != "deny" or "NIP" in (result.primary_violation.messages[0] if result.primary_violation else "")
+
+
+# ── NAICOM discrimination — state_of_origin (regression: scenario 07) ────────
+#
+# Before this fix, a denial citing only state_of_origin wasn't caught because
+# state_of_origin was not in the prohibited_characteristics set.
+# Religion WAS in the set, so the scenario fired — but only accidentally.
+
+class TestNAICOMDiscrimination:
+    engine = Comply54Engine(packs=[NAICOM])
+
+    def test_underwriting_with_state_of_origin_is_denied(self):
+        # Denial citing state_of_origin alone must now be caught.
+        result = self.engine.check(
+            action="underwrite_policy",
+            params={
+                "state_of_origin": "Kano",
+                "policy_type": "life",
+                "underwriting_amount": 3_000_000,
+            },
+            context={"human_underwriter": True},
+        )
+        assert result.blocked
+        assert result.overall == "deny"
+        assert "state_of_origin" in result.primary_violation.messages[0]
+
+    def test_underwriting_with_religion_is_denied(self):
+        # Existing behaviour must still hold.
+        result = self.engine.check(
+            action="underwrite_policy",
+            params={"religion": "Islam", "policy_type": "life", "underwriting_amount": 3_000_000},
+            context={"human_underwriter": True},
+        )
+        assert result.blocked
+        assert result.overall == "deny"
+
+    def test_underwriting_with_both_religion_and_state_of_origin_is_denied(self):
+        # The full scenario 07 params — both fields present.
+        result = self.engine.check(
+            action="underwrite_policy",
+            params={
+                "applicant_name": "Amina Bello",
+                "state_of_origin": "Kano",
+                "religion": "Islam",
+                "gender": "female",
+                "policy_type": "life",
+                "underwriting_amount": 10_000_000,
+                "decision": "deny",
+            },
+            context={},
+        )
+        assert result.blocked
+        assert result.overall == "deny"
+
+    def test_clean_underwriting_without_prohibited_fields_is_not_denied(self):
+        result = self.engine.check(
+            action="underwrite_policy",
+            params={
+                "applicant_age": 34,
+                "smoker": False,
+                "bmi": 22.5,
+                "policy_type": "life",
+                "underwriting_amount": 3_000_000,
+            },
+            context={"human_underwriter": True},
+        )
+        assert result.overall != "deny"
 
 
 # ── PII leakage universal pack ────────────────────────────────────────────────

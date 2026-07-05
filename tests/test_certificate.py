@@ -91,7 +91,7 @@ class TestStrictMode:
         result = compliance.check(
             action="transfer_funds",
             params={"amount": 6_000_000, "currency": "NGN"},
-            context={"kyc_tier": 3},
+            context={"kyc_tier": 3, "sanctions_screened": True},
         )
         # Should escalate (NFIU CTR) but not deny
         assert result.overall != "deny"

@@ -323,7 +323,7 @@ class TestIntegrationWithRealSector:
                     {"amount": 50_000, "currency": "NGN"},
                 )
             ],
-            "compliance_context": {"kyc_tier": 3, "customer_verified": True},
+            "compliance_context": {"kyc_tier": 3, "customer_verified": True, "sanctions_screened": True},
         }
         result = guard(state)
 

@@ -13,6 +13,23 @@ description: Kenya Data Protection Act 2019 — policy rules enforced by comply5
 | **Jurisdiction** | Kenya (KE) |
 | **Effective date** | November 2019 |
 
+:::caution Pack ID vs. file path
+The pack ID used in the SDK is **`kenya/kdpa`**, but the underlying Rego file lives at `comply54/packs/africa/kdpa.rego` for historical reasons. These are two different identifiers:
+
+```python
+# ✅ Correct — use the pack ID, not the file path
+from comply54 import KenyaDataComplianceCompliance
+# or explicitly:
+from comply54.core.packs import KDPA  # pack_id = "kenya/kdpa"
+
+# ❌ Silently broken — "africa/kdpa" is not a registered pack ID
+compliance.check(action="export_data", params={}, pack_ids=["africa/kdpa"])
+# Returns no violations — the pack was never evaluated
+```
+
+The SDK does **not** error on an unrecognised pack ID — it silently evaluates nothing. If you reference `"africa/kdpa"` directly, your checks will always return `allow` with no violations logged.
+:::
+
 ## What comply54 enforces
 
 ### Cross-border transfers (§48)

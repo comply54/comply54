@@ -95,9 +95,10 @@ fraud_actions := {
 }
 
 # Prohibited characteristics: NIIRA 2025 Part V (Market Conduct) + NAICOM Market Conduct Rule 6
+# state_of_origin is explicitly prohibited — common in Nigerian underwriting discrimination cases.
 prohibited_characteristics := {
 	"religion", "ethnicity", "tribe", "political_affiliation",
-	"gender", "disability", "hiv_status",
+	"gender", "disability", "hiv_status", "state_of_origin",
 }
 
 # ── DENY rules ────────────────────────────────────────────────────

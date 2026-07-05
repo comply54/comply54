@@ -48,15 +48,20 @@ result = compliance.check(
 
 The following characteristics are explicitly prohibited as underwriting or pricing factors:
 
-| Prohibited characteristic |
-|--------------------------|
-| `religion` |
-| `ethnicity` |
-| `tribe` |
-| `political_affiliation` |
-| `gender` |
-| `disability` |
-| `hiv_status` |
+| Prohibited characteristic | Basis |
+|--------------------------|-------|
+| `religion` | NIIRA 2025 Part V |
+| `ethnicity` | NIIRA 2025 Part V |
+| `tribe` | NIIRA 2025 Part V |
+| `political_affiliation` | NIIRA 2025 Part V |
+| `gender` | NIIRA 2025 Part V |
+| `disability` | NIIRA 2025 Part V |
+| `hiv_status` | NIIRA 2025 Part V |
+| `state_of_origin` | NIIRA 2025 Part V — explicitly prohibited; common in Nigerian underwriting discrimination cases |
+
+:::caution State of origin
+`state_of_origin` is a documented pattern in Nigerian insurance discrimination cases, particularly in life and health underwriting. It is explicitly prohibited under NIIRA 2025 Part V alongside the more commonly cited religion and ethnicity factors. Any input that includes a `state_of_origin` field on an underwriting action is hard-blocked — not escalated.
+:::
 
 ```python
 result = compliance.check(

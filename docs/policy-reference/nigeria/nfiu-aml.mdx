@@ -49,26 +49,43 @@ result = compliance.check(
 # decision: escalate — "STR pattern detected: possible structuring below CTR threshold"
 ```
 
-### Sanctions screening
+### Sanctions screening (MLPPA 2022 s.6)
 
-Transfers to OFAC/UN-sanctioned destinations are blocked:
+MLPPA 2022 s.6 requires every payment to be screened against sanctions lists **before execution**. comply54 enforces this as a fail-closed rule: any transfer without `context.sanctions_screened == true` is blocked immediately, regardless of amount.
 
 ```python
+# ❌ Transfer without confirmed screening — denied even at ₦1K
 result = compliance.check(
     action="transfer_funds",
-    params={"amount": 100_000, "currency": "NGN", "destination_country": "IR"},
+    params={"amount": 8_000_000, "currency": "NGN"},
+    context={"sanctions_screened": False},
 )
-# decision: deny — "NFIU/MLPPA 2022: Transfer to sanctioned jurisdiction blocked"
+# decision: deny
+# → NFIU / MLPPA 2022 s.6: Sanctions screening not confirmed — payment blocked.
+#   Counterparty must be screened against OFAC SDN, UN Security Council
+#   Consolidated List, and NFIU Designated Persons List before execution.
+
+# ✅ Screening confirmed — sanctions rule passes; CTR escalate fires for ₦8M
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 8_000_000, "currency": "NGN"},
+    context={"sanctions_screened": True},
+)
+# decision: escalate (CTR threshold at ₦5M)
 ```
+
+This is an explicit MLPPA s.6 requirement: the institution must document that screening was performed. Absence of the flag is treated as absent screening — not as "no result." This is the correct fail-closed interpretation; returning `"not-applicable"` when `sanctions_screened` is absent would silently bypass a mandatory control.
+
+Affected actions: `transfer_funds`, `send_money`, `wire_transfer`, `nip_transfer`, `instant_payment`, `disburse_funds`, `process_corporate_payment`, `initiate_wire_transfer`, `send_international_payment`.
 
 ## Input fields used
 
 | Field | Path | Description |
 |-------|------|-------------|
-| Action | `input.action` | `"transfer_funds"` triggers AML checks |
-| Amount | `input.params.amount` | Numeric |
+| Action | `input.action` | Any of the transfer actions above |
+| Amount | `input.params.amount` | Numeric (NGN) |
 | Currency | `input.params.currency` | ISO 4217 |
-| Destination country | `input.params.destination_country` | ISO 3166-1 |
+| Sanctions screened | `input.context.sanctions_screened` | Boolean — **must be `true` or transfer is denied** |
 | Structuring flag | `input.context.structuring_detected` | Boolean |
 | PEP flag | `input.context.pep_flag` | Boolean |
 

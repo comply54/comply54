@@ -36,9 +36,21 @@ structuring_zone_low := 4500000 # Just-under-threshold alert zone (lower bound)
 transfer_actions := {
 	"transfer_funds", "send_money", "wire_transfer",
 	"nip_transfer", "instant_payment", "disburse_funds",
+	"process_corporate_payment", "initiate_wire_transfer", "send_international_payment",
 }
 
 # ── Deny rules ────────────────────────────────────────────────────
+
+# MLPPA 2022 s.6 / NFIU AML/CFT Guidelines 2022 §3.2:
+# Every payment must be screened against sanctions lists before execution.
+# The agent must confirm screening was performed (context.sanctions_screened == true).
+# Absence of confirmation is treated as unscreened — hard block regardless of amount.
+# Note: an ₦8M transfer to a sanctioned entity blocks HERE, not at the NIP cap.
+deny contains msg if {
+	input.action in transfer_actions
+	not input.context.sanctions_screened == true
+	msg := "NFIU / MLPPA 2022 s.6: Sanctions screening not confirmed — payment blocked. Counterparty must be screened against OFAC SDN, UN Security Council Consolidated List, and NFIU Designated Persons List before execution."
+}
 
 # MLPPA / CBN NIP: transfer exceeding ₦10M cap — hard block
 deny contains msg if {
@@ -133,6 +145,12 @@ audit contains msg if {
 }
 
 # ── Citation key sets ─────────────────────────────────────────────
+
+deny_citations contains key if {
+	input.action in transfer_actions
+	not input.context.sanctions_screened == true
+	key := "sanctions_screening_required"
+}
 
 deny_citations contains key if {
 	input.action in transfer_actions

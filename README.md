@@ -9,6 +9,9 @@
 [![Python](https://img.shields.io/pypi/pyversions/comply54.svg)](https://pypi.org/project/comply54)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![OpenSSF Baseline](https://www.bestpractices.dev/projects/13481/baseline)](https://www.bestpractices.dev/projects/13481)
+[![Agent Disaster Lab](https://img.shields.io/badge/demo-disaster.comply54.io-red)](https://disaster.comply54.io)
+
+> **See comply54 in action:** [disaster.comply54.io](https://disaster.comply54.io) — watch AI agents cause regulatory disasters, then watch comply54 block them live.
 
 ---
 

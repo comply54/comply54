@@ -22,11 +22,12 @@ class TestNigeriaFintechCompliance:
         assert result.overall == "deny"
 
     def test_small_transfer_not_denied(self):
-        # ₦5,000 should not be outright denied — may audit but not block
+        # ₦5,000 should not be outright denied — may audit but not block.
+        # sanctions_screened: True reflects account-level KYC clearing for retail transfers.
         result = self.compliance.check(
             action="transfer_funds",
             params={"amount": 5_000, "currency": "NGN"},
-            context={"kyc_tier": 3},
+            context={"kyc_tier": 3, "sanctions_screened": True},
         )
         assert result.overall != "deny"
 
