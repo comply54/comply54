@@ -26,9 +26,18 @@ class SectorCompliance:
     #: Regulatory frameworks covered, e.g. ["NDPA 2023", "CBN FPR"].
     regulations: list[str] = []
 
-    def __init__(self, packs: list[PackSpec], strict_mode: bool = False) -> None:
+    def __init__(
+        self,
+        packs: list[PackSpec],
+        strict_mode: bool = False,
+        signing_key: "bytes | str | None" = None,
+    ) -> None:
         self._engine = Comply54Engine(packs=packs)
         self._strict_mode = strict_mode
+        self._signer: "ReceiptSigner | None" = None
+        if signing_key is not None:
+            from ..receipts._signer import ReceiptSigner
+            self._signer = ReceiptSigner(signing_key)
 
     @property
     def strict_mode(self) -> bool:
@@ -70,13 +79,25 @@ class SectorCompliance:
         )
         if self._strict_mode:
             result = self._apply_strict_mode(result)
+        if self._signer is not None:
+            token = self._signer.sign(result, action, params or {}, output, context or {})
+            result = result.model_copy(update={"receipt_token": token})
         return result
 
     def evaluate(self, input: EvaluationInput | dict) -> ComplianceResult:
         """Direct evaluation with an EvaluationInput object."""
-        result = self._engine.evaluate(input)
+        if isinstance(input, dict):
+            eval_input = EvaluationInput(**input)
+        else:
+            eval_input = input
+        result = self._engine.evaluate(eval_input)
         if self._strict_mode:
             result = self._apply_strict_mode(result)
+        if self._signer is not None:
+            token = self._signer.sign(
+                result, eval_input.action, eval_input.params, eval_input.output, eval_input.context
+            )
+            result = result.model_copy(update={"receipt_token": token})
         return result
 
     def certificate(
@@ -118,6 +139,7 @@ class SectorCompliance:
                 jurisdiction=d.jurisdiction,
                 action="deny" if d.action == "escalate" else d.action,
                 messages=d.messages,
+                citations=d.citations,
                 rule_triggered=d.rule_triggered,
                 audit_id=d.audit_id,
                 evaluated_at=d.evaluated_at,

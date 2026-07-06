@@ -59,7 +59,11 @@ class NigeriaFintechCompliance(SectorCompliance):
         "OWASP Agentic AI",
     ]
 
-    def __init__(self, strict_mode: bool = False) -> None:
+    def __init__(
+        self,
+        strict_mode: bool = False,
+        signing_key: "bytes | str | None" = None,
+    ) -> None:
         super().__init__(
             packs=[
                 NDPA,
@@ -72,4 +76,5 @@ class NigeriaFintechCompliance(SectorCompliance):
                 HUMAN_APPROVAL,
             ],
             strict_mode=strict_mode,
+            signing_key=signing_key,
         )

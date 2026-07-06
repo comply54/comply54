@@ -9,6 +9,47 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.4.0] — 2026-07-06
+
+### Added
+
+**Signed compliance receipts (`comply54[signing]`)**
+
+Ed25519-signed JWT receipts: tamper-evident, offline-verifiable proof attached to every compliance evaluation. Inspired by the AgenTrust TRACE concept.
+
+```bash
+pip install 'comply54[signing]'
+```
+
+Key additions:
+
+- `comply54.receipts.ReceiptSigner` — signs a `ComplianceResult` into a compact JWT using Ed25519 (EdDSA). Bring-your-own-key (PEM format).
+- `comply54.receipts.verify_receipt(token, public_key_pem)` — verifies a receipt offline. Returns `ReceiptPayload`. Raises `InvalidReceiptError` on any failure.
+- `comply54.receipts.digest_input(action, params, output, context)` — deterministic SHA-256 digest of an evaluation input. Ties the receipt to the exact call.
+- `comply54.receipts.ReceiptPayload` — frozen dataclass: `jti`, `issued_at`, `issuer`, `decision`, `pack`, `regulation`, `rule_triggered`, `messages`, `input_digest`, `comply54_version`, `packs_evaluated`.
+- `comply54.receipts.InvalidReceiptError` — raised by `verify_receipt()` on any verification failure.
+- `signing_key` parameter on all sector packs (`NigeriaFintechCompliance`, `NigeriaHealthcareCompliance`, `NigeriaInsuranceCompliance`, `KenyaFintechCompliance`, `PanAfricanFintechCompliance`) and `Comply54Engine`. Signing is applied **after** `strict_mode`, so the receipt accurately reflects the final decision returned to the caller.
+- `ComplianceResult.receipt_token: Optional[str] = None` — backwards-compatible new field. `None` when no `signing_key` is provided.
+- `comply54 CLI` — new commands:
+  - `comply54 verify-receipt <token> --public-key <path>` — verify a receipt and optionally confirm it covers a specific input.
+  - `comply54 generate-keypair [--out <dir>]` — generate an Ed25519 keypair for development / CI.
+- `comply54/_version.py` — single source of truth for `__version__`, imported by the signer to embed the version in every receipt.
+- `[project.scripts]` entry in `pyproject.toml` — installs the `comply54` CLI command.
+- `[project.optional-dependencies.signing]` — `PyJWT>=2.4.0`, `cryptography>=41.0.0`.
+- `docs/receipt-signing.mdx` — full receipt signing documentation.
+- 50 new tests in `tests/test_receipts.py` (total: 160 tests).
+
+**Security details:**
+- Algorithm: Ed25519 (EdDSA) — 32-byte keys, 64-byte signatures, ~35× faster than RSA-2048, NIST SP 800-186 approved.
+- CVE-2022-29217 mitigation: `algorithms=["EdDSA"]` is always passed explicitly to `jwt.decode()`.
+- BYOK: comply54 never generates or stores keys on the caller's behalf in production paths.
+
+### Fixed
+
+- `SectorCompliance._apply_strict_mode()` was silently dropping `citations` from upgraded decisions. `citations=d.citations` is now preserved. [#pre-existing]
+
 ### Added
 
 - `funding.json` manifest (fundingjson.org v1.1.0) at repo root — describes project funding channels and plans for FLOSS/fund and other grant programs.

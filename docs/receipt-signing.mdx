@@ -1,0 +1,312 @@
+---
+title: Signed Compliance Receipts
+description: Ed25519-signed JWT receipts — tamper-evident proof of every comply54 policy evaluation. Verifiable offline, no network call required.
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+## What is a compliance receipt?
+
+A comply54 receipt is a compact Ed25519-signed JWT issued immediately after a policy evaluation. It is self-contained proof that a specific compliance decision was reached for a specific input at a specific time — with no network call required to verify it.
+
+Each receipt proves:
+
+| Claim | JWT field | What it proves |
+|-------|-----------|----------------|
+| Decision | `c54_decision` | `allow`, `deny`, `escalate`, or `audit` |
+| Primary pack | `c54_pack` | Which pack triggered the decision |
+| Regulation | `c54_regulation` | Which regulation was cited |
+| Rule | `c54_rule` | The specific rule key that fired |
+| Messages | `c54_messages` | Human-readable violation messages (up to 5) |
+| Input digest | `c54_input_digest` | SHA-256 of the exact input evaluated |
+| All packs evaluated | `c54_packs_evaluated` | Every pack in the evaluation |
+| comply54 version | `c54_version` | Version that produced the receipt |
+| Audit ID | `jti` | Matches `ComplianceResult.audit_id` |
+| Timestamp | `iat` | UTC Unix timestamp |
+| Issuer | `iss` | Always `"comply54"` |
+
+The `c54_input_digest` ties the receipt to the exact call. Recompute it with `digest_input()` to confirm a receipt covers the input under inspection — not a different call with the same decision.
+
+## Installation
+
+Receipts require two additional dependencies — not bundled in the base install to keep the footprint minimal:
+
+```bash
+pip install 'comply54[signing]'
+```
+
+This adds `PyJWT>=2.4.0` and `cryptography>=41.0.0`.
+
+## Quick start
+
+### 1. Generate a keypair
+
+```python
+from comply54.receipts import ReceiptSigner
+
+private_pem, public_pem = ReceiptSigner.generate_keypair()
+
+# Save private_pem to your secret manager — never write it to disk in production.
+# Distribute public_pem to anyone who needs to verify receipts.
+```
+
+Or using the CLI:
+
+```bash
+comply54 generate-keypair --out ./keys
+# Ed25519 keypair generated:
+#   private key  ./keys/comply54_signing_key.pem
+#   public key   ./keys/comply54_signing_key.pub.pem
+```
+
+:::warning Key management
+`generate-keypair` is intended for development and CI. In production, generate and store your private key in a secret manager (AWS KMS, HashiCorp Vault, GCP KMS). Never commit private keys to source control.
+:::
+
+### 2. Sign results
+
+Pass `signing_key` to any sector pack:
+
+```python
+from comply54 import NigeriaFintechCompliance
+
+compliance = NigeriaFintechCompliance(signing_key=private_pem)
+
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 8_000_000, "currency": "NGN"},
+    context={"sanctions_screened": True},
+)
+
+print(result.receipt_token)
+# eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjb21wbHk1...
+print(result.overall)       # escalate
+print(result.audit_id)      # 3f7a8c2b-...
+```
+
+`receipt_token` is `None` when no `signing_key` is provided — existing integrations are unaffected.
+
+### 3. Verify receipts
+
+```python
+from comply54.receipts import verify_receipt, digest_input
+
+# Verify the signature and decode the payload:
+payload = verify_receipt(result.receipt_token, public_pem)
+
+print(payload.decision)     # escalate
+print(payload.pack)         # nigeria/nfiu-aml
+print(payload.regulation)   # Money Laundering (Prevention & Prohibition) Act 2022 / NFIU Guidelines
+print(payload.rule_triggered)
+print(payload.messages[0])  # NFIU / MLPPA 2022: Transaction ≥ ₦5,000,000 — CTR required...
+
+# Confirm the receipt covers the exact input under inspection:
+recomputed = digest_input(
+    action="transfer_funds",
+    params={"amount": 8_000_000, "currency": "NGN"},
+    context={"sanctions_screened": True},
+)
+assert payload.input_digest == recomputed
+```
+
+Or via the CLI:
+
+```bash
+comply54 verify-receipt "$TOKEN" \
+  --public-key ./keys/comply54_signing_key.pub.pem \
+  --action transfer_funds \
+  --params-json '{"amount": 8000000, "currency": "NGN"}' \
+  --context-json '{"sanctions_screened": true}'
+
+# comply54 receipt  ESCALATE
+#   jti              3f7a8c2b-...
+#   issued_at        1751234567
+#   comply54_version 0.4.0
+#   decision         escalate
+#   pack             nigeria/nfiu-aml
+#   regulation       Money Laundering (Prevention & Prohibition) Act 2022 / NFIU Guidelines
+#   rule_triggered   ctr_required
+#   messages[0]      NFIU / MLPPA 2022: Transaction ≥ ₦5,000,000 — CTR required within 24 hours
+#   input_digest     sha256:a3f9c2b1...
+#   packs_evaluated  nigeria/ndpa, nigeria/cbn, nigeria/bvn-nin, nigeria/nfiu-aml, ...
+#
+#   input match      YES
+```
+
+## All sector packs support signing
+
+Every sector pack and `Comply54Engine` accept `signing_key`:
+
+<Tabs>
+<TabItem value="fintech" label="Nigerian fintech">
+
+```python
+from comply54 import NigeriaFintechCompliance
+
+compliance = NigeriaFintechCompliance(signing_key=private_pem)
+```
+
+</TabItem>
+<TabItem value="health" label="Nigerian health">
+
+```python
+from comply54.sectors import NigeriaHealthcareCompliance
+
+compliance = NigeriaHealthcareCompliance(signing_key=private_pem)
+```
+
+</TabItem>
+<TabItem value="insurance" label="Nigerian insurance">
+
+```python
+from comply54.sectors import NigeriaInsuranceCompliance
+
+compliance = NigeriaInsuranceCompliance(signing_key=private_pem)
+```
+
+</TabItem>
+<TabItem value="kenya" label="Kenyan fintech">
+
+```python
+from comply54.sectors import KenyaFintechCompliance
+
+compliance = KenyaFintechCompliance(signing_key=private_pem)
+```
+
+</TabItem>
+<TabItem value="pan" label="Pan-African">
+
+```python
+from comply54 import PanAfricanFintechCompliance
+
+compliance = PanAfricanFintechCompliance(signing_key=private_pem)
+```
+
+</TabItem>
+<TabItem value="engine" label="Direct engine">
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import CBN, NDPA, NFIU_AML
+
+engine = Comply54Engine(packs=[CBN, NDPA, NFIU_AML], signing_key=private_pem)
+result = engine.check(action="transfer_funds", params={"amount": 500_000})
+```
+
+</TabItem>
+</Tabs>
+
+## strict_mode and receipts
+
+When `strict_mode=True`, the receipt reflects the final decision — after `escalate` is upgraded to `deny`:
+
+```python
+compliance = NigeriaFintechCompliance(strict_mode=True, signing_key=private_pem)
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 6_000_000, "currency": "NGN"},
+    context={"sanctions_screened": True},
+)
+assert result.overall == "deny"          # strict_mode upgraded escalate → deny
+
+payload = verify_receipt(result.receipt_token, public_pem)
+assert payload.decision == "deny"        # receipt reflects the final decision
+```
+
+## `digest_input()` — standalone use
+
+`digest_input()` is a pure function with no side effects. Use it anywhere you need a tamper-evident fingerprint of an evaluation input:
+
+```python
+from comply54.receipts import digest_input
+
+digest = digest_input(
+    action="transfer_funds",
+    params={"amount": 5_000_000, "currency": "NGN"},
+    output="",
+    context={"sanctions_screened": True},
+)
+# "sha256:a3f9c2b1d4e5f6a7..."
+```
+
+Determinism guarantees:
+- Dict key order is normalised (`sort_keys=True`)
+- No whitespace between JSON tokens (`separators=(",", ":")`)
+- UTF-8 encoding on all platforms
+- `None` context is treated as `{}`
+
+## Security design
+
+### Algorithm choice — Ed25519
+
+comply54 uses Ed25519 (EdDSA) for all receipt signatures:
+
+- **32-byte keys, 64-byte signatures** — compact receipts
+- **~35× faster than RSA-2048** — negligible overhead per evaluation
+- **No parameter confusion** — unlike RSA/ECDSA, Ed25519 has no padding modes or curve choices to misconfigure
+- **NIST SP 800-186 approved**
+
+### CVE-2022-29217 mitigation
+
+All `jwt.decode()` calls in comply54 explicitly pass `algorithms=["EdDSA"]`. Omitting the `algorithms` parameter allows an attacker to substitute an HMAC algorithm and forge tokens using the public key as the HMAC secret. comply54's verifier rejects any token that does not use EdDSA.
+
+### BYOK — bring your own key
+
+comply54 never generates, stores, or transmits signing keys on your behalf. You generate the keypair; you control where the private key lives. The `generate_keypair()` helper is a convenience for development only.
+
+### Offline verification
+
+Receipts carry all proof. `verify_receipt()` makes no network calls and needs no access to the comply54 installation that produced the receipt — only the public key and the token.
+
+## Receipt payload reference
+
+```python
+@dataclass(frozen=True)
+class ReceiptPayload:
+    jti: str               # Unique receipt ID — matches ComplianceResult.audit_id
+    issued_at: int         # UTC Unix timestamp
+    issuer: str            # Always "comply54"
+    decision: str          # "allow" | "deny" | "escalate" | "audit"
+    pack: Optional[str]    # Primary pack that triggered decision (None for allow)
+    regulation: Optional[str]  # Primary regulation cited
+    rule_triggered: Optional[str]  # Specific rule key
+    messages: List[str]    # Human-readable violation messages (up to 5)
+    input_digest: str      # "sha256:<hex>" — ties receipt to exact input
+    comply54_version: str  # Version that produced this receipt
+    packs_evaluated: List[str]  # All pack IDs in the evaluation
+```
+
+`str(payload)` produces a human-readable summary line:
+
+```
+comply54 receipt ✗ ESCALATE [nigeria/nfiu-aml] — Money Laundering (Prevention & Prohibition) Act 2022 / NFIU Guidelines
+comply54 receipt ✓ ALLOW — no violation
+```
+
+## Error handling
+
+```python
+from comply54.receipts import InvalidReceiptError, verify_receipt
+
+try:
+    payload = verify_receipt(token, public_pem)
+except InvalidReceiptError as exc:
+    # Token is forged, tampered, or doesn't match the public key
+    logger.error("Receipt verification failed: %s", exc)
+    raise
+```
+
+`InvalidReceiptError` is raised for:
+- Signature mismatch (wrong key, or token was tampered with)
+- Missing required claims (`iss`, `iat`, `jti`, `c54_decision`, `c54_input_digest`, `c54_version`)
+- Issuer is not `"comply54"`
+- Malformed JWT (not three base64url-encoded segments)
+- Public key is not Ed25519
+
+## Related
+
+- [Compliance certificates](/docs/certificates) — structured JSON export for regulatory auditors
+- [Nigerian fintech sector pack](/docs/sector-packs/nigeria-fintech)
+- [NFIU / MLPPA 2022 policy reference](/docs/policy-reference/nigeria/nfiu-aml)
+- [NDPA 2023 policy reference](/docs/policy-reference/nigeria/ndpa)

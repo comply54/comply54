@@ -24,6 +24,16 @@ export type {
   PackEvaluatorFn,
 } from "./types.js";
 
+// Signed receipts
+export {
+  ReceiptSigner,
+  verifyReceipt,
+  digestInput,
+  InvalidReceiptError,
+  VERSION,
+} from "./receipts.js";
+export type { ReceiptPayload } from "./receipts.js";
+
 // Engine
 export { Comply54Engine } from "./engine.js";
 

@@ -123,6 +123,44 @@ cert = compliance.certificate(
 print(cert.to_json())   # tamper-evident JSON with SHA-256 integrity hash
 ```
 
+### Signed receipt (cryptographic proof, offline verifiable)
+
+```python
+pip install 'comply54[signing]'
+```
+
+```python
+from comply54 import NigeriaFintechCompliance
+from comply54.receipts import ReceiptSigner, verify_receipt, digest_input
+
+# One-time: generate keypair (store private key in your secret manager)
+private_pem, public_pem = ReceiptSigner.generate_keypair()
+
+compliance = NigeriaFintechCompliance(signing_key=private_pem)
+
+result = compliance.check(
+    action="transfer_funds",
+    params={"amount": 8_000_000, "currency": "NGN"},
+    context={"sanctions_screened": True},
+)
+
+# Compact Ed25519-signed JWT — store alongside your audit log
+print(result.receipt_token)   # eyJhbGciOiJFZERTQSIs...
+
+# Verify offline — no network call, no comply54 installation needed
+payload = verify_receipt(result.receipt_token, public_pem)
+assert payload.decision == result.overall
+assert payload.jti == result.audit_id
+
+# Confirm the receipt covers the exact call
+recomputed = digest_input(
+    action="transfer_funds",
+    params={"amount": 8_000_000, "currency": "NGN"},
+    context={"sanctions_screened": True},
+)
+assert payload.input_digest == recomputed
+```
+
 ---
 
 ## Sector Packs

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+  "version": "v1.1.0",
+  "entity": {
+    "type": "individual",
+    "role": "maintainer",
+    "name": "Oluwajuwon Omotayo",
+    "email": "ginuxtechacademy@gmail.com",
+    "description": "Independent open-source developer building AI governance infrastructure for African regulatory compliance. Creator of comply54 and agt-policies-nigeria — the only open-source runtime enforcement engine for NDPA 2023, CBN NIP Framework, NIMC Act 2026, NFIU, KDPA 2019, POPIA, and 15+ African regulations. Both projects are cited in the Microsoft Agent Governance Toolkit (AGT).",
+    "webpageUrl": {
+      "url": "https://comply54.io"
+    }
+  },
+  "projects": [
+    {
+      "guid": "comply54",
+      "name": "comply54",
+      "description": "Open-source AI governance enforcement engine for African regulatory compliance. Intercepts AI agent tool calls and evaluates them against 21 African regulatory frameworks — CBN NIP Framework, NDPA 2023, NIMC Act 2026, NFIU MLPPA, KDPA 2019, POPIA, Uganda DPPA, Tanzania PDPA, Ethiopia PDP, and more — before execution. Blocked calls never reach the tool. Ships with production-ready adapters for LangGraph, CrewAI, AutoGen (v0.4), and OpenAI Agents SDK. No OPA binary required; works in serverless environments. Holds OpenSSF Best Practices Passing badge.",
+      "webpageUrl": {
+        "url": "https://comply54.io"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/comply54/comply54"
+      },
+      "licenses": ["spdx:Apache-2.0"],
+      "tags": [
+        "ai-governance",
+        "africa",
+        "compliance",
+        "fintech",
+        "ndpa",
+        "cbn",
+        "popia",
+        "kdpa",
+        "llm",
+        "open-policy-agent"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "bank-transfer",
+        "type": "bank",
+        "description": "Wire transfer or bank payment. Contact ginuxtechacademy@gmail.com for bank details and tax documentation."
+      }
+    ],
+    "plans": [
+      {
+        "guid": "floss-fund-annual",
+        "status": "active",
+        "name": "Annual Sustainability Grant",
+        "description": "Sustains full-time development of comply54 across four areas: (1) New African jurisdiction packs — Rwanda, Ghana, Egypt, Morocco, Senegal, Côte d'Ivoire; (2) Regulatory tracking — African data protection laws change frequently and policy packs must stay current; (3) Framework adapters — maintenance and new integrations as LangGraph, AutoGen, and CrewAI evolve; (4) Community and adoption — documentation, tutorials, and outreach to African fintech developers who need this infrastructure but don't yet know it exists.",
+        "amount": 50000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": ["bank-transfer"]
+      }
+    ]
+  }
+}

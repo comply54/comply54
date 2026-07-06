@@ -44,6 +44,12 @@ export interface ComplianceResult {
   violations: PolicyDecision[];
   /** Highest-severity violation, or null */
   primaryViolation: PolicyDecision | null;
+  /**
+   * Compact Ed25519-signed JWT receipt — present only when `checkSigned()`
+   * is called (or when a `ReceiptSigner` is used directly). Pass to
+   * `verifyReceipt()` for offline verification.
+   */
+  receiptToken?: string;
 }
 
 export interface EvaluationInput {

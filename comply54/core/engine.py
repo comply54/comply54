@@ -69,11 +69,31 @@ class Comply54Engine:
         ))
         if result.blocked:
             raise ValueError(result.primary_violation.messages[0])
+
+    Signed receipts (optional)::
+
+        private_pem, public_pem = ReceiptSigner.generate_keypair()
+        engine = Comply54Engine(packs=[CBN, NDPA], signing_key=private_pem)
+        result = engine.check(action="transfer_funds", params={"amount": 500_000})
+        print(result.receipt_token)  # compact JWT
+
+    Note: when using sector packs (e.g. ``NigeriaFintechCompliance``), pass
+    ``signing_key`` to the sector pack instead — it signs after applying
+    ``strict_mode``, so the receipt accurately reflects the final decision.
     """
 
-    def __init__(self, packs: list[PackSpec], cache: bool = True) -> None:
+    def __init__(
+        self,
+        packs: list[PackSpec],
+        cache: bool = True,
+        signing_key: "bytes | str | None" = None,
+    ) -> None:
         self._packs = packs
         self._cache = cache
+        self._signer: "ReceiptSigner | None" = None
+        if signing_key is not None:
+            from ..receipts._signer import ReceiptSigner
+            self._signer = ReceiptSigner(signing_key)
 
     def evaluate(self, input: EvaluationInput | dict) -> ComplianceResult:
         """
@@ -101,7 +121,11 @@ class Comply54Engine:
 
         if not bindings1:
             # Fallback: evaluate each pack independently (graceful degradation)
-            return self._evaluate_individually(input_json)
+            result = self._evaluate_individually(input_json)
+            if self._signer is not None:
+                token = self._signer.sign(result, input.action, input.params, input.output, input.context)
+                result = result.model_copy(update={"receipt_token": token})
+            return result
 
         decisions_step1: list[tuple[int, PackSpec, Action]] = [
             (i, p, bindings1.get(f"p{i}_d", "allow"))
@@ -143,7 +167,11 @@ class Comply54Engine:
                 rule_triggered=rule_triggered,
             ))
 
-        return ComplianceResult.from_decisions(decisions)
+        result = ComplianceResult.from_decisions(decisions)
+        if self._signer is not None:
+            token = self._signer.sign(result, input.action, input.params, input.output, input.context)
+            result = result.model_copy(update={"receipt_token": token})
+        return result
 
     def _evaluate_individually(self, input_json: str) -> ComplianceResult:
         """Fallback: evaluate each pack with its own interpreter."""

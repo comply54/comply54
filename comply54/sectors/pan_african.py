@@ -78,14 +78,22 @@ class PanAfricanFintechCompliance(SectorCompliance):
         "OWASP Agentic AI",
     ]
 
-    def __init__(self, strict_mode: bool = False) -> None:
-        super().__init__(packs=[
-            # Nigeria
-            NDPA, CBN, BVN_NIN, NFIU_AML,
-            # East Africa
-            KDPA, MAURITIUS_DPA, TANZANIA_PDPA, UGANDA_DPPA, RWANDA_DPA, ETHIOPIA_PDP,
-            # Southern / West / North Africa
-            POPIA, GHANA_DPA, EGYPT_PDPL,
-            # Universal safety
-            PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL, MODEL_ROUTING,
-        ], strict_mode=strict_mode)
+    def __init__(
+        self,
+        strict_mode: bool = False,
+        signing_key: "bytes | str | None" = None,
+    ) -> None:
+        super().__init__(
+            packs=[
+                # Nigeria
+                NDPA, CBN, BVN_NIN, NFIU_AML,
+                # East Africa
+                KDPA, MAURITIUS_DPA, TANZANIA_PDPA, UGANDA_DPPA, RWANDA_DPA, ETHIOPIA_PDP,
+                # Southern / West / North Africa
+                POPIA, GHANA_DPA, EGYPT_PDPL,
+                # Universal safety
+                PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL, MODEL_ROUTING,
+            ],
+            strict_mode=strict_mode,
+            signing_key=signing_key,
+        )

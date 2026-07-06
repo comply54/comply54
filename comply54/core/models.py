@@ -78,6 +78,12 @@ class ComplianceResult(BaseModel):
     decisions: list[PolicyDecision]
     audit_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    receipt_token: Optional[str] = None
+    """
+    Compact Ed25519-signed JWT receipt — present only when a ``signing_key``
+    was provided to the sector pack or engine.  Pass to
+    ``comply54.receipts.verify_receipt()`` for offline verification.
+    """
 
     @property
     def passed(self) -> bool:

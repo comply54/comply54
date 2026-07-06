@@ -29,6 +29,7 @@ Low-level API:
 
 from __future__ import annotations
 
+from ._version import __version__
 from .core.engine import Comply54Engine
 from .core.models import Action, ComplianceCertificate, ComplianceResult, EvaluationInput, PolicyDecision, RegulatorySource
 from .core.packs import (
@@ -37,17 +38,21 @@ from .core.packs import (
     packs_for_ids,
     packs_for_jurisdiction,
 )
+from .receipts import InvalidReceiptError, ReceiptPayload, ReceiptSigner, digest_input, verify_receipt
 from .sectors import (
     KenyaFintechCompliance,
     NigeriaFintechCompliance,
+    NigeriaHealthcareCompliance,
+    NigeriaInsuranceCompliance,
     PanAfricanFintechCompliance,
     SectorCompliance,
 )
 
-__version__ = "0.2.4"
 __all__ = [
     # Sector packs (recommended entry point)
     "NigeriaFintechCompliance",
+    "NigeriaHealthcareCompliance",
+    "NigeriaInsuranceCompliance",
     "KenyaFintechCompliance",
     "PanAfricanFintechCompliance",
     "SectorCompliance",
@@ -66,6 +71,14 @@ __all__ = [
     "PackSpec",
     "packs_for_jurisdiction",
     "packs_for_ids",
+    # Signed receipts
+    "ReceiptSigner",
+    "ReceiptPayload",
+    "verify_receipt",
+    "InvalidReceiptError",
+    "digest_input",
+    # Version
+    "__version__",
 ]
 
 

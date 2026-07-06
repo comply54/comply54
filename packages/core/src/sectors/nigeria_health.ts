@@ -9,6 +9,7 @@
  */
 
 import { Comply54Engine } from "../engine.js";
+import { ReceiptSigner } from "../receipts.js";
 import { evaluateNHA, evaluateNDPA, evaluateBvnNin } from "../packs/nigeria.js";
 import {
   evaluatePiiLeakage,
@@ -43,9 +44,13 @@ export class NigeriaHealthcareCompliance {
   readonly regulations = REGULATIONS;
 
   private readonly engine: Comply54Engine;
+  private readonly signer?: ReceiptSigner;
 
-  constructor(options: { strictMode?: boolean } = {}) {
+  constructor(options: { strictMode?: boolean; signingKey?: string } = {}) {
     this.engine = new Comply54Engine(PACKS, options);
+    if (options.signingKey) {
+      this.signer = new ReceiptSigner(options.signingKey);
+    }
   }
 
   check(
@@ -55,6 +60,21 @@ export class NigeriaHealthcareCompliance {
     context?: Record<string, unknown>
   ): ComplianceResult {
     return this.engine.check(action, params, output, context);
+  }
+
+  /** Like `check()` but returns a `Promise<ComplianceResult>` with `receiptToken` populated. */
+  async checkSigned(
+    action: string,
+    params?: Record<string, unknown>,
+    output?: string,
+    context?: Record<string, unknown>
+  ): Promise<ComplianceResult> {
+    if (!this.signer) {
+      throw new Error("checkSigned() requires signingKey to be set in the constructor");
+    }
+    const result = this.check(action, params, output, context);
+    const token = await this.signer.sign(result, action, params ?? {}, output ?? "", context ?? {});
+    return { ...result, receiptToken: token };
   }
 
   evaluate(input: EvaluationInput): ComplianceResult {
