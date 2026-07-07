@@ -238,7 +238,7 @@ class TestVerifyReceiptRoundTrip:
         assert deny_payload.issuer == "comply54"
 
     def test_comply54_version_is_present(self, deny_payload):
-        assert deny_payload.comply54_version == "0.4.0"
+        assert deny_payload.comply54_version == "0.4.1"
 
     def test_packs_evaluated_is_non_empty(self, deny_payload):
         assert len(deny_payload.packs_evaluated) > 0
@@ -291,6 +291,50 @@ class TestVerifyReceiptRoundTrip:
             context={"sanctions_screened": False},
         )
         assert deny_payload.input_digest != wrong
+
+    # ── pack_versions ─────────────────────────────────────────────────────
+
+    def test_pack_versions_is_dict(self, deny_payload):
+        assert isinstance(deny_payload.pack_versions, dict)
+
+    def test_pack_versions_non_empty(self, deny_payload):
+        assert len(deny_payload.pack_versions) > 0
+
+    def test_pack_versions_keys_match_packs_evaluated(self, deny_payload):
+        assert set(deny_payload.pack_versions.keys()) == set(deny_payload.packs_evaluated)
+
+    def test_pack_versions_values_are_semver(self, deny_payload):
+        import re
+        semver = re.compile(r"^\d+\.\d+\.\d+$")
+        for pack_id, version in deny_payload.pack_versions.items():
+            assert semver.match(version), f"{pack_id} has non-semver version: {version!r}"
+
+    def test_nfiu_aml_version_is_1_1_0(self, deny_payload):
+        assert deny_payload.pack_versions.get("nigeria/nfiu-aml") == "1.1.0"
+
+    def test_pack_versions_empty_for_pre_0_4_1_receipts(self, private_pem, public_pem):
+        """Old receipts without c54_pack_versions should still verify and return empty dict."""
+        import jwt as _jwt
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        from comply54.receipts import digest_input
+        key = load_pem_private_key(private_pem, password=None)
+        legacy_claims = {
+            "iss": "comply54",
+            "iat": 1700000000,
+            "jti": "legacy-jti",
+            "c54_decision": "allow",
+            "c54_pack": None,
+            "c54_regulation": None,
+            "c54_rule": None,
+            "c54_messages": [],
+            "c54_input_digest": digest_input("ping", {}),
+            "c54_version": "0.4.0",
+            "c54_packs_evaluated": ["nigeria/ndpa"],
+            # intentionally omitting c54_pack_versions
+        }
+        token = _jwt.encode(legacy_claims, key, algorithm="EdDSA")
+        payload = verify_receipt(token, public_pem)
+        assert payload.pack_versions == {}
 
     # ── str representation ────────────────────────────────────────────────
 

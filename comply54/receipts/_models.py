@@ -58,6 +58,23 @@ class ReceiptPayload:
     packs_evaluated: List[str]
     """All pack IDs evaluated in this check, e.g. ``['nigeria/nfiu-aml', 'nigeria/cbn']``."""
 
+    pack_versions: dict
+    """
+    Mapping of evaluated pack ID → policy pack version at evaluation time.
+
+    Example::
+
+        {
+            "nigeria/cbn":      "1.0.0",
+            "nigeria/nfiu-aml": "1.1.0",
+            "nigeria/ndpa":     "1.0.0",
+        }
+
+    Use this to confirm exactly which version of each regulation was being
+    enforced when this receipt was issued.  Empty dict for receipts produced
+    before comply54 v0.4.1.
+    """
+
     def __str__(self) -> str:
         status = "✓ ALLOW" if self.decision == "allow" else f"✗ {self.decision.upper()}"
         pack_str = f" [{self.pack}]" if self.pack else ""

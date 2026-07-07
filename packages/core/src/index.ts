@@ -33,6 +33,7 @@ export {
   VERSION,
 } from "./receipts.js";
 export type { ReceiptPayload } from "./receipts.js";
+export { PACK_VERSIONS } from "./packs/versions.js";
 
 // Engine
 export { Comply54Engine } from "./engine.js";

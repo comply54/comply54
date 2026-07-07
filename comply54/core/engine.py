@@ -123,7 +123,8 @@ class Comply54Engine:
             # Fallback: evaluate each pack independently (graceful degradation)
             result = self._evaluate_individually(input_json)
             if self._signer is not None:
-                token = self._signer.sign(result, input.action, input.params, input.output, input.context)
+                pv = {p.id: p.version for p in self._packs if any(d.pack == p.id for d in result.decisions)}
+                token = self._signer.sign(result, input.action, input.params, input.output, input.context, pack_versions=pv)
                 result = result.model_copy(update={"receipt_token": token})
             return result
 
@@ -169,7 +170,8 @@ class Comply54Engine:
 
         result = ComplianceResult.from_decisions(decisions)
         if self._signer is not None:
-            token = self._signer.sign(result, input.action, input.params, input.output, input.context)
+            pv = {p.id: p.version for p in self._packs if any(d.pack == p.id for d in result.decisions)}
+            token = self._signer.sign(result, input.action, input.params, input.output, input.context, pack_versions=pv)
             result = result.model_copy(update={"receipt_token": token})
         return result
 

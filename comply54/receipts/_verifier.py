@@ -149,4 +149,5 @@ def verify_receipt(
         input_digest=claims["c54_input_digest"],
         comply54_version=claims["c54_version"],
         packs_evaluated=claims.get("c54_packs_evaluated", []),
+        pack_versions=claims.get("c54_pack_versions", {}),
     )

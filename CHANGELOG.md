@@ -11,6 +11,35 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.4.1] — 2026-07-07
+
+### Added
+
+**Policy pack versioning in signed receipts**
+
+Every signed receipt now embeds a `c54_pack_versions` JWT claim — a map of pack ID to the semantic version of its Rego rules at evaluation time.
+
+```json
+"c54_pack_versions": {
+  "nigeria/cbn":      "1.0.0",
+  "nigeria/nfiu-aml": "1.1.0",
+  "nigeria/ndpa":     "1.0.0",
+  "universal/pii-leakage": "1.0.0"
+}
+```
+
+This closes a legal evidence gap: a receipt previously proved *that* a check ran — now it also proves *which version of each regulation* was in force at evaluation time. Auditors can confirm the exact policy pack rules that governed a decision, independent of any subsequent pack updates.
+
+- `ReceiptPayload.pack_versions: dict[str, str]` — new field on the Python model (empty dict for pre-v0.4.1 receipts, fully backwards-compatible).
+- `ReceiptPayload.packVersions: Record<string, string>` — TypeScript equivalent.
+- `PackSpec.version: str` — new field on `PackSpec` (default `"1.0.0"`). Set this whenever a pack's Rego rules change behaviour.
+- `PACK_VERSIONS` dict exported from `@comply54/core` for TypeScript consumers.
+- `nigeria/nfiu-aml` bumped to `"1.1.0"` — `sanctions_screening_required` fail-closed rule (MLPPA 2022 s.6).
+- `nigeria/naicom` bumped to `"1.1.0"` — `state_of_origin` added to prohibited characteristics (NIIRA 2025 Part V).
+- 6 new tests in `tests/test_receipts.py` covering pack_versions content, key–packs alignment, semver format, and backwards-compat with legacy receipts (total: 166 tests).
+
+---
+
 ## [0.4.0] — 2026-07-06
 
 ### Added

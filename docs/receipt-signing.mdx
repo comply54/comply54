@@ -21,6 +21,7 @@ Each receipt proves:
 | Messages | `c54_messages` | Human-readable violation messages (up to 5) |
 | Input digest | `c54_input_digest` | SHA-256 of the exact input evaluated |
 | All packs evaluated | `c54_packs_evaluated` | Every pack in the evaluation |
+| Pack versions | `c54_pack_versions` | Version of each policy pack at evaluation time |
 | comply54 version | `c54_version` | Version that produced the receipt |
 | Audit ID | `jti` | Matches `ComplianceResult.audit_id` |
 | Timestamp | `iat` | UTC Unix timestamp |
@@ -122,7 +123,7 @@ comply54 verify-receipt "$TOKEN" \
 # comply54 receipt  ESCALATE
 #   jti              3f7a8c2b-...
 #   issued_at        1751234567
-#   comply54_version 0.4.0
+#   comply54_version 0.4.1
 #   decision         escalate
 #   pack             nigeria/nfiu-aml
 #   regulation       Money Laundering (Prevention & Prohibition) Act 2022 / NFIU Guidelines
@@ -130,6 +131,7 @@ comply54 verify-receipt "$TOKEN" \
 #   messages[0]      NFIU / MLPPA 2022: Transaction ≥ ₦5,000,000 — CTR required within 24 hours
 #   input_digest     sha256:a3f9c2b1...
 #   packs_evaluated  nigeria/ndpa, nigeria/cbn, nigeria/bvn-nin, nigeria/nfiu-aml, ...
+#   pack_versions    nigeria/ndpa=1.0.0, nigeria/cbn=1.0.0, nigeria/nfiu-aml=1.1.0, ...
 #
 #   input match      YES
 ```
@@ -275,6 +277,7 @@ class ReceiptPayload:
     input_digest: str      # "sha256:<hex>" — ties receipt to exact input
     comply54_version: str  # Version that produced this receipt
     packs_evaluated: List[str]  # All pack IDs in the evaluation
+    pack_versions: dict[str, str]  # {pack_id: version} for every evaluated pack
 ```
 
 `str(payload)` produces a human-readable summary line:

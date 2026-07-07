@@ -26,6 +26,18 @@ class PackSpec:
     authority: str
     rego_path: pathlib.Path
     query_prefix: str  # e.g. "data.agt_policies_nigeria.cbn"
+    version: str = "1.0.0"
+    """Semantic version of this policy pack's Rego rules.
+
+    Bump this whenever the rules change behaviour:
+    - **patch** (1.0.x): bug fix that doesn't change what is blocked
+    - **minor** (1.x.0): new rule or new enforced case added
+    - **major** (x.0.0): breaking regulatory change (new law replaces old)
+
+    This version is embedded in every signed receipt so auditors can
+    confirm exactly which version of the policy was in force at
+    evaluation time.
+    """
     tags: list[str] = field(default_factory=list)
     sources: list[RegulatorySource] = field(default_factory=list)
     """Exact regulatory documents and sections this pack enforces."""
@@ -94,6 +106,7 @@ NFIU_AML = PackSpec(
     authority="NFIU",
     rego_path=_PACKS_DIR / "nigeria" / "nfiu_aml.rego",
     query_prefix="data.agt_policies_nigeria.nfiu",
+    version="1.1.0",  # sanctions_screening_required rule added (fail-closed, MLPPA 2022 s.6)
     tags=["aml", "cft", "str", "fintech"],
     sources=[
         RegulatorySource(document="Money Laundering (Prevention and Prohibition) Act 2022", section="§10", authority="NFIU", year=2022),
@@ -127,6 +140,7 @@ NAICOM = PackSpec(
     authority="NAICOM",
     rego_path=_PACKS_DIR / "nigeria" / "naicom.rego",
     query_prefix="data.agt_policies_nigeria.naicom",
+    version="1.1.0",  # state_of_origin added to prohibited_characteristics (NIIRA 2025 Part V)
     tags=["insurance", "claims", "underwriting", "anti-discrimination"],
     sources=[
         RegulatorySource(document="Insurance Act 2003 (Cap I17 LFN 2004)", section="§50", authority="NAICOM", year=2003),

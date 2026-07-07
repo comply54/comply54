@@ -6,6 +6,7 @@
 
 import { Comply54Engine } from "../engine.js";
 import { ReceiptSigner } from "../receipts.js";
+import { PACK_VERSIONS } from "../packs/versions.js";
 import { evaluateKDPA } from "../packs/africa.js";
 import {
   evaluatePiiLeakage,
@@ -63,7 +64,10 @@ export class KenyaFintechCompliance {
       throw new Error("checkSigned() requires signingKey to be set in the constructor");
     }
     const result = this.check(action, params, output, context);
-    const token = await this.signer.sign(result, action, params ?? {}, output ?? "", context ?? {});
+    const packVersions = Object.fromEntries(
+      result.decisions.map((d) => [d.pack, PACK_VERSIONS[d.pack] ?? "unknown"])
+    );
+    const token = await this.signer.sign(result, action, params ?? {}, output ?? "", context ?? {}, packVersions);
     return { ...result, receiptToken: token };
   }
 

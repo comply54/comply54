@@ -111,17 +111,23 @@ class ReceiptSigner:
         params: dict,
         output: str = "",
         context: Optional[dict] = None,
+        pack_versions: Optional[dict] = None,
     ) -> str:
         """
         Sign a ``ComplianceResult`` and return a compact JWT receipt token.
 
         Args:
-            result:  The ``ComplianceResult`` to sign — must be the final
-                     result after strict_mode is applied.
-            action:  The action string passed to ``check()`` / ``evaluate()``.
-            params:  The params dict from the same call.
-            output:  The output string from the same call.
-            context: The context dict from the same call.
+            result:        The ``ComplianceResult`` to sign — must be the final
+                           result after strict_mode is applied.
+            action:        The action string passed to ``check()`` / ``evaluate()``.
+            params:        The params dict from the same call.
+            output:        The output string from the same call.
+            context:       The context dict from the same call.
+            pack_versions: Mapping of pack ID → policy version for every pack
+                           that was evaluated, e.g.
+                           ``{"nigeria/cbn": "1.0.0", "nigeria/nfiu-aml": "1.1.0"}``.
+                           Embedded as ``c54_pack_versions`` in the JWT so auditors
+                           can confirm which version of each regulation was in force.
 
         Returns:
             Compact JWT string (three base64url-encoded segments).
@@ -141,6 +147,7 @@ class ReceiptSigner:
             "c54_input_digest": digest_input(action, params, output, ctx),
             "c54_version": __version__,
             "c54_packs_evaluated": [d.pack for d in result.decisions],
+            "c54_pack_versions": pack_versions or {},
         }
 
         return _jwt.encode(claims, self._private_key, algorithm="EdDSA")

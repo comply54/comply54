@@ -13,7 +13,7 @@
 import type { ComplianceResult } from "./types.js";
 
 /** Current package version — embedded in every receipt. */
-export const VERSION = "0.4.0";
+export const VERSION = "0.4.1";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -45,6 +45,16 @@ export interface ReceiptPayload {
   comply54Version: string;
   /** All pack IDs evaluated in this check. */
   packsEvaluated: string[];
+  /**
+   * Mapping of pack ID → policy pack version at evaluation time.
+   *
+   * @example
+   * { "nigeria/cbn": "1.0.0", "nigeria/nfiu-aml": "1.1.0" }
+   *
+   * Use this to confirm exactly which version of each regulation was enforced
+   * when this receipt was issued. Empty object for pre-v0.4.1 receipts.
+   */
+  packVersions: Record<string, string>;
 }
 
 /** Raised by `verifyReceipt()` when the token fails verification. */
@@ -222,6 +232,7 @@ export class ReceiptSigner {
     params: Record<string, unknown> = {},
     output = "",
     context: Record<string, unknown> = {},
+    packVersions: Record<string, string> = {},
   ): Promise<string> {
     const inputDigest = await digestInput(action, params, output, context);
     const pv = result.primaryViolation;
@@ -239,6 +250,7 @@ export class ReceiptSigner {
       c54_input_digest: inputDigest,
       c54_version: VERSION,
       c54_packs_evaluated: result.decisions.map((d) => d.pack),
+      c54_pack_versions: packVersions,
     };
 
     const header = b64urlEncodeStr(JSON.stringify({ alg: "EdDSA", typ: "JWT" }));
@@ -378,5 +390,6 @@ export async function verifyReceipt(token: string, publicKeyPem: string): Promis
     inputDigest: claims["c54_input_digest"] as string,
     comply54Version: claims["c54_version"] as string,
     packsEvaluated: ((claims["c54_packs_evaluated"] as string[]) ?? []),
+    packVersions: ((claims["c54_pack_versions"] as Record<string, string>) ?? {}),
   };
 }

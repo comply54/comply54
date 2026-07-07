@@ -11,6 +11,12 @@ from ..core.models import ComplianceCertificate, ComplianceResult, EvaluationInp
 from ..core.packs import PackSpec
 
 
+def _pack_versions_for(result: ComplianceResult, all_packs: list[PackSpec]) -> dict[str, str]:
+    """Return {pack_id: version} for every pack that appears in result.decisions."""
+    version_map = {p.id: p.version for p in all_packs}
+    return {d.pack: version_map.get(d.pack, "unknown") for d in result.decisions}
+
+
 class SectorCompliance:
     """
     Base class for comply54 sector packs.
@@ -80,7 +86,10 @@ class SectorCompliance:
         if self._strict_mode:
             result = self._apply_strict_mode(result)
         if self._signer is not None:
-            token = self._signer.sign(result, action, params or {}, output, context or {})
+            token = self._signer.sign(
+                result, action, params or {}, output, context or {},
+                pack_versions=_pack_versions_for(result, self.packs),
+            )
             result = result.model_copy(update={"receipt_token": token})
         return result
 
@@ -95,7 +104,8 @@ class SectorCompliance:
             result = self._apply_strict_mode(result)
         if self._signer is not None:
             token = self._signer.sign(
-                result, eval_input.action, eval_input.params, eval_input.output, eval_input.context
+                result, eval_input.action, eval_input.params, eval_input.output, eval_input.context,
+                pack_versions=_pack_versions_for(result, self.packs),
             )
             result = result.model_copy(update={"receipt_token": token})
         return result
