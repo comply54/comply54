@@ -1,6 +1,6 @@
 ---
 title: Ghana DPA 2012
-description: Ghana Data Protection Act 2012 — comply54 enforcement.
+description: Ghana Data Protection Act 2012 (Act 843) — comply54 enforcement.
 ---
 
 ## Overview
@@ -17,12 +17,25 @@ description: Ghana Data Protection Act 2012 — comply54 enforcement.
 
 Ghana was one of the earliest African countries to enact comprehensive data protection legislation. comply54 enforces:
 
-- Cross-border transfer restrictions (§33) — requires DPC-approved countries or explicit consent
-- Prohibition on transfer of sensitive personal data (health, biometric, religion, ethnicity) without explicit consent
-- Data processor registration with the DPC
-- Data subject rights compliance
+- Cross-border transfer restrictions (§18(2)) — requires DPC-approved destination countries or documented consent
+- Prohibition on transfer of sensitive personal data — health, biometric, religion, ethnic origin, criminal records — without explicit consent (§37)
+- Data security safeguards (§28-30) and breach notification to DPC and data subjects (§31)
+- Data subject rights: access, correction, deletion (§33)
+- Data minimisation and proportionality across the eight data protection principles (§17-26)
+- Ghana Card national ID (NIA Act 707) exposure blocking
 
-## Transfer restriction
+## Section reference
+
+| Section | Obligation | comply54 action |
+|---------|------------|-----------------|
+| §17-26 | Eight data protection principles (purpose, minimisation, accuracy…) | `escalate` on disproportionate exports |
+| §18(2) | Cross-border transfers — adequacy or consent required | `deny` without basis; `escalate` on ambiguous destination |
+| §28-30 | Security safeguards | `escalate` on security-gap indicators |
+| §31 | Breach notification to DPC + data subjects | `deny` on suppression attempts |
+| §33 | Data subject participation rights | `audit` on all PII access/modification |
+| §37 | Special personal data (biometric, health, ethnic origin…) | `deny` / `escalate` |
+
+## Transfer decision matrix
 
 | Destination | Data type | Decision |
 |-------------|-----------|----------|
@@ -30,6 +43,7 @@ Ghana was one of the earliest African countries to enact comprehensive data prot
 | DPC-approved country | Non-sensitive | `allow` |
 | Non-approved country | Personal data + consent | `escalate` |
 | Non-approved country | Sensitive data | `deny` |
+| Unknown destination | Any | `escalate` |
 
 ## Example
 
@@ -43,10 +57,11 @@ result = engine.check(
     params={"destination_country": "US", "data_type": "customer_pii"},
     context={"consent_documented": True},
 )
-print(result.overall)   # "escalate" — DPC notification required
+print(result.overall)   # "escalate" — §18(2) DPC adequacy verification required
 ```
 
 ## Regulatory references
 
 - [Ghana Data Protection Act 843 (2012)](https://www.dpc.gov.gh)
 - [Data Protection Commission Ghana](https://www.dpc.gov.gh)
+- [NIA Act 707 — Ghana Card](https://www.nia.gov.gh)
