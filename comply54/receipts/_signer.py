@@ -106,7 +106,7 @@ class ReceiptSigner:
 
     def sign(
         self,
-        result: "ComplianceResult",  # type: ignore[name-defined]  # avoid circular import
+        result: "ComplianceResult",  # type: ignore[name-defined]  # noqa: F821  # avoid circular import
         action: str,
         params: dict,
         output: str = "",

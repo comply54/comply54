@@ -106,7 +106,7 @@ def _cmd_generate_keypair(args: argparse.Namespace) -> int:
     with open(pub_path, "wb") as fh:
         fh.write(public_pem)
 
-    print(f"Ed25519 keypair generated:")
+    print("Ed25519 keypair generated:")
     print(f"  private key  {priv_path}")
     print(f"  public key   {pub_path}")
     print()

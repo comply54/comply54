@@ -41,7 +41,6 @@ import base64
 import re
 import unicodedata
 from dataclasses import dataclass, field
-from typing import Sequence
 
 
 # ── Homoglyph table ────────────────────────────────────────────────────────────
