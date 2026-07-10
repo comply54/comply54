@@ -34,7 +34,7 @@ export const PACK_VERSIONS: Record<string, string> = {
 
   // Universal
   "universal/pii-leakage": "1.0.0",
-  "universal/prompt-injection": "1.0.0",
+  "universal/prompt-injection": "2.0.0", // comprehensive rewrite: 6 categories, 5 surfaces, encoding detection, config factory
   "universal/tool-permissions": "1.0.0",
   "universal/human-approval": "1.0.0",
   "universal/model-routing": "1.0.0",

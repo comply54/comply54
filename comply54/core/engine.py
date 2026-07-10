@@ -30,10 +30,51 @@ _interp_cache: dict[frozenset, Interpreter] = {}
 _cache_lock = threading.Lock()
 
 
-def _build_interpreter(packs: list[PackSpec]) -> Interpreter:
+def _python_to_rego(value: object) -> str:
+    """Serialize a Python value to its Rego literal equivalent."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, str):
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    if isinstance(value, (set, frozenset)):
+        if not value:
+            return "set()"
+        items = ", ".join(sorted(_python_to_rego(v) for v in value))
+        return "{" + items + "}"
+    if isinstance(value, list):
+        items = ", ".join(_python_to_rego(v) for v in value)
+        return "[" + items + "]"
+    if isinstance(value, dict):
+        pairs = ", ".join(
+            f"{_python_to_rego(k)}: {_python_to_rego(v)}"
+            for k, v in value.items()
+        )
+        return "{" + pairs + "}"
+    return f'"{value}"'
+
+
+def _build_config_modules(config: dict) -> list[tuple[str, str]]:
+    """Generate synthetic Rego modules that populate data.config.<pack>.* for deployer overrides."""
+    modules: list[tuple[str, str]] = []
+    for pack_name, pack_conf in config.items():
+        pkg = f"config.{pack_name}"
+        lines = [f"package {pkg}", "import rego.v1", ""]
+        for key, value in pack_conf.items():
+            lines.append(f"{key} := {_python_to_rego(value)}")
+        modules.append((f"__config__{pack_name}", "\n".join(lines)))
+    return modules
+
+
+def _build_interpreter(packs: list[PackSpec], config: dict | None = None) -> Interpreter:
     interp = Interpreter()
     for pack in packs:
         interp.add_module(pack.module_name, pack.rego_source)
+    if config:
+        for module_name, rego_source in _build_config_modules(config):
+            interp.add_module(module_name, rego_source)
     return interp
 
 
@@ -87,9 +128,11 @@ class Comply54Engine:
         packs: list[PackSpec],
         cache: bool = True,
         signing_key: "bytes | str | None" = None,
+        config: dict | None = None,
     ) -> None:
         self._packs = packs
         self._cache = cache
+        self._config: dict = config or {}
         self._signer: "ReceiptSigner | None" = None
         if signing_key is not None:
             from ..receipts._signer import ReceiptSigner
@@ -110,7 +153,13 @@ class Comply54Engine:
 
         input_json = json.dumps(input.to_rego_input())
 
-        interp = _get_interpreter(self._packs) if self._cache else _build_interpreter(self._packs)
+        if self._config:
+            # Config makes the interpreter unique — skip shared cache
+            interp = _build_interpreter(self._packs, self._config)
+        elif self._cache:
+            interp = _get_interpreter(self._packs)
+        else:
+            interp = _build_interpreter(self._packs)
 
         # ── Pass 1: get decisions for all packs ───────────────────────────────
         q1 = "; ".join(
@@ -179,8 +228,7 @@ class Comply54Engine:
         """Fallback: evaluate each pack with its own interpreter."""
         decisions: list[PolicyDecision] = []
         for pack in self._packs:
-            interp = Interpreter()
-            interp.add_module(pack.module_name, pack.rego_source)
+            interp = _build_interpreter([pack], self._config or None)
 
             q_d = f"d := {pack.query_prefix}.decision"
             b = _query(interp, input_json, q_d)

@@ -289,6 +289,65 @@ RULE_CITATIONS: dict[str, list[RegulatorySource]] = {
     ],
 
     # ── universal/prompt-injection ────────────────────────────────────────────
+    # Direct injection — deny citations
+    "universal/prompt-injection.pi_direct_override": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Direct Override)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="NIST AI 600-1", section="§2.5 — Adversarial Inputs", authority="NIST", year=2024),
+    ],
+    "universal/prompt-injection.pi_role_hijacking": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Role/Persona Hijacking)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="NIST AI RMF", section="GOVERN 1.2 — Roles and Responsibilities", authority="NIST", year=2023),
+    ],
+    "universal/prompt-injection.pi_goal_hijacking": [
+        RegulatorySource(document="OWASP Top 10 for Agentic AI", section="ASI01 — Agent Prompt Injection (Goal Hijacking)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="NIST AI 600-1", section="§2.5 — Adversarial Inputs", authority="NIST", year=2024),
+    ],
+    "universal/prompt-injection.pi_privilege_escalation": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Privilege Escalation)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="NDPA 2023", section="s.24 — Technical Safeguards (Processors)", authority="NITDA", year=2023),
+    ],
+    "universal/prompt-injection.pi_fake_dialogue": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Completion / Fake Dialogue)", authority="OWASP", year=2025, url=_OWASP_URL),
+    ],
+    "universal/prompt-injection.pi_mcp_poisoning": [
+        RegulatorySource(document="OWASP Top 10 for Agentic AI", section="ASI01 — Agent Prompt Injection (MCP Tool Poisoning)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="MCP Threat Modeling (arxiv 2603.22489)", section="§4 — Tool Description Poisoning", authority="Invariant Labs", year=2025),
+    ],
+    "universal/prompt-injection.pi_structural_high_stakes": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Separator Injection, High-Stakes)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="Separator Injection Attack (arxiv 2504.05689)", section="§3 — Chat Template Exploitation", authority="Academic", year=2025),
+    ],
+    "universal/prompt-injection.pi_indirect_high_stakes": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Indirect, High-Stakes)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="NIST AI 600-1", section="§2.5 — Adversarial Inputs (Indirect)", authority="NIST", year=2024),
+    ],
+    # Structural / indirect injection — escalate citations
+    "universal/prompt-injection.pi_structural_separator": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Structural Separator)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="Separator Injection Attack (arxiv 2504.05689)", section="§3 — Chat Template Exploitation", authority="Academic", year=2025),
+    ],
+    "universal/prompt-injection.pi_indirect_injection": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Indirect)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="ControlNET RAG Firewall (arxiv 2504.09593)", section="§2 — Indirect Injection via Retrieved Content", authority="Academic", year=2025),
+    ],
+    "universal/prompt-injection.pi_homoglyph": [
+        RegulatorySource(document="Hidden Unicode Instruction Injection (CSA Labs, 2025)", section="§3 — Homoglyph Substitution", authority="Cloud Security Alliance", year=2025),
+        RegulatorySource(document="Bypassing LLM Guardrails (arxiv 2504.11168)", section="§4.2 — Unicode Evasion Techniques", authority="Academic", year=2025),
+    ],
+    # Encoding anomalies — audit citations
+    "universal/prompt-injection.pi_zero_width": [
+        RegulatorySource(document="GlassWorm Unicode Attack (CSA Labs, 2025)", section="§2 — Zero-Width / Variation Selector Injection", authority="Cloud Security Alliance", year=2025),
+        RegulatorySource(document="Hidden Unicode Instruction Injection (CSA Labs, 2025)", section="§2 — Zero-Width Character Embedding", authority="Cloud Security Alliance", year=2025),
+    ],
+    "universal/prompt-injection.pi_base64_encoding": [
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection (Encoded Payloads)", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="Bypassing LLM Guardrails (arxiv 2504.11168)", section="§4.3 — Base64 Encoding Evasion", authority="Academic", year=2025),
+    ],
+    "universal/prompt-injection.pi_instruction_density": [
+        RegulatorySource(document="ControlNET RAG Firewall (arxiv 2504.09593)", section="§3 — Instruction Density Scoring", authority="Academic", year=2025),
+        RegulatorySource(document="Defending against IPI by Instruction Detection (arxiv 2505.06311)", section="§2 — Document-Level Instruction Detection", authority="Academic", year=2025),
+    ],
+    # Legacy keys — retained for backwards compatibility
     "universal/prompt-injection.prompt_injection": [
         RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection", authority="OWASP", year=2025, url=_OWASP_URL),
     ],

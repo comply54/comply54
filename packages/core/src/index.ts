@@ -72,7 +72,9 @@ export {
 export {
   evaluatePiiLeakage,
   evaluatePromptInjection,
+  createPromptInjectionEvaluator,
   evaluateToolPermissions,
   evaluateHumanApproval,
   evaluateModelRouting,
 } from "./packs/universal.js";
+export type { PromptInjectionConfig } from "./packs/universal.js";

@@ -11,6 +11,87 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.5.0] — 2026-07-10
+
+### Added
+
+**Comprehensive prompt injection detection pack (`universal/prompt-injection` v2.0.0)**
+
+Complete rewrite of the prompt injection pack — from 8 basic regex patterns to a production-grade, taxonomy-driven engine covering every attack vector in OWASP LLM01:2025 and NIST AI 600-1 §2.5.
+
+#### Attack categories (6 + MCP + indirect + encoding)
+
+- **Category A — Explicit override**: 42 patterns covering `ignore previous instructions`, system prompt bypass, `[system override]`, and more
+- **Category B — Role hijacking**: 40 patterns — DAN, jailbreak mode, developer mode, `bypass all restrictions`, `act as an uncensored AI`
+- **Category C — Goal hijacking**: 21 patterns for agentic task redirection — `abort current task`, `your actual mission is`, `override your current goal`
+- **Category D — Privilege escalation**: 25 patterns — `admin access granted`, `elevated permissions granted`, `[root access]`
+- **Category E — Fake dialogue**: 19 patterns for fabricated assistant completions — `[assistant]:`, `assistant: sure,`, `<|im_start|>assistant`
+- **Category F — Structural separators**: 31 chat-template exploitation tokens — `[INST]`, `<|im_end|>`, `###system`, `{{system}}`, `%%system%%`
+- **MCP tool poisoning**: 27 patterns for AI-directed instructions embedded in MCP tool descriptions — `silently also`, `without telling the user`, `also exfiltrate`
+- **Indirect injection**: 27 patterns for instructions embedded in RAG content or tool output
+
+#### Five scan surfaces
+
+All string values in `params`, `output`, `context.retrieved_content`, `context.tool_output`, `context.mcp_tool_descriptions[].description` — each controllable via the new config API.
+
+#### Encoding obfuscation detection (`InjectionPreprocessor`)
+
+New Python class `comply54.packs.universal.injection_preprocessor.InjectionPreprocessor` detects:
+- **Zero-width characters**: U+200B, U+200C, U+200D, U+FEFF, Unicode tag range U+E0000–E007F (GlassWorm/StegoAttack variants)
+- **Base64-encoded payloads**: regex-extracts candidates ≥ 20 chars, decodes, checks against instruction signal set
+- **Homoglyph substitution**: Cyrillic/Greek → ASCII normalisation before re-checking all patterns
+- **Instruction density score**: `keyword_hits / word_count × 2.5` — detects injection-heavy retrieved documents
+
+Signals returned as `.to_dict()` and consumed by `context.injection_signals` in both Rego and TypeScript evaluators.
+
+#### Deployer configuration (`Comply54Engine(config=...)`)
+
+New `config` parameter on `Comply54Engine`:
+
+```python
+engine = Comply54Engine(
+    packs=[PROMPT_INJECTION],
+    config={
+        "prompt_injection": {
+            "extra_deny_patterns":        {"expose all customer records"},
+            "extra_structural_patterns":  set(),
+            "high_stakes_actions":        {"custom_action"},
+            "strict_mode":                True,
+            "scan_output":                False,
+            "scan_retrieved_content":     True,
+            "scan_tool_output":           True,
+            "scan_mcp_descriptions":      True,
+        }
+    },
+)
+```
+
+Config is injected as synthetic Rego modules at evaluation time — no OPA binary required, no data bundle files.
+
+#### TypeScript parity (`@comply54/core` v0.5.0)
+
+- Full port of all 6 categories + MCP + indirect + encoding to TypeScript
+- Same 5 scan surfaces, same severity hierarchy, same messages
+- New `createPromptInjectionEvaluator(config?: PromptInjectionConfig)` factory
+- New `PromptInjectionConfig` interface exported
+- `universal/prompt-injection` pack version bumped to `2.0.0` in `PACK_VERSIONS`
+- Inline encoding detection without a separate preprocessor file; interops with Python `InjectionPreprocessor` via `context.injection_signals`
+
+#### Test coverage
+
+119 tests across 13 test classes (`tests/test_prompt_injection.py`):
+- Direct injection by category (A–E), multi-category inputs, multi-surface scan, MCP poisoning
+- Indirect injection (RAG, tool output, high-stakes routing)
+- Encoding: zero-width, base64, homoglyph, instruction density
+- Configuration: custom patterns, scan toggles, strict mode, custom high-stakes actions
+- All 119 tests pass in 2.3s
+
+#### 14-key regulatory citation map
+
+Each detection category maps to specific OWASP LLM01:2025 subsections and NIST AI 600-1 §2.5 clauses. High-stakes indirect injection additionally cites NDPA 2023 §25 (Automated Decision Controls).
+
+---
+
 ## [0.4.1] — 2026-07-07
 
 ### Added

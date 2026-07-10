@@ -302,14 +302,17 @@ PII_LEAKAGE = PackSpec(
 
 PROMPT_INJECTION = PackSpec(
     id="universal/prompt-injection",
-    regulation="OWASP Agentic AI LLM01/ASI01 — Prompt Injection",
+    regulation="OWASP LLM01:2025 / ASI01 — Prompt Injection (Comprehensive)",
     jurisdiction="universal",
     authority="OWASP",
     rego_path=_PACKS_DIR / "universal" / "prompt_injection.rego",
     query_prefix="data.agt_policies_agent.prompt_injection",
-    tags=["owasp", "security", "safety"],
+    tags=["owasp", "security", "safety", "agentic", "indirect-injection", "mcp", "encoding"],
     sources=[
         RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="OWASP Top 10 for Agentic AI", section="ASI01 — Agent Prompt Injection", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="NIST AI 600-1", section="§2.5 — Adversarial Inputs", authority="NIST", year=2024),
+        RegulatorySource(document="NDPA 2023", section="s.24 — Technical Safeguards (Processors)", authority="NITDA", year=2023),
     ],
 )
 
