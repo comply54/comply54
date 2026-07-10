@@ -1,0 +1,56 @@
+name: DCO
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: DCO Sign-off
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Verify DCO sign-off on every commit
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          COMMITS=$(git log --no-merges --format="%H" "${BASE_SHA}..${HEAD_SHA}")
+          if [ -z "$COMMITS" ]; then
+            echo "No commits to check."
+            exit 0
+          fi
+
+          FAILED=0
+          for sha in $COMMITS; do
+            SUBJECT=$(git log --format="%s" -n 1 "$sha")
+            BODY=$(git log --format="%B" -n 1 "$sha")
+            if echo "$BODY" | grep -qE "Signed-off-by: .+ <[^>]+@[^>]+>"; then
+              echo "✓  $sha  $SUBJECT"
+            else
+              echo "✗  $sha  $SUBJECT  — missing Signed-off-by"
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" = "1" ]; then
+            echo ""
+            echo "One or more commits are missing a DCO sign-off."
+            echo ""
+            echo "The sign-off certifies you wrote the code or have the right to submit it"
+            echo "under the project license (see https://developercertificate.org)."
+            echo ""
+            echo "Fix options:"
+            echo "  Last commit only:  git commit --amend --signoff"
+            echo "  All commits in PR: git rebase --signoff HEAD~<count>"
+            echo "  Auto-sign future:  git config format.signoff true"
+            exit 1
+          fi

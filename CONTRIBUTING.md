@@ -1,54 +1,124 @@
-# Contributing to Comply54
+# Contributing to comply54
 
-Comply54 is a community-maintained open-source project. Contributions — new policy packs,
-new sector compositions, framework adapter improvements, and bug fixes — are welcome.
+comply54 is a community-maintained open-source project. Contributions — new jurisdiction packs, sector compositions, framework adapters, engine features, and bug fixes — are welcome.
 
-## Before You Submit
-
-- Comply54 policy packs are governance **starter templates**, not certified legal instruments.
-- Always cite the exact section number you are implementing (e.g. `NDPA s.25`, `CBN NIP Framework §4.3`).
-- Include a regulatory source URL in the `PackSpec` entry so reviewers can verify the rule.
-- All contributions must pass CI (OPA tests, Regal lint, pytest) before merging.
+**New to open source?** Issues labelled [`good first issue`](https://github.com/comply54/comply54/labels/good%20first%20issue) are scoped to be completable in a few days with no prior comply54 knowledge.
 
 ---
 
-## Repository Structure
+## Before you start
+
+### DCO sign-off (required)
+
+Every commit in a PR must carry a `Signed-off-by:` line. This certifies that you wrote the code or have the right to submit it under the project license, per the [Developer Certificate of Origin](https://developercertificate.org).
+
+```
+feat(africa): add Senegal LPDP pack
+
+Signed-off-by: Your Name <you@example.com>
+```
+
+**How to add it:**
+
+```bash
+# Sign off a single commit
+git commit --signoff -m "feat(africa): add Senegal LPDP pack"
+
+# Sign off your last commit retroactively
+git commit --amend --signoff
+
+# Sign off every commit in the PR at once
+git rebase --signoff HEAD~<number-of-commits>
+
+# Auto sign-off all future commits in this repo
+git config format.signoff true
+```
+
+The `dco` CI job will fail and block merge if any commit is missing the sign-off.
+
+### Code of Conduct
+
+This project follows the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md). Be constructive and respectful. Policy interpretation is nuanced — always cite sources when disagreeing about regulatory scope, and link to the official gazette rather than secondary sources.
+
+### comply54 Open Source Fellowship
+
+A number of open issues are tagged [`fellowship`](https://github.com/comply54/comply54/labels/fellowship) as part of the comply54 Open Source Fellowship. If you are applying or contributing through the fellowship programme, pick one of these issues and mention the fellowship track in your PR. Visit [comply54.io/fellowship](https://comply54.io/fellowship) to learn more.
+
+---
+
+## Dev environment setup
+
+### Python
+
+```bash
+git clone https://github.com/comply54/comply54.git
+cd comply54
+
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+
+# Verify
+pytest tests/ -q                       # all tests
+ruff check comply54/ tests/            # lint
+```
+
+### TypeScript
+
+```bash
+cd packages/core
+npm install
+
+npm run typecheck                      # tsc --noEmit
+npm test                               # vitest run
+```
+
+### Rego (optional, for pack development)
+
+```bash
+# Install OPA
+curl -sSL -o /usr/local/bin/opa \
+  https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+chmod +x /usr/local/bin/opa
+
+opa check comply54/packs/              # syntax check
+opa test comply54/packs/ -v            # run _test.rego files
+regal lint comply54/packs/<jurisdiction>/   # lint (install: https://docs.styra.com/regal)
+```
+
+---
+
+## Repository structure
 
 ```
 comply54/
 ├── comply54/
 │   ├── packs/
 │   │   ├── nigeria/          ← Nigerian regulatory Rego packs
-│   │   │   ├── ndpa.rego
-│   │   │   ├── cbn.rego
-│   │   │   ├── nha.rego
-│   │   │   └── naicom.rego
-│   │   ├── africa/           ← Pan-African jurisdiction Rego packs
-│   │   │   ├── kdpa.rego
-│   │   │   ├── popia.rego
-│   │   │   └── ...
+│   │   ├── africa/           ← Other African jurisdiction Rego packs
 │   │   └── universal/        ← Framework-agnostic safety packs
-│   │       ├── pii_leakage.rego
-│   │       └── ...
 │   ├── core/
-│   │   └── packs.py          ← PackSpec registry (add new packs here)
+│   │   ├── engine.py         ← Comply54Engine
+│   │   ├── packs.py          ← PackSpec registry (add new packs here)
+│   │   └── types.py          ← ComplianceResult and related types
 │   ├── sectors/
 │   │   ├── _base.py          ← SectorCompliance base class
 │   │   ├── nigeria_fintech.py
-│   │   ├── nigeria_health.py
-│   │   ├── nigeria_insurance.py
-│   │   └── ...               ← Add new sector compositions here
-│   └── langchain/            ← LangChain / LangGraph adapter
-├── examples/
-│   ├── nigeria_fintech_agent/
-│   ├── nigeria_health_agent/
-│   └── nigeria_insurance_agent/
+│   │   └── ...
+│   ├── langchain/            ← LangChain / LangGraph adapter
+│   ├── crewai/               ← CrewAI adapter
+│   └── autogen/              ← AutoGen adapter
+├── packages/
+│   └── core/
+│       └── src/
+│           ├── engine.ts
+│           ├── packs/        ← TypeScript pack evaluators
+│           └── sectors/      ← TypeScript sector classes
 └── tests/
 ```
 
 ---
 
-## Adding a New Policy Pack
+## Adding a new jurisdiction pack
 
 ### Step 1 — Write the Rego file
 
@@ -59,32 +129,32 @@ The package declaration must follow the convention:
 - African packs: `package agt_policies_africa.<slug>`
 - Universal packs: `package agt_policies_agent.<slug>`
 
-Every pack must define these four rule sets and the `decision` summary:
+Every pack must define these four rule sets and a `decision` summary:
 
 ```rego
-package agt_policies_nigeria.my_pack
+package agt_policies_africa.senegal_lpdp
 
 import rego.v1
 
-# ── DENY: hard blocks (never execute) ─────────────────────────
+# ── DENY: hard blocks (never execute) ─────────────────────────────────────────
 deny contains msg if {
     # condition
-    msg := "Regulation Name s.X: clear message explaining what was blocked and why"
+    msg := "Senegal LPDP 2008 Art.X: clear message explaining what was blocked and why"
 }
 
-# ── ESCALATE: route to human approval queue ────────────────────
+# ── ESCALATE: route to human review ───────────────────────────────────────────
 escalate contains msg if {
     # condition
-    msg := "Regulation Name s.Y: reason this needs a human decision"
+    msg := "Senegal LPDP 2008 Art.Y: reason this requires a human decision"
 }
 
-# ── AUDIT: log regardless of outcome ──────────────────────────
+# ── AUDIT: always log regardless of outcome ───────────────────────────────────
 audit contains msg if {
     # condition
-    msg := "Regulation Name: action logged for regulatory examination"
+    msg := "Senegal LPDP 2008: action logged for regulatory examination"
 }
 
-# ── Decision summary (required) ────────────────────────────────
+# ── Decision summary (required) ────────────────────────────────────────────────
 decision := "deny"    if count(deny) > 0
 decision := "escalate" if { count(deny) == 0; count(escalate) > 0 }
 decision := "audit"   if { count(deny) == 0; count(escalate) == 0; count(audit) > 0 }
@@ -92,149 +162,183 @@ decision := "allow"   if { count(deny) == 0; count(escalate) == 0; count(audit) 
 ```
 
 **Guidelines:**
-- Every `msg` string must cite the regulation section by name and number
-- Check `input.params` fields directly — do not regex-match on `input.output` unless there is no structured alternative
-- Define thresholds as named constants at the top (`nip_cap := 10000000`)
-- Group action names into named sets (`transfer_actions := {"transfer_funds", ...}`)
-- All three container types must be checked where applicable (containers, initContainers, ephemeralContainers)
+- Every `msg` string must cite the regulation and section by name and number
+- Check `input.params` fields directly — avoid regex on `input.output` unless there is no structured alternative
+- Define thresholds as named constants at the top (`max_transfer_amount := 5_000_000`)
+- Group related action names into named sets (`transfer_actions := {"transfer_funds", "send_money"}`)
 
 ### Step 2 — Add a PackSpec entry
 
-Open `comply54/core/packs.py` and add a `PackSpec` for your new pack:
+Open `comply54/core/packs.py` and add a `PackSpec`:
 
 ```python
-MY_PACK = PackSpec(
-    id="nigeria/my-pack",                     # kebab-case, jurisdiction-prefixed
-    regulation="Full Regulation Name Year",   # exact official name
-    jurisdiction="NG",                        # ISO 3166-1 alpha-2
-    authority="Authority Name",               # enforcing body
-    rego_path=_PACKS_DIR / "nigeria" / "my_pack.rego",
-    query_prefix="data.agt_policies_nigeria.my_pack",
-    tags=["sector-tag", "regulation-type"],
+SENEGAL_LPDP = PackSpec(
+    id="senegal/lpdp",
+    regulation="Senegal Loi n° 2008-12 sur la Protection des Données à Caractère Personnel",
+    jurisdiction="SN",
+    authority="CDP Senegal",
+    rego_path=_PACKS_DIR / "africa" / "senegal_lpdp.rego",
+    query_prefix="data.agt_policies_africa.senegal_lpdp",
+    tags=["data-protection", "west-africa"],
+    sources=[
+        RegulatorySource(
+            document="Loi n° 2008-12 du 25 janvier 2008",
+            section="Art. 6",
+            authority="CDP Senegal",
+            year=2008,
+            url="https://...",
+        ),
+    ],
 )
 ```
 
-Then add it to `PACK_REGISTRY` and, if appropriate, to `JURISDICTION_PACKS`.
+Add it to `PACK_REGISTRY` and to `JURISDICTION_PACKS`.
 
-### Step 3 — Compose a sector class (or update an existing one)
+### Step 3 — Add the Python evaluator
 
-If the pack belongs to an existing sector (e.g. a new Nigerian fintech rule), add it to
-`comply54/sectors/nigeria_fintech.py`. If it belongs to a new sector, create a new file
-in `comply54/sectors/` following this pattern:
+Open `comply54/packs/africa.py` (or the relevant file) and add:
 
 ```python
-from ..core.packs import MY_PACK, NDPA, PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL
+def evaluateSenegalLPDP(input: EvaluationInput) -> PolicyDecision:
+    return _evaluate(SENEGAL_LPDP, input)
+```
+
+Export it from `comply54/__init__.py`.
+
+### Step 4 — Add the TypeScript evaluator
+
+Open `packages/core/src/packs/africa.ts` and add:
+
+```typescript
+export const evaluateSenegalLPDP: PackEvaluatorFn = (input) =>
+  _evaluateAfrica("senegal/lpdp", input);
+```
+
+Export it from `packages/core/src/index.ts`.
+
+### Step 5 — Write tests
+
+Add tests to `tests/test_africa.py`. Aim for at least one `deny`, one `escalate`, one `audit`, and one clean `allow` per rule.
+
+```python
+from comply54.packs.africa import evaluateSenegalLPDP
+from comply54.core.engine import Comply54Engine
+
+engine = Comply54Engine(packs=[evaluateSenegalLPDP])
+
+def test_deny_fires_on_unconsented_processing():
+    result = engine.check(
+        action="process_personal_data",
+        params={"has_consent": False, "data_type": "personal"},
+    )
+    assert result.overall == "deny"
+    assert "LPDP" in result.primary_violation.messages[0]
+
+def test_allow_when_consent_given():
+    result = engine.check(
+        action="process_personal_data",
+        params={"has_consent": True, "data_type": "personal"},
+    )
+    assert result.overall in ("allow", "audit")
+```
+
+Minimum: 80% rule coverage. Every `deny` and `escalate` rule needs at least one test.
+
+### Step 6 — Validate locally
+
+```bash
+# Python tests
+pytest tests/ -q
+
+# Rego syntax
+opa check comply54/packs/africa/senegal_lpdp.rego
+
+# Lint
+ruff check comply54/ tests/
+
+# TypeScript
+cd packages/core && npm run typecheck && npm test
+```
+
+### Step 7 — Open a pull request
+
+Use the PR template. Title format: `feat(africa): add <regulation-slug> policy pack`
+
+---
+
+## Adding a new sector class
+
+If you are composing existing packs into a new sector (no new Rego), you only need Steps 3–6. PR title: `feat(sectors): add <JurisdictionName><SectorName>Compliance`
+
+```python
+from ..core.packs import SENEGAL_LPDP, PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL
 from ._base import SectorCompliance
 
-class NigeriaMyNewSectorCompliance(SectorCompliance):
-    name = "Nigeria My Sector Compliance"
-    jurisdictions = ["NG"]
+class SenegalFintechCompliance(SectorCompliance):
+    name = "Senegal Fintech Compliance"
+    jurisdictions = ["SN"]
     regulations = [
-        "Full Regulation Name Year",
-        "Nigeria Data Protection Act 2023",
+        "Senegal Loi n° 2008-12 (LPDP)",
         "OWASP Agentic AI",
     ]
 
     def __init__(self, strict_mode: bool = False) -> None:
         super().__init__(
-            packs=[MY_PACK, NDPA, PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL],
+            packs=[SENEGAL_LPDP, PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL],
             strict_mode=strict_mode,
         )
 ```
 
-Export it from `comply54/sectors/__init__.py`.
-
-### Step 4 — Write tests
-
-Add tests to `tests/`. Aim for at least one test per `deny`, `escalate`, and `audit` rule
-(both the triggering path and the safe path). Use pytest:
-
-```python
-from comply54.sectors import NigeriaMyNewSectorCompliance
-
-compliance = NigeriaMyNewSectorCompliance()
-
-def test_deny_rule_fires():
-    result = compliance.check(
-        action="dangerous_action",
-        params={"amount": 9_999_999},
-        context={"some_flag": False},
-    )
-    assert result.overall == "deny"
-    assert "Regulation Name s.X" in result.primary_violation.messages[0]
-
-def test_allow_when_compliant():
-    result = compliance.check(
-        action="safe_action",
-        params={"amount": 100},
-        context={"some_flag": True},
-    )
-    assert result.overall in ("allow", "audit")
-```
-
-Minimum 80% rule coverage. Every `deny` and `escalate` rule needs at least one test.
-
-### Step 5 — Validate locally
-
-```bash
-pip install -e ".[dev]"
-
-# Python tests
-pytest tests/ -v
-
-# OPA tests (requires opa binary)
-opa test comply54/packs/ -v
-
-# Rego lint
-regal lint comply54/packs/<jurisdiction>/
-
-# Verify imports
-python -c "from comply54.sectors import NigeriaMyNewSectorCompliance; print('OK')"
-```
-
-### Step 6 — Open a Pull Request
-
-Title format: `feat(nigeria): add <regulation-slug> policy pack`
-
-Include in the PR description:
-- Which regulation and sections are covered
-- A link to the official regulatory source
-- Test count and pass rate
-- The `deny` / `escalate` / `audit` rules defined
+Export from `comply54/sectors/__init__.py`.
 
 ---
 
-## Adding a New Sector Composition
+## Adding a framework adapter
 
-If you are composing existing packs into a new sector class without adding new Rego,
-you only need Steps 3–5 above. The PR title format is:
+Each adapter lives in its own sub-package (`comply54/langchain/`, `comply54/crewai/`, etc.) and intercepts tool calls or agent steps to run a comply54 compliance check before execution.
 
-`feat(sectors): add <JurisdictionName><SectorName>Compliance`
+Follow the shape of `comply54/langchain/guard.py` as the reference implementation. The adapter must:
+- Accept a `Comply54Engine` or sector class at construction time
+- Not import the framework at module level — use a lazy import with a clear `ImportError` hint
+- Be listed as an optional dependency in `pyproject.toml`
+- Have integration tests (can mock the framework internals)
 
 ---
 
-## Updating an Existing Pack
+## Updating an existing pack
 
 - Keep the `package` declaration unchanged — it is part of the `query_prefix` contract
 - Add a comment citing the regulatory source that changed (e.g. a new CBN circular)
-- Update the relevant `PackSpec.regulation` string in `packs.py` if the regulation name changed
+- Update the `PackSpec.regulation` string if the regulation name changed
+- Bump the pack version in `comply54/core/packs.py` and `packages/core/src/packs/versions.ts`
 - Add or update tests to cover the changed rule
 
 ---
 
-## Commit Message Convention
+## Commit message convention
 
 ```
-feat(nigeria): add NAICOM insurance policy pack
-fix(cbn): correct NIP cap threshold to ₦10,000,000
-test(nha): add patient consent deny rule coverage
-docs: update README sector packs table
+feat(africa):    add Senegal LPDP pack
+feat(nigeria):   add NAICOM insurance policy pack
+feat(sectors):   add KenyaHealthcareCompliance sector class
+feat(adapters):  add Semantic Kernel integration
+fix(cbn):        correct NIP cap threshold to ₦10,000,000
+test(nha):       add patient consent deny rule coverage
+docs:            update README sector packs table
+chore:           bump version to 0.6.0
 ```
 
 ---
 
-## Code of Conduct
+## Pull requests
 
-Be constructive and respectful. Policy interpretation is nuanced — always cite sources
-when disagreeing about regulatory scope, and link to the official gazette or regulatory
-circular rather than secondary sources.
+- Use the PR template — it is pre-populated when you open a PR on GitHub
+- Keep PRs focused: one pack, one adapter, or one feature per PR
+- Mark as Draft until all checklist items are green
+- At least one maintainer review is required before merge
+
+---
+
+## Questions?
+
+Open a [GitHub Discussion](https://github.com/comply54/comply54/discussions) or join the conversation in the relevant issue thread.
