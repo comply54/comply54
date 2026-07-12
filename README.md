@@ -10,6 +10,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![OpenSSF Baseline](https://www.bestpractices.dev/projects/13481/baseline)](https://www.bestpractices.dev/projects/13481)
 [![Agent Disaster Lab](https://img.shields.io/badge/demo-disaster.comply54.io-red)](https://disaster.comply54.io)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21324303.svg)](https://doi.org/10.5281/zenodo.21324303)
 
 > **See comply54 in action:** [disaster.comply54.io](https://disaster.comply54.io) — watch AI agents cause regulatory disasters, then watch comply54 block them live.
 
@@ -51,6 +52,26 @@ The policy SOURCE.                          The enforcement and tooling LAYER.
 `comply54` is where the ecosystem lives — the enforcement engine, sector compositions,
 framework adapters, and CI tooling that make those policies consumable from LangChain,
 LangGraph, CrewAI, AutoGen, and any OPA pipeline.
+
+---
+
+## Research
+
+> "Africa does not have an AI regulation gap. It has an accountability gap."
+
+**[The Enforcement Gap: Why Africa's AI Regulations Need Runtime Enforcement](https://comply54.io/research/enforcement-gap)**  
+Oluwajuwon Omotayo · July 2026 · Comply54 Research Working Paper No. 1  
+DOI: [10.5281/zenodo.21324303](https://doi.org/10.5281/zenodo.21324303) · [Download PDF](https://comply54.io/papers/the-enforcement-gap-july-2026.pdf) · [Zenodo record](https://zenodo.org/records/21324303)
+
+The paper documents the enforcement gap — the space between Africa's AI regulatory frameworks (NDPA 2023, KDPA, POPIA, GAID 2025, NIMC Act 2026, and nine more) and the enforcement infrastructure AI agents need to honour them before acting. It covers 12 African jurisdictions and proposes runtime enforcement as the solution, implemented here in comply54.
+
+If you use comply54 in research or academic work, please cite:
+
+```
+Omotayo, O. (2026, July 12). The enforcement gap: Why Africa's AI regulations need runtime
+enforcement. Comply54 Research Working Paper No. 1. Zenodo.
+https://doi.org/10.5281/zenodo.21324303
+```
 
 ---
 
