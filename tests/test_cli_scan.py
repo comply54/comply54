@@ -104,3 +104,34 @@ def test_scan_rejects_invalid_json(capsys):
 
     assert scan.run_scan(args) == 2
     assert "--params must be a JSON object" in capsys.readouterr().err
+
+
+def test_scan_rejects_malformed_json(capsys):
+    args = build_parser().parse_args(
+        ["scan", "--action", "read", "--params", "not-json", "--pack", "nigeria/cbn"]
+    )
+
+    assert scan.run_scan(args) == 2
+    assert "--params must be valid JSON" in capsys.readouterr().err
+
+
+def test_scan_rejects_invalid_yaml(tmp_path, capsys):
+    config = tmp_path / "scan.yaml"
+    config.write_text("key: [unclosed", encoding="utf-8")
+    args = build_parser().parse_args(["scan", "--config", str(config)])
+
+    assert scan.run_scan(args) == 2
+    assert "invalid YAML config" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    [
+        {"action": "read", "params": []},
+        {"action": "read", "context": []},
+        {"action": "read", "output": {}},
+    ],
+)
+def test_evaluate_rejects_invalid_scenario_types(scenario):
+    with pytest.raises(ValueError, match="params/context must be objects"):
+        scan._evaluate(["nigeria/cbn"], scenario)

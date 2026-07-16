@@ -8,10 +8,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
-from rich.console import Console
-from rich.table import Table
-
 from ..core.engine import Comply54Engine
 from ..core.models import ComplianceResult
 from ..core.packs import PACK_REGISTRY, packs_for_ids
@@ -31,6 +27,8 @@ def _json_object(value: str, option: str) -> dict[str, Any]:
 
 
 def _load_input(args) -> tuple[list[str], list[dict[str, Any]]]:
+    import yaml
+
     if args.config:
         if args.action or args.packs:
             raise ValueError("--config cannot be combined with --action or --pack")
@@ -100,6 +98,9 @@ def _report_data(
 
 
 def _render_table(scenarios: list[dict[str, Any]], results: list[ComplianceResult]) -> None:
+    from rich.console import Console
+    from rich.table import Table
+
     table = Table(title="comply54 governance scan")
     table.add_column("#", justify="right")
     table.add_column("Action")
@@ -141,6 +142,16 @@ def _render_html(data: dict[str, Any]) -> str:
 
 
 def run_scan(args) -> int:
+    try:
+        import yaml  # noqa: F401
+        import rich  # noqa: F401
+    except ImportError:
+        print(
+            "error: CLI dependencies not installed. Run: pip install comply54[cli]",
+            file=sys.stderr,
+        )
+        return 2
+
     try:
         pack_ids, scenarios = _load_input(args)
         _validate_packs(pack_ids)
