@@ -124,6 +124,24 @@ def test_scan_rejects_invalid_yaml(tmp_path, capsys):
     assert "invalid YAML config" in capsys.readouterr().err
 
 
+def test_scan_rejects_empty_packs_in_config(tmp_path, capsys):
+    config = tmp_path / "scan.yaml"
+    config.write_text("packs: []\nscenarios:\n  - action: read\n", encoding="utf-8")
+    args = build_parser().parse_args(["scan", "--config", str(config)])
+
+    assert scan.run_scan(args) == 2
+    assert "non-empty" in capsys.readouterr().err
+
+
+def test_scan_rejects_non_mapping_scenario(tmp_path, capsys):
+    config = tmp_path / "scan.yaml"
+    config.write_text("packs:\n  - nigeria/cbn\nscenarios:\n  - just-a-string\n", encoding="utf-8")
+    args = build_parser().parse_args(["scan", "--config", str(config)])
+
+    assert scan.run_scan(args) == 2
+    assert "scenario" in capsys.readouterr().err.lower()
+
+
 @pytest.mark.parametrize(
     "scenario",
     [

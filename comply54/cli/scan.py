@@ -40,8 +40,8 @@ def _load_input(args) -> tuple[list[str], list[dict[str, Any]]]:
             raise ValueError(f"invalid YAML config: {exc}") from exc
         packs = data.get("packs", [])
         scenarios = data.get("scenarios", [])
-        if not isinstance(packs, list) or not isinstance(scenarios, list) or not scenarios:
-            raise ValueError("config requires non-empty 'scenarios' and a list of 'packs'")
+        if not isinstance(packs, list) or not packs or not isinstance(scenarios, list) or not scenarios:
+            raise ValueError("config requires non-empty 'scenarios' and 'packs' lists")
         return packs, scenarios
 
     if not args.action:
@@ -65,6 +65,8 @@ def _validate_packs(pack_ids: list[str]) -> None:
 
 
 def _evaluate(pack_ids: list[str], scenario: dict[str, Any]) -> ComplianceResult:
+    if not isinstance(scenario, dict):
+        raise ValueError("each scenario must be an object")
     action = scenario.get("action")
     if not isinstance(action, str) or not action:
         raise ValueError("each scenario requires a non-empty 'action'")
@@ -156,7 +158,7 @@ def run_scan(args) -> int:
         pack_ids, scenarios = _load_input(args)
         _validate_packs(pack_ids)
         results = [_evaluate(pack_ids, scenario) for scenario in scenarios]
-    except (TypeError, ValueError) as exc:
+    except (AttributeError, TypeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
