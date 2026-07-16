@@ -1,0 +1,38 @@
+---
+title: CLI Reference
+description: Run comply54 governance scans from shells and CI pipelines.
+---
+
+## Scan one action
+
+```bash
+comply54 scan \
+  --action transfer_funds \
+  --params '{"amount": 15000000, "currency": "NGN"}' \
+  --pack nigeria/cbn
+```
+
+The default output is a coloured table. Use `--format json` for CI and pipelines, or
+`--format html --report governance-report.html` for a standalone report.
+
+## Scan a YAML scenario file
+
+```yaml
+packs:
+  - nigeria/ndpa
+  - nigeria/cbn
+  - universal/prompt-injection
+scenarios:
+  - action: transfer_funds
+    params:
+      amount: 15000000
+      currency: NGN
+    context:
+      kyc_tier: 2
+```
+
+```bash
+comply54 scan --config scan.yaml --format json
+```
+
+Exit codes are `0` for allow/audit, `1` for deny, and `2` for escalate or invalid input.

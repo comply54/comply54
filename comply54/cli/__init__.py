@@ -122,6 +122,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
+    scan = sub.add_parser(
+        "scan",
+        help="Run governance checks from the command line.",
+    )
+    scan.add_argument("--action", help="Action to evaluate.")
+    scan.add_argument("--params", default="{}", metavar="JSON", help="Action parameters as JSON.")
+    scan.add_argument("--context", default="{}", metavar="JSON", help="Scenario context as JSON.")
+    scan.add_argument(
+        "--output", default="", metavar="TEXT", help="Proposed agent output to evaluate."
+    )
+    scan.add_argument("--pack", action="append", dest="packs", help="Policy pack ID (repeatable).")
+    scan.add_argument("--config", metavar="PATH", help="YAML file containing packs and scenarios.")
+    scan.add_argument("--format", choices=("table", "json", "html"), default="table")
+    scan.add_argument("--report", metavar="PATH", help="Write HTML output to this file.")
+
     # ── verify-receipt ──────────────────────────────────────────────────────
     vr = sub.add_parser(
         "verify-receipt",
@@ -183,6 +198,10 @@ def main() -> None:
 
     if args.command == "verify-receipt":
         sys.exit(_cmd_verify_receipt(args))
+    elif args.command == "scan":
+        from .scan import run_scan
+
+        sys.exit(run_scan(args))
     elif args.command == "generate-keypair":
         sys.exit(_cmd_generate_keypair(args))
     else:
