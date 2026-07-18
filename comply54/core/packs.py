@@ -117,6 +117,7 @@ NFIU_AML = PackSpec(
 
 NHA = PackSpec(
     id="nigeria/nha",
+    version="1.1.0",  # query_health_records added to record_access_actions (NHA s.26 / NDPA s.30)
     regulation="Nigeria National Health Act 2014 / Medical & Dental Practitioners Act Cap M8",
     jurisdiction="NG",
     authority="FMOH / MDCN",

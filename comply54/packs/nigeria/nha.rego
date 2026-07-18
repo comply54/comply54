@@ -47,6 +47,7 @@ record_access_actions := {
 	"access_patient_records", "read_health_record",
 	"get_patient_history", "fetch_lab_results",
 	"retrieve_ehr", "query_medical_records",
+	"query_health_records",
 }
 
 data_sharing_actions := {

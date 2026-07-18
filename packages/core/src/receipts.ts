@@ -87,7 +87,12 @@ function b64urlEncodeStr(str: string): string {
 }
 
 function b64urlDecode(str: string): Buffer {
-  return Buffer.from(str, "base64url");
+  // Browser buffer polyfill doesn't support "base64url" encoding — convert manually
+  const base64 = str
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(str.length + ((4 - (str.length % 4)) % 4), "=");
+  return Buffer.from(base64, "base64");
 }
 
 /** Strip PEM headers/footers and decode to DER bytes. */

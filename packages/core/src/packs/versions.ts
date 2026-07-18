@@ -16,7 +16,7 @@ export const PACK_VERSIONS: Record<string, string> = {
   "nigeria/cbn": "1.0.0",
   "nigeria/bvn-nin": "1.0.0",
   "nigeria/nfiu-aml": "1.1.0", // sanctions_screening_required added (MLPPA 2022 s.6)
-  "nigeria/nha": "1.0.0",
+  "nigeria/nha": "1.1.0",
   "nigeria/naicom": "1.1.0", // state_of_origin added to prohibited_characteristics (NIIRA 2025 Part V)
 
   // East Africa
