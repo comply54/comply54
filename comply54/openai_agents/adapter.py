@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 
 def make_tool_input_guardrail(
-    compliance: "SectorCompliance",
+    compliance: SectorCompliance,
     context: dict[str, Any] | None = None,
 ):
     """

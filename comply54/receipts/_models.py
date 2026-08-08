@@ -7,7 +7,6 @@ Data model for a decoded and verified comply54 receipt payload.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 @dataclass(frozen=True)
@@ -32,16 +31,16 @@ class ReceiptPayload:
     decision: str
     """The compliance decision: ``'allow'``, ``'deny'``, ``'escalate'``, or ``'audit'``."""
 
-    pack: Optional[str]
+    pack: str | None
     """Primary pack that produced the decision (``None`` for ``'allow'``)."""
 
-    regulation: Optional[str]
+    regulation: str | None
     """Primary regulation cited (``None`` for ``'allow'``)."""
 
-    rule_triggered: Optional[str]
+    rule_triggered: str | None
     """Specific rule key that triggered the decision (e.g. ``'sanctions_screening_required'``)."""
 
-    messages: List[str]
+    messages: list[str]
     """Human-readable violation messages from the primary pack (up to 5)."""
 
     input_digest: str
@@ -55,7 +54,7 @@ class ReceiptPayload:
     comply54_version: str
     """Version of comply54 that produced this receipt."""
 
-    packs_evaluated: List[str]
+    packs_evaluated: list[str]
     """All pack IDs evaluated in this check, e.g. ``['nigeria/nfiu-aml', 'nigeria/cbn']``."""
 
     pack_versions: dict

@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 
 from .models import RegulatorySource
 
-
 _PACKS_DIR = pathlib.Path(__file__).parent.parent / "packs"
 
 
@@ -117,6 +116,7 @@ NFIU_AML = PackSpec(
 
 NHA = PackSpec(
     id="nigeria/nha",
+    version="1.1.0",  # query_health_records added to record_access_actions (NHA s.26 / NDPA s.30)
     regulation="Nigeria National Health Act 2014 / Medical & Dental Practitioners Act Cap M8",
     jurisdiction="NG",
     authority="FMOH / MDCN",
@@ -355,6 +355,25 @@ MODEL_ROUTING = PackSpec(
     ],
 )
 
+CODE_REVIEW_AGENT = PackSpec(
+    id="universal/code-review-agent",
+    regulation="OWASP Agentic AI LLM08 / ASI01 / ASI02 / ASI09 — AI Code Review Agent Governance",
+    jurisdiction="universal",
+    authority="OWASP",
+    rego_path=_PACKS_DIR / "universal" / "code_review_agent.rego",
+    query_prefix="data.agt_policies_agent.code_review_agent",
+    version="1.1.0",
+    tags=["owasp", "safety", "agentic", "code-review", "human-in-the-loop", "security-probe"],
+    sources=[
+        RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM08:2025 — Excessive Agency", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="OWASP Top 10 for Agentic AI", section="ASI01 — Agent Behaviour Hijack", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="OWASP Top 10 for Agentic AI", section="ASI02 — Tool Misuse", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="OWASP Top 10 for Agentic AI", section="ASI09 — Human-Agent Trust Exploitation", authority="OWASP", year=2025, url=_OWASP_URL),
+        RegulatorySource(document="NIST AI RMF 1.0", section="GOVERN 1.3 — Human oversight of AI systems", authority="NIST", year=2023),
+        RegulatorySource(document="ISO/IEC 42001:2023", section="§6.1.2 — AI risk assessment", authority="ISO/IEC", year=2023),
+    ],
+)
+
 # ── Registry lookup ────────────────────────────────────────────────────────────
 
 PACK_REGISTRY: dict[str, PackSpec] = {
@@ -365,6 +384,7 @@ PACK_REGISTRY: dict[str, PackSpec] = {
         GHANA_DPA,
         EGYPT_PDPL,
         PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL, MODEL_ROUTING,
+        CODE_REVIEW_AGENT,
     ]
 }
 
@@ -388,6 +408,7 @@ UNIVERSAL_PACKS: list[str] = [
     "universal/tool-permissions",
     "universal/human-approval",
     "universal/model-routing",
+    "universal/code-review-agent",
 ]
 
 

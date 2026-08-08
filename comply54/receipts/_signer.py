@@ -17,8 +17,6 @@ Design decisions:
 
 from __future__ import annotations
 
-from typing import Optional, Union
-
 from .._version import __version__
 from ._digest import digest_input
 
@@ -90,14 +88,14 @@ class ReceiptSigner:
         }
     """
 
-    def __init__(self, private_key_pem: Union[str, bytes]) -> None:
+    def __init__(self, private_key_pem: str | bytes) -> None:
         if not _SIGNING_AVAILABLE:  # pragma: no cover
             raise ImportError(_SIGNING_INSTALL_MSG)
         if isinstance(private_key_pem, str):
             private_key_pem = private_key_pem.encode()
         key = load_pem_private_key(private_key_pem, password=None)
         if not isinstance(key, Ed25519PrivateKey):
-            raise ValueError(
+            raise ValueError(  # noqa: TRY004 — public API contract; ValueError is already documented
                 "comply54 receipts require an Ed25519 private key. "
                 "Received a key of type: "
                 f"{type(key).__name__}"
@@ -106,12 +104,12 @@ class ReceiptSigner:
 
     def sign(
         self,
-        result: "ComplianceResult",  # type: ignore[name-defined]  # noqa: F821  # avoid circular import
+        result: ComplianceResult,  # type: ignore[name-defined]  # noqa: F821  # avoid circular import
         action: str,
         params: dict,
         output: str = "",
-        context: Optional[dict] = None,
-        pack_versions: Optional[dict] = None,
+        context: dict | None = None,
+        pack_versions: dict | None = None,
     ) -> str:
         """
         Sign a ``ComplianceResult`` and return a compact JWT receipt token.

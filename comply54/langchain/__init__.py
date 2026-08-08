@@ -1,3 +1,3 @@
-from .adapter import Comply54Guard, comply54_route, comply54_tool, compliance_node
+from .adapter import Comply54Guard, compliance_node, comply54_route, comply54_tool
 
-__all__ = ["Comply54Guard", "comply54_route", "comply54_tool", "compliance_node"]
+__all__ = ["Comply54Guard", "compliance_node", "comply54_route", "comply54_tool"]

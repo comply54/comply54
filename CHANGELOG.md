@@ -9,6 +9,64 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+**AI Code Review Agent governance pack (`universal/code-review-agent` v1.0.0)**
+
+New universal pack governing autonomous AI agents that review source code, post findings to version control systems, probe applications for security vulnerabilities, and notify developers. Covers any CI-integrated AI code reviewer, not a single implementation.
+
+Pack is **fail-closed by default**: an unconfigured allowlist denies all traffic rather than permitting it. Deployers must explicitly opt out of fail-closed behavior via config — silence is not consent.
+
+Covered actions: `post_review_finding`, `post_review_summary`, `post_compliance_assessment`, `run_security_probe`, `send_developer_notification`, `ingest_pull_request`, `dismiss_finding`.
+
+#### DENY rules
+
+- **D1 — Confidence gate**: findings with confidence below `min_confidence` (default 0.75) are blocked. Missing confidence is treated as 0.0 — an agent that doesn't report its confidence doesn't pass the gate.
+- **D2 — Output integrity**: posted content containing prompt injection artifacts (e.g. `ignore previous instructions`, `[system override]`) is blocked — guards against an injected diff manipulating the review model's output.
+- **D3 — Probe authorization**: security probes require either an approved target URL or a token that appears in `context.verified_tokens`. A bare non-empty token string is not sufficient (`require_explicit_authorization=true` by default).
+- **D4 — Destructive probe payload**: probe scopes containing destructive keywords (`drop_table`, `rm -rf`, `truncate`, `ransomware`, etc.) are unconditionally blocked.
+- **D5 — Developer notification domain**: notifications to recipients outside the configured domain allowlist are blocked. With no allowlist configured, all notifications are blocked (`deny_unlisted_notification_domains=true` by default).
+- **D6 — Dismissal reason**: dismissals without a stated reason are blocked — prevents silent suppression of real findings without audit trail.
+- **D7 — PR ingestion scope**: ingestion of PRs from repositories not in the approved list is blocked. With no approved list configured, all ingestion is blocked (`deny_unlisted_repos=true` by default).
+
+#### ESCALATE rules
+
+- **E1 — Security human gate**: HIGH severity + security category findings require `context.human_approved=true` before posting.
+- **E2 — Finding volume**: batches exceeding `max_findings_per_batch` (default 30) are routed to human triage.
+- **E3 — Notification approval**: developer notifications require `context.human_approved=true`.
+- **E4 — Production probe guard**: probes against URLs matching production indicators escalate for human approval even when otherwise authorized.
+- **E5 — Compliance assessment gate**: assessments with non-compliance ratio above `non_compliance_threshold` (default 50%) escalate for human review.
+
+#### AUDIT rules
+
+All VCS-posting actions, authorized security probe executions, finding dismissals, and approved developer notifications produce signed audit records. Audit messages distinguish "authorized and executed" from "escalated — pending human approval" to prevent misleading audit trails.
+
+#### Framework alignment
+
+OWASP LLM08 Excessive Agency, OWASP Agentic AI ASI01/ASI02/ASI09, NIST AI RMF GOVERN 1.3, ISO/IEC 42001:2023 §6.1.2, EU AI Act Art. 9 & 14.
+
+#### Production environment detection — fail-safe logic
+
+E4 uses a **three-phase fail-safe** rather than a positive-only production match:
+
+1. **Explicit flag** — `context.is_production` is authoritative when present; `false` suppresses escalation even for `prod.` URLs; `true` forces escalation even for staging URLs.
+2. **Positive production indicators** — matches `prod.`, `-prod.`, `prd.`, `/prd/`, `production.`, `live.`, `release.` (including `prd` abbreviation used by AWS/Azure convention, missing from many implementations).
+3. **Fail-safe default** — if no recognized non-production marker is found, the target is treated as production. Non-production set covers staging/stg, dev/develop, test/qa/uat, sandbox/sbx, demo, preview, canary, localhost, private IP ranges, branch/PR prefixes (feature-, pr-, feat-), pre-release labels (alpha, beta, rc), and common dev-only ports (3000, 5000, 8080, etc.).
+
+This means bare domains (`api.myapp.io`, `secure.mybank.com`) and cloud platform hostnames with no environment label escalate by default — the most dangerous false-negative in positive-match-only implementations.
+
+#### Security hardening (v1.1.0)
+
+Five edge cases closed after adversarial review:
+
+- **E1 case-sensitivity bypass**: `severity: "HIGH"` and `category: "SECURITY"` previously bypassed the human approval gate because the E1 rule used exact string comparison. Fixed by applying `lower()` at the comparison site — `lower(_severity) == "high"` — rather than in the helper (a regopy limitation prevents `lower()` in complete rules with `else` clauses).
+- **Production port false negatives**: Ports `:9000` (SonarQube), `:9090` (Prometheus), `:9443` (OpenShift/K8s HTTPS alternate) were incorrectly listed as non-production indicators, causing probes against production infrastructure to bypass E4. Removed. These URLs now escalate via the Phase 3 fail-safe.
+- **Confidence inflation bypass**: No upper bound on confidence allowed an agent to report `confidence: 99.0` and bypass D1. Fixed by clamping the `_confidence` helper to `[0.0, 1.0]` — out-of-range values default to `0.0` (worst case).
+- **Spurious escalation on denied actions (E1/E2/E5)**: When D1 fired (low confidence on a HIGH security finding), E1 also fired, producing misleading escalation messages alongside a denial. Added `count(deny) == 0` guard to E1, E2, E5, matching the pattern already used by E3/E4.
+- **Incomplete production prefix indicators**: `prod-` and `prd-` prefixes (e.g., `prod-api.company.com`) were not in the explicit production indicator set. Added. These were already caught by the Phase 3 fail-safe, but now match Phase 2 explicitly.
+
+167 tests covering all edge cases added in `tests/test_code_review_agent.py`.
+
 ---
 
 ## [0.5.0] — 2026-07-10

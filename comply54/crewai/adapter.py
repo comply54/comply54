@@ -41,7 +41,7 @@ Output-level guardrail pattern:
 from __future__ import annotations
 
 import json
-from typing import Any, Type
+from typing import Any, ClassVar
 
 from ..core.models import ComplianceResult
 from ..sectors._base import SectorCompliance
@@ -99,9 +99,9 @@ class Comply54CrewTool(BaseTool):
         "Returns a JSON decision with overall outcome (allow/deny/escalate/audit), "
         "violation details, triggered rule, and exact regulatory citations."
     )
-    args_schema: Type[BaseModel] = _ComplianceInput  # type: ignore[assignment]
+    args_schema: type[BaseModel] = _ComplianceInput  # type: ignore[assignment]
     compliance: Any = None
-    model_config = {"arbitrary_types_allowed": True}
+    model_config: ClassVar[dict] = {"arbitrary_types_allowed": True}
 
     def __init__(self, compliance: SectorCompliance, **kwargs: Any) -> None:
         if not _CREWAI:
@@ -173,7 +173,7 @@ class Comply54GuardedTool(BaseTool):
     compliance: Any = None
     guard_context: dict = Field(default_factory=dict)
     block_on_escalate: bool = False
-    model_config = {"arbitrary_types_allowed": True}
+    model_config: ClassVar[dict] = {"arbitrary_types_allowed": True}
 
     def __init__(
         self,

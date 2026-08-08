@@ -14,7 +14,6 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 Action = Literal["allow", "deny", "escalate", "audit"]
 
 
@@ -48,7 +47,7 @@ class PolicyDecision(BaseModel):
     action: Action
     messages: list[str] = Field(default_factory=list)
     citations: list[RegulatorySource] = Field(default_factory=list)
-    rule_triggered: Optional[str] = None
+    rule_triggered: Optional[str] = None  # noqa: UP045 — Pydantic evaluates on Python 3.9
     audit_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -78,7 +77,7 @@ class ComplianceResult(BaseModel):
     decisions: list[PolicyDecision]
     audit_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    receipt_token: Optional[str] = None
+    receipt_token: Optional[str] = None  # noqa: UP045 — Pydantic evaluates on Python 3.9
     """
     Compact Ed25519-signed JWT receipt — present only when a ``signing_key``
     was provided to the sector pack or engine.  Pass to
@@ -110,7 +109,7 @@ class ComplianceResult(BaseModel):
         sector_pack: str = "comply54",
         jurisdictions: list[str] | None = None,
         regulations: list[str] | None = None,
-    ) -> "ComplianceCertificate":
+    ) -> ComplianceCertificate:
         """
         Generate an auditor-exportable compliance certificate from this result.
 
@@ -162,7 +161,7 @@ class ComplianceResult(BaseModel):
         )
 
     @classmethod
-    def from_decisions(cls, decisions: list[PolicyDecision]) -> "ComplianceResult":
+    def from_decisions(cls, decisions: list[PolicyDecision]) -> ComplianceResult:
         overall: Action = "allow"
         for d in decisions:
             if _SEVERITY[d.action] > _SEVERITY[overall]:

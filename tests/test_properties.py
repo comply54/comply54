@@ -33,7 +33,6 @@ from comply54.core.models import (
 )
 from comply54.core.packs import CBN
 
-
 # ── Strategies ────────────────────────────────────────────────────────────────
 
 _ACTIONS: list[Action] = ["allow", "deny", "escalate", "audit"]

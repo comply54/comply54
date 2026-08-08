@@ -228,6 +228,7 @@ All packs use in-process Rego evaluation via `regopy` — no OPA binary required
 | `universal/tool-permissions` | OWASP LLM08 — Excessive Agency | LLM08 |
 | `universal/human-approval` | OWASP LLM09 — Overreliance | LLM09 |
 | `universal/model-routing` | OWASP LLM03/LLM05 — Model Selection Controls | LLM03/LLM05 |
+| `universal/code-review-agent` | OWASP LLM08 / ASI01 / ASI02 / ASI09 — AI Code Review Agent Governance | LLM08 |
 
 ### Nigerian Regulatory Packs
 

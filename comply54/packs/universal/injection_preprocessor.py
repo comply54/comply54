@@ -42,7 +42,6 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
-
 # ── Homoglyph table ────────────────────────────────────────────────────────────
 # Mapping of confusable Unicode code points → their ASCII equivalents.
 # Focused on the characters most commonly used in injection obfuscation attacks.
@@ -85,7 +84,7 @@ _HOMOGLYPHS: dict[str, str] = {
 # ── Zero-width / invisible code-point sets ─────────────────────────────────────
 
 _ZERO_WIDTH_CHARS: frozenset[str] = frozenset([
-    "​",  # ZERO WIDTH SPACE
+    "\u200b",  # ZERO WIDTH SPACE
     "‌",  # ZERO WIDTH NON-JOINER
     "‍",  # ZERO WIDTH JOINER
     "﻿",  # ZERO WIDTH NO-BREAK SPACE / BOM
@@ -295,7 +294,7 @@ class InjectionPreprocessor:
                         snippet = decoded[:120].replace("\n", " ")
                         signals.base64_decoded_snippets.append(snippet)
                         break
-            except Exception:
+            except Exception:  # noqa: BLE001, S112 — skip malformed b64 chunks silently
                 continue
 
     # ── Homoglyph detection ────────────────────────────────────────────────────

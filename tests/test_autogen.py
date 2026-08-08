@@ -19,14 +19,13 @@ pytest.importorskip("autogen_agentchat")
 
 from comply54.autogen import (
     Comply54UserProxy,
+    compliance_tool,
     comply54_tool,
     comply54_tools,
-    compliance_tool,
     register_compliance,
     register_compliance_guard,
 )
 from comply54.core.models import ComplianceResult, PolicyDecision, RegulatorySource
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

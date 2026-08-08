@@ -12,7 +12,6 @@ from ..core.engine import Comply54Engine
 from ..core.models import ComplianceResult
 from ..core.packs import PACK_REGISTRY, packs_for_ids
 
-
 _EXIT_CODES = {"allow": 0, "audit": 0, "deny": 1, "escalate": 2}
 
 
@@ -22,7 +21,7 @@ def _json_object(value: str, option: str) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise ValueError(f"{option} must be valid JSON: {exc.msg}") from exc
     if not isinstance(parsed, dict):
-        raise ValueError(f"{option} must be a JSON object")
+        raise ValueError(f"{option} must be a JSON object")  # noqa: TRY004
     return parsed
 
 
@@ -66,7 +65,7 @@ def _validate_packs(pack_ids: list[str]) -> None:
 
 def _evaluate(pack_ids: list[str], scenario: dict[str, Any]) -> ComplianceResult:
     if not isinstance(scenario, dict):
-        raise ValueError("each scenario must be an object")
+        raise ValueError("each scenario must be an object")  # noqa: TRY004
     action = scenario.get("action")
     if not isinstance(action, str) or not action:
         raise ValueError("each scenario requires a non-empty 'action'")
@@ -74,7 +73,7 @@ def _evaluate(pack_ids: list[str], scenario: dict[str, Any]) -> ComplianceResult
     context = scenario.get("context", {})
     output = scenario.get("output", "")
     if not isinstance(params, dict) or not isinstance(context, dict) or not isinstance(output, str):
-        raise ValueError("scenario params/context must be objects and output must be a string")
+        raise ValueError("scenario params/context must be objects and output must be a string")  # noqa: TRY004
     return Comply54Engine(packs_for_ids(pack_ids)).check(
         action=action,
         params=params,
@@ -145,8 +144,8 @@ def _render_html(data: dict[str, Any]) -> str:
 
 def run_scan(args) -> int:
     try:
-        import yaml  # noqa: F401
         import rich  # noqa: F401
+        import yaml  # noqa: F401
     except ImportError:
         print(
             "error: CLI dependencies not installed. Run: pip install comply54[cli]",

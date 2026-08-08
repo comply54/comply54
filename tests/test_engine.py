@@ -6,8 +6,7 @@ No OPA binary required.
 
 from comply54.core.engine import Comply54Engine
 from comply54.core.models import EvaluationInput
-from comply54.core.packs import CBN, NDPA, BVN_NIN, PII_LEAKAGE, KDPA, NFIU_AML, NAICOM
-
+from comply54.core.packs import BVN_NIN, CBN, KDPA, NAICOM, NDPA, NFIU_AML, PII_LEAKAGE
 
 # ── CBN transaction limit tests ────────────────────────────────────────────────
 
