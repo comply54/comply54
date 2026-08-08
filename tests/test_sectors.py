@@ -4,8 +4,7 @@ PanAfricanFintechCompliance.
 """
 
 
-from comply54 import NigeriaFintechCompliance, KenyaFintechCompliance, PanAfricanFintechCompliance
-
+from comply54 import KenyaFintechCompliance, NigeriaFintechCompliance, PanAfricanFintechCompliance
 
 # ── NigeriaFintechCompliance ──────────────────────────────────────────────────
 

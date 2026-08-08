@@ -30,6 +30,8 @@ Usage:
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from ..core.packs import (
     BVN_NIN,
     HUMAN_APPROVAL,
@@ -52,8 +54,8 @@ class NigeriaHealthcareCompliance(SectorCompliance):
     """
 
     name = "Nigeria Healthcare Compliance"
-    jurisdictions = ["NG"]
-    regulations = [
+    jurisdictions: ClassVar[list[str]] = ["NG"]
+    regulations: ClassVar[list[str]] = [
         "Nigeria National Health Act 2014",
         "Nigeria Data Protection Act 2023 (Special-Category Health Data)",
         "Medical and Dental Practitioners Act Cap M8 LFN 2004",
@@ -65,7 +67,7 @@ class NigeriaHealthcareCompliance(SectorCompliance):
     def __init__(
         self,
         strict_mode: bool = False,
-        signing_key: "bytes | str | None" = None,
+        signing_key: bytes | str | None = None,
     ) -> None:
         super().__init__(
             packs=[

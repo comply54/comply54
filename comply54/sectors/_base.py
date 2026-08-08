@@ -6,6 +6,8 @@ Base class for all comply54 sector packs.
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from ..core.engine import Comply54Engine
 from ..core.models import ComplianceCertificate, ComplianceResult, EvaluationInput
 from ..core.packs import PackSpec
@@ -28,19 +30,19 @@ class SectorCompliance:
     #: Human-readable name shown in audit logs and error messages.
     name: str = "SectorCompliance"
     #: Regulatory jurisdictions covered, e.g. ["NG", "KE"].
-    jurisdictions: list[str] = []
+    jurisdictions: ClassVar[list[str]] = []
     #: Regulatory frameworks covered, e.g. ["NDPA 2023", "CBN FPR"].
-    regulations: list[str] = []
+    regulations: ClassVar[list[str]] = []
 
     def __init__(
         self,
         packs: list[PackSpec],
         strict_mode: bool = False,
-        signing_key: "bytes | str | None" = None,
+        signing_key: bytes | str | None = None,
     ) -> None:
         self._engine = Comply54Engine(packs=packs)
         self._strict_mode = strict_mode
-        self._signer: "ReceiptSigner | None" = None
+        self._signer: ReceiptSigner | None = None
         if signing_key is not None:
             from ..receipts._signer import ReceiptSigner
             self._signer = ReceiptSigner(signing_key)

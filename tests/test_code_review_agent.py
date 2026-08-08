@@ -38,7 +38,6 @@ import pytest
 from comply54.core.engine import Comply54Engine
 from comply54.core.packs import CODE_REVIEW_AGENT
 
-
 # ── Fixtures ───────────────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="module")

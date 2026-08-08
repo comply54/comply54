@@ -13,8 +13,6 @@ Security note — CVE-2022-29217:
 
 from __future__ import annotations
 
-from typing import Union
-
 from ._models import ReceiptPayload
 
 try:
@@ -48,7 +46,7 @@ class InvalidReceiptError(Exception):
 
 def verify_receipt(
     token: str,
-    public_key_pem: Union[str, bytes],
+    public_key_pem: str | bytes,
 ) -> ReceiptPayload:
     """
     Verify a comply54 signed receipt token and return the decoded payload.

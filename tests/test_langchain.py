@@ -22,12 +22,11 @@ from langchain_core.messages import AIMessage, ToolMessage
 from comply54.core.models import Action, ComplianceResult, PolicyDecision, RegulatorySource
 from comply54.langchain.adapter import (
     Comply54Guard,
+    compliance_node,
     comply54_route,
     comply54_tool,
-    compliance_node,
 )
 from comply54.sectors.nigeria_fintech import NigeriaFintechCompliance
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -155,7 +154,7 @@ class TestComply54Guard:
         }
         guard(state)
 
-        _, kwargs = mock_compliance.check.call_args
+        _, _kwargs = mock_compliance.check.call_args
         called_kwargs = mock_compliance.check.call_args.kwargs
         assert called_kwargs.get("context", {}).get("kyc_tier") == 2
         assert called_kwargs.get("context", {}).get("customer_verified") is True

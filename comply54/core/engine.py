@@ -22,7 +22,6 @@ from .citations import RULE_CITATIONS
 from .models import Action, ComplianceResult, EvaluationInput, PolicyDecision, RegulatorySource
 from .packs import PackSpec
 
-
 _SEVERITY: dict[Action, int] = {"allow": 0, "audit": 1, "escalate": 2, "deny": 3}
 
 # Interpreters keyed by frozenset of pack IDs — modules loaded once, reused
@@ -127,13 +126,13 @@ class Comply54Engine:
         self,
         packs: list[PackSpec],
         cache: bool = True,
-        signing_key: "bytes | str | None" = None,
+        signing_key: bytes | str | None = None,
         config: dict | None = None,
     ) -> None:
         self._packs = packs
         self._cache = cache
         self._config: dict = config or {}
-        self._signer: "ReceiptSigner | None" = None
+        self._signer: ReceiptSigner | None = None
         if signing_key is not None:
             from ..receipts._signer import ReceiptSigner
             self._signer = ReceiptSigner(signing_key)

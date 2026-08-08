@@ -34,7 +34,6 @@ from comply54.receipts import (
     verify_receipt,
 )
 
-
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
 
@@ -79,25 +78,25 @@ class TestDigestInput:
         assert all(c in "0123456789abcdef" for c in hex_part)
 
     def test_deterministic_same_input(self):
-        kwargs = dict(action="transfer_funds", params={"amount": 5_000_000}, output="", context={"kyc_tier": 3})
+        kwargs = {"action": "transfer_funds", "params": {"amount": 5_000_000}, "output": "", "context": {"kyc_tier": 3}}
         assert digest_input(**kwargs) == digest_input(**kwargs)
 
     def test_sensitive_to_action(self):
-        base = dict(params={"amount": 5_000_000}, output="", context={})
+        base = {"params": {"amount": 5_000_000}, "output": "", "context": {}}
         assert digest_input("transfer_funds", **base) != digest_input("send_money", **base)
 
     def test_sensitive_to_amount(self):
-        base = dict(action="transfer_funds", output="", context={})
+        base = {"action": "transfer_funds", "output": "", "context": {}}
         assert digest_input(**base, params={"amount": 100}) != digest_input(**base, params={"amount": 200})
 
     def test_sensitive_to_context(self):
-        base = dict(action="transfer_funds", params={"amount": 100}, output="")
+        base = {"action": "transfer_funds", "params": {"amount": 100}, "output": ""}
         d1 = digest_input(**base, context={"kyc_tier": 1})
         d2 = digest_input(**base, context={"kyc_tier": 2})
         assert d1 != d2
 
     def test_sensitive_to_output(self):
-        base = dict(action="transfer_funds", params={}, context={})
+        base = {"action": "transfer_funds", "params": {}, "context": {}}
         assert digest_input(**base, output="hello") != digest_input(**base, output="world")
 
     def test_none_context_equals_empty_dict(self):
@@ -143,7 +142,9 @@ class TestGenerateKeypair:
     def test_signer_rejects_non_ed25519_key(self):
         from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives.serialization import (
-            Encoding, NoEncryption, PrivateFormat
+            Encoding,
+            NoEncryption,
+            PrivateFormat,
         )
         rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         rsa_pem = rsa_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
@@ -316,6 +317,7 @@ class TestVerifyReceiptRoundTrip:
         """Old receipts without c54_pack_versions should still verify and return empty dict."""
         import jwt as _jwt
         from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
         from comply54.receipts import digest_input
         key = load_pem_private_key(private_pem, password=None)
         legacy_claims = {
@@ -402,9 +404,7 @@ class TestVerifyReceiptRejection:
 
     def test_non_ed25519_public_key_raises(self, valid_token):
         from cryptography.hazmat.primitives.asymmetric import rsa
-        from cryptography.hazmat.primitives.serialization import (
-            Encoding, PublicFormat
-        )
+        from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
         rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         rsa_pub_pem = rsa_key.public_key().public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
         with pytest.raises(InvalidReceiptError, match="Ed25519"):

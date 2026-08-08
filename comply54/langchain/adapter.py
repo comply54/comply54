@@ -38,7 +38,6 @@ from typing import Any
 from ..core.models import ComplianceResult
 from ..sectors._base import SectorCompliance
 
-
 # ─── LangGraph guard node ─────────────────────────────────────────────────────
 
 class Comply54Guard:

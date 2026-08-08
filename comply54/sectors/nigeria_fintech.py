@@ -27,6 +27,8 @@ Usage:
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from ..core.packs import (
     BVN_NIN,
     CBN,
@@ -50,8 +52,8 @@ class NigeriaFintechCompliance(SectorCompliance):
     """
 
     name = "Nigeria Fintech Compliance"
-    jurisdictions = ["NG"]
-    regulations = [
+    jurisdictions: ClassVar[list[str]] = ["NG"]
+    regulations: ClassVar[list[str]] = [
         "Nigeria Data Protection Act 2023",
         "CBN Transaction Limits & Controls",
         "CBN BVN Framework & NIBSS Rules",
@@ -62,7 +64,7 @@ class NigeriaFintechCompliance(SectorCompliance):
     def __init__(
         self,
         strict_mode: bool = False,
-        signing_key: "bytes | str | None" = None,
+        signing_key: bytes | str | None = None,
     ) -> None:
         super().__init__(
             packs=[

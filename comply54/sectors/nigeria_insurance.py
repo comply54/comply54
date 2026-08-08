@@ -35,6 +35,8 @@ Usage:
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from ..core.packs import (
     HUMAN_APPROVAL,
     NAICOM,
@@ -60,8 +62,8 @@ class NigeriaInsuranceCompliance(SectorCompliance):
     """
 
     name = "Nigeria Insurance Compliance"
-    jurisdictions = ["NG"]
-    regulations = [
+    jurisdictions: ClassVar[list[str]] = ["NG"]
+    regulations: ClassVar[list[str]] = [
         "Nigerian Insurance Industry Reform Act 2025 (NIIRA 2025)",
         "NAICOM Operational Guidelines 2021",
         "NAICOM Market Conduct Guidelines 2023",
@@ -73,7 +75,7 @@ class NigeriaInsuranceCompliance(SectorCompliance):
     def __init__(
         self,
         strict_mode: bool = False,
-        signing_key: "bytes | str | None" = None,
+        signing_key: bytes | str | None = None,
     ) -> None:
         super().__init__(
             packs=[

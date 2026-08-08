@@ -7,7 +7,7 @@ Tests for Phase 1.3 additions:
 
 import json
 
-from comply54 import NigeriaFintechCompliance, PanAfricanFintechCompliance, ComplianceCertificate
+from comply54 import ComplianceCertificate, NigeriaFintechCompliance, PanAfricanFintechCompliance
 
 
 class TestComplianceCertificate:

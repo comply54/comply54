@@ -19,6 +19,8 @@ Usage:
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from ..core.packs import (
     HUMAN_APPROVAL,
     KDPA,
@@ -38,8 +40,8 @@ class KenyaFintechCompliance(SectorCompliance):
     """
 
     name = "Kenya Fintech Compliance"
-    jurisdictions = ["KE"]
-    regulations = [
+    jurisdictions: ClassVar[list[str]] = ["KE"]
+    regulations: ClassVar[list[str]] = [
         "Kenya Data Protection Act 2019",
         "OWASP Agentic AI",
     ]
@@ -47,7 +49,7 @@ class KenyaFintechCompliance(SectorCompliance):
     def __init__(
         self,
         strict_mode: bool = False,
-        signing_key: "bytes | str | None" = None,
+        signing_key: bytes | str | None = None,
     ) -> None:
         super().__init__(
             packs=[

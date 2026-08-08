@@ -63,7 +63,6 @@ from typing import Any, Callable
 from ..core.models import ComplianceResult
 from ..sectors._base import SectorCompliance
 
-
 # ─── Lazy import helper ───────────────────────────────────────────────────────
 
 def _require_function_tool() -> type:
@@ -322,7 +321,7 @@ def compliance_tool(compliance: SectorCompliance) -> Any:
 
 # ─── Deprecated v0.2 / pyautogen API ──────────────────────────────────────────
 
-def Comply54UserProxy(*_args: Any, **_kwargs: Any) -> None:  # noqa: N802
+def Comply54UserProxy(*_args: Any, **_kwargs: Any) -> None:
     """Removed. Use comply54_tools() with AssistantAgent instead."""
     raise ImportError(
         "Comply54UserProxy requires pyautogen ≤ 0.2 which is incompatible with "

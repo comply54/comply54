@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 
 from .models import RegulatorySource
 
-
 _PACKS_DIR = pathlib.Path(__file__).parent.parent / "packs"
 
 

@@ -47,9 +47,9 @@ from ._signer import ReceiptSigner
 from ._verifier import InvalidReceiptError, verify_receipt
 
 __all__ = [
-    "ReceiptSigner",
-    "ReceiptPayload",
-    "verify_receipt",
     "InvalidReceiptError",
+    "ReceiptPayload",
+    "ReceiptSigner",
     "digest_input",
+    "verify_receipt",
 ]
