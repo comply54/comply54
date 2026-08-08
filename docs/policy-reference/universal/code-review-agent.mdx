@@ -1,0 +1,275 @@
+---
+title: AI Code Review Agent
+description: Governance pack for autonomous AI agents that review source code, post findings to VCS systems, probe applications for vulnerabilities, and notify developers.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `universal/code-review-agent` |
+| **Standards** | OWASP LLM08 Excessive Agency · OWASP Agentic AI ASI01/ASI02/ASI09 · NIST AI RMF GOVERN 1.3 · ISO/IEC 42001:2023 §6.1.2 |
+| **Jurisdiction** | Universal |
+| **Version** | 1.0.0 |
+
+## What comply54 enforces
+
+AI code review agents post findings to pull requests, fire security probes at target applications, and send notifications to developers — all without human intervention. Each of these actions has organizational, security, and employment consequences. This pack enforces the governance layer that should exist between the agent's decision and its execution.
+
+### Security posture: fail-closed by default
+
+This pack is **fail-closed**. If a deployer forgets to configure an allowlist or approval token, the default behavior is `deny`, not `allow`. Three config flags control this:
+
+- `deny_unlisted_repos` (default `true`) — no approved-repo list → all ingestion denied
+- `deny_unlisted_notification_domains` (default `true`) — no domain allowlist → all developer notifications denied
+- `require_explicit_authorization` (default `true`) — probe tokens must appear in `context.verified_tokens`, not just be non-empty strings
+
+### Covered actions
+
+| Action | Description |
+|--------|-------------|
+| `post_review_finding` | Post a single finding/comment to a PR or MR |
+| `post_review_summary` | Post the overall review summary to a PR or MR |
+| `post_compliance_assessment` | Post ticket/issue compliance results to a PR |
+| `run_security_probe` | Actively probe a target URL with security payloads |
+| `send_developer_notification` | Send email/Teams/Slack notification about a developer |
+| `ingest_pull_request` | Receive a PR diff into the LLM for analysis |
+| `dismiss_finding` | Dismiss a previously raised finding |
+
+### Controls
+
+| Scenario | Decision | Rule |
+|----------|----------|------|
+| Finding confidence below threshold (default 0.75) | `deny` | D1 — confidence gate |
+| Posted content contains a prompt injection artifact | `deny` | D2 — output integrity |
+| Security probe with no verified authorization | `deny` | D3 — probe authorization |
+| Probe scope contains destructive keywords (DROP TABLE, rm -rf) | `deny` | D4 — destructive probe |
+| Developer notification to recipient outside approved domains | `deny` | D5 — domain restriction |
+| Developer notification with no domain allowlist configured | `deny` | D5 — fail-closed |
+| Dismissal with no stated reason | `deny` | D6 — dismissal audit |
+| PR ingestion from unauthorized repository | `deny` | D7 — repo scope |
+| PR ingestion with no approved-repo list configured | `deny` | D7 — fail-closed |
+| HIGH severity security finding, no human approval | `escalate` | E1 — human gate |
+| Finding batch exceeds volume limit (default 30) | `escalate` | E2 — volume limit |
+| Developer notification without human approval | `escalate` | E3 — human gate |
+| Security probe targeting production environment | `escalate` | E4 — production guard |
+| Compliance assessment with >50% requirements not implemented | `escalate` | E5 — assessment gate |
+| All VCS-posting actions (always recorded) | `audit` | A1 |
+| Authorized security probe executions | `audit` | A2 |
+| Dismissed findings (with reason) | `audit` | A3 |
+| Approved developer notifications | `audit` | A4 |
+
+## Usage
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import CODE_REVIEW_AGENT
+
+engine = Comply54Engine(packs=[CODE_REVIEW_AGENT])
+
+# Post a finding — confidence gate applied
+result = engine.check(
+    action="post_review_finding",
+    params={
+        "body": "Missing input validation on line 42.",
+        "confidence": 0.92,
+        "severity": "medium",
+        "category": "bug",
+        "findings_in_batch": 3,
+    },
+)
+print(result.overall)   # "audit"
+
+# HIGH severity security finding requires human approval
+result = engine.check(
+    action="post_review_finding",
+    params={
+        "body": "Hardcoded AWS access key detected on line 22.",
+        "confidence": 0.98,
+        "severity": "high",
+        "category": "security",
+        "findings_in_batch": 1,
+    },
+)
+print(result.overall)   # "escalate"
+
+# With human approval
+result = engine.check(
+    action="post_review_finding",
+    params={
+        "body": "Hardcoded AWS access key detected on line 22.",
+        "confidence": 0.98,
+        "severity": "high",
+        "category": "security",
+        "findings_in_batch": 1,
+    },
+    context={"human_approved": True},
+)
+print(result.overall)   # "audit"
+```
+
+## Security probe governance
+
+```python
+# Probe requires verified authorization token
+result = engine.check(
+    action="run_security_probe",
+    params={
+        "target_url": "https://staging.myapp.io",
+        "probe_scope": "sql_injection xss",
+    },
+    context={
+        "authorization_token": "tok-abc123",
+        "verified_tokens": ["tok-abc123"],  # must appear here
+    },
+)
+print(result.overall)   # "audit"
+
+# Destructive payloads blocked unconditionally
+result = engine.check(
+    action="run_security_probe",
+    params={
+        "target_url": "https://staging.myapp.io",
+        "probe_scope": "xss drop_table",
+    },
+    context={
+        "approved_targets": ["https://staging.myapp.io"],
+    },
+)
+print(result.overall)   # "deny"
+```
+
+## Production environment detection
+
+E4 (production guard) uses a **three-phase fail-safe** to determine whether a probe target is production. The logic is deliberately conservative — an unlabelled URL is treated as production, never as safe.
+
+**Phase 1 — Explicit flag wins.**  
+If `context.is_production` is present, it is authoritative. `false` suppresses escalation even for `prod.` URLs (e.g. smoke-test environments named after production); `true` forces escalation even for staging URLs.
+
+**Phase 2 — Positive production match.**  
+If the URL contains a known production pattern (`prod.`, `-prod.`, `prd.`, `/prd/`, `production.`, `live.`, `release.`), the target is treated as production.
+
+**Phase 3 — Fail-safe (default to production).**  
+If the URL has no recognized non-production marker, it is treated as production. The non-production set covers:
+
+| Category | Examples |
+|----------|---------|
+| Staging | `staging.`, `-staging.`, `.staging.`, `stg.`, `-stg.` |
+| Development | `dev.`, `develop.`, `development.`, `-dev.` |
+| Testing | `test.`, `qa.`, `uat.`, `sandbox.`, `sbx.` |
+| Feature/preview | `pr-`, `feature-`, `feat-`, `preview.`, `canary.`, `branch-` |
+| Pre-release | `alpha.`, `beta.`, `rc.`, `nightly.`, `experiment.` |
+| Local / private IPs | `localhost`, `127.0.0.1`, `192.168.`, `10.`, `172.`, `[::1]`, `0.0.0.0` |
+| Dev-only ports | `:3000`, `:4000`, `:5000`, `:8000`, `:8080`, `:8888`, `:9000`, `:9090`, `:9443` |
+
+This means bare domains (`api.myapp.io`, `myapp.io`, `secure.mybank.com`) and cloud platform hostnames with no environment prefix escalate by default. Override with `context.is_production = false` for environments you control.
+
+```python
+# Fail-safe: bare API subdomain treated as production
+result = engine.check(
+    action="run_security_probe",
+    params={"target_url": "https://api.myapp.io", "probe_scope": "xss"},
+    context={"authorization_token": "tok", "verified_tokens": ["tok"]},
+)
+print(result.overall)   # "escalate"
+
+# Operator override: explicitly mark a bare domain as non-production
+result = engine.check(
+    action="run_security_probe",
+    params={"target_url": "https://api.myapp.io", "probe_scope": "xss"},
+    context={
+        "authorization_token": "tok",
+        "verified_tokens": ["tok"],
+        "is_production": False,
+    },
+)
+print(result.overall)   # "audit"
+```
+
+## Fail-closed behavior for ingestion and notifications
+
+```python
+# No approved_repos configured → deny by default (fail-closed)
+result = engine.check(
+    action="ingest_pull_request",
+    params={"repo": "myorg/api"},
+)
+print(result.overall)   # "deny"
+
+# Explicitly configure repos to allow ingestion
+result = engine.check(
+    action="ingest_pull_request",
+    params={"repo": "myorg/api"},
+    context={"approved_repos": ["myorg/api", "myorg/web"]},
+)
+print(result.overall)   # "allow"
+
+# Early rollout: opt out of fail-closed explicitly
+engine_open = Comply54Engine(
+    packs=[CODE_REVIEW_AGENT],
+    config={"code_review_agent": {"deny_unlisted_repos": False}},
+)
+result = engine_open.check(
+    action="ingest_pull_request",
+    params={"repo": "myorg/any-repo"},
+)
+print(result.overall)   # "allow"
+```
+
+## Configuration reference
+
+Override any setting via `data.config.code_review_agent.*`:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `min_confidence` | `float` | `0.75` | Minimum confidence to post a finding. Missing confidence treated as 0.0. |
+| `max_findings_per_batch` | `int` | `30` | Maximum findings before requiring human triage. |
+| `require_human_for_security` | `bool` | `true` | Escalate HIGH severity security findings before posting. |
+| `require_probe_authorization` | `bool` | `true` | Probes must have a verified token or approved target. |
+| `require_explicit_authorization` | `bool` | `true` | Probe token must appear in `context.verified_tokens`. |
+| `require_dismissal_reason` | `bool` | `true` | Dismissals must include a stated reason. |
+| `require_notification_approval` | `bool` | `true` | Developer notifications require `context.human_approved`. |
+| `deny_unlisted_notification_domains` | `bool` | `true` | Deny all notifications when no allowlist is configured. |
+| `deny_unlisted_repos` | `bool` | `true` | Deny all ingestion when no approved-repo list is configured. |
+| `non_compliance_threshold` | `float` | `0.5` | Non-compliance ratio above which assessments are escalated. |
+
+## Input schema
+
+```json
+{
+  "action": "post_review_finding",
+  "params": {
+    "body": "Missing null check on line 42.",
+    "confidence": 0.92,
+    "severity": "medium",
+    "category": "bug",
+    "findings_in_batch": 3,
+    "target_url": "https://staging.myapp.io",
+    "probe_scope": "sql_injection xss",
+    "recipient": "dev@company.com",
+    "dismissal_reason": "False positive — React auto-escapes.",
+    "repo": "myorg/api",
+    "not_implemented_count": 3,
+    "total_requirements": 20
+  },
+  "context": {
+    "human_approved": true,
+    "approved_targets": ["https://staging.myapp.io"],
+    "authorization_token": "tok-abc123",
+    "verified_tokens": ["tok-abc123"],
+    "approved_repos": ["myorg/api", "myorg/web"],
+    "recipient_domain_allowlist": ["company.com"],
+    "is_production": false
+  }
+}
+```
+
+## Framework alignment
+
+| Framework | Section |
+|-----------|---------|
+| OWASP Top 10 for LLM Applications 2025 | LLM08 — Excessive Agency |
+| OWASP Top 10 for Agentic AI | ASI01 Agent Behaviour Hijack, ASI02 Tool Misuse, ASI09 Human-Agent Trust Exploitation |
+| NIST AI RMF 1.0 | GOVERN 1.2, GOVERN 1.3, MANAGE 2.2 |
+| ISO/IEC 42001:2023 | §6.1.2 AI risk assessment |
+| EU AI Act | Art. 9 Risk management, Art. 14 Human oversight |

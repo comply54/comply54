@@ -38,4 +38,5 @@ export const PACK_VERSIONS: Record<string, string> = {
   "universal/tool-permissions": "1.0.0",
   "universal/human-approval": "1.0.0",
   "universal/model-routing": "1.0.0",
+  "universal/code-review-agent": "1.1.0",
 }
