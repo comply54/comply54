@@ -10,7 +10,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -47,7 +47,7 @@ class PolicyDecision(BaseModel):
     action: Action
     messages: list[str] = Field(default_factory=list)
     citations: list[RegulatorySource] = Field(default_factory=list)
-    rule_triggered: str | None = None
+    rule_triggered: Optional[str] = None  # noqa: UP045 — Pydantic evaluates on Python 3.9
     audit_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -77,7 +77,7 @@ class ComplianceResult(BaseModel):
     decisions: list[PolicyDecision]
     audit_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     evaluated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    receipt_token: str | None = None
+    receipt_token: Optional[str] = None  # noqa: UP045 — Pydantic evaluates on Python 3.9
     """
     Compact Ed25519-signed JWT receipt — present only when a ``signing_key``
     was provided to the sector pack or engine.  Pass to
