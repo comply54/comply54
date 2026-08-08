@@ -2,8 +2,7 @@ import json
 
 import pytest
 
-from comply54.cli import build_parser
-from comply54.cli import scan
+from comply54.cli import build_parser, scan
 from comply54.core.models import ComplianceResult, PolicyDecision
 
 
