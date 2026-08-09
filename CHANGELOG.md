@@ -9,6 +9,41 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+**AI Code Review Agent (`universal/code-review-agent` v1.2.0) — comprehensive injection defense**
+
+Prompt injection coverage expanded from 12 to 175 detection artifacts, a new E6 escalation rule for adversarial PR diffs, and a new A5 audit trail for all PR ingestion.
+
+#### Injection artifact expansion (D2)
+
+`_injection_artifacts` now covers eight categories:
+
+1. **Direct instruction override** — `disregard/forget/override/supersede/replace your instructions`, plus synonyms (`new instructions:`, `revised instructions:`, `amended instructions:`, etc.)
+2. **Task hijacking** — `your real/actual/true task`, `new primary objective`, `secret task:`, `your hidden objective`, etc.
+3. **Role and identity hijacking** — `from now on you are`, `pretend you have no restrictions`, `act as an ai without`, `your true instructions are`, etc.
+4. **Jailbreak and mode flags** — `jailbreak`, `developer mode enabled`, `god mode`, `dan mode`, `unrestricted mode`, `bypass all safety/guardrails`, `safety guardrails off`, `you have no restrictions`, etc.
+5. **Authority spoofing** — `as openai`, `as anthropic`, `i am your developer/creator/trainer/operator`, `speaking as your developer`, etc.
+6. **System prompt extraction and exfiltration** — `reveal/output/print/leak/show/copy your system prompt`, `print/output/repeat everything above`, `send this conversation to`, `exfiltrate`, etc.
+7. **Prompt boundary and structural markers** — `[system]`, `[override]`, `[[system]]`, `<|system|>`, `<|im_start|>system`, `<<sys>>`, `[inst]`, `### system:`, `## new instructions:`, `end of system prompt`, `begin new instructions`, `attention: new directive`, etc.
+8. **Code comment injection — all major languages** — `//`, `/*`, `#`, `--`, `<!--`, `%`, `;`, `rem` prefix variants for `ignore previous`, `new task:`, `system override`, `override instructions`, `your new instructions` — covering JavaScript/C/Go/Rust, Python/Shell/YAML, SQL/Lua/Haskell, HTML/XML, Rego/LaTeX/MATLAB, Assembly/INI, and Batch/VBScript.
+
+#### E6 — Ingest integrity escalation (new)
+
+When `input.params.body` (PR diff content) contains injection artifact patterns during `ingest_pull_request`, the action is escalated for human review before the agent's analysis may be acted upon. The reviewer's conclusion may still be valid; human confirmation ensures it was not influenced by an adversarial payload embedded in the diff. Suppressed by `context.human_approved=true`.
+
+Citation key: `ai_agent_injection_in_diff`
+
+#### A5 — PR ingestion audit trail (new)
+
+All authorized `ingest_pull_request` actions now produce an audit record (`ai_agent_ingest_audit`). Previously, allowed ingestion produced no audit entry, leaving a gap in the audit trail.
+
+#### Test coverage
+
+109 new parametrized test cases added in `tests/test_code_review_agent.py`, covering each new artifact category (including representative patterns per language for multi-language comment injection), E6 escalation and `human_approved` override, E6 suppression by D7 deny, and A5 audit presence. Total: 276 tests (+109).
+
+---
+
 ### Added
 
 **AI Code Review Agent governance pack (`universal/code-review-agent` v1.0.0)**

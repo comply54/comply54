@@ -2,7 +2,7 @@
   "$schema": "https://comply54.io/schema/registry.schema.json",
   "version": "1.4.0",
   "last_updated": "2026-06-19",
-  "total_packs": 19,
+  "total_packs": 20,
   "packs": [
     {
       "id": "comply54-nigeria-ndpa",
@@ -209,6 +209,23 @@
       "rego_tests": 22
     },
     {
+      "id": "comply54-universal-code-review-agent",
+      "source_repo": "comply54/comply54",
+      "source_yaml": null,
+      "source_rego": "https://raw.githubusercontent.com/comply54/comply54/main/comply54/packs/universal/code_review_agent.rego",
+      "path": "comply54/packs/universal/code_review_agent.rego",
+      "jurisdiction": "universal",
+      "regulation": "OWASP Agentic AI Top 10 — ASI01/ASI02/ASI09",
+      "short_name": "Code Review Agent Controls",
+      "version": "1.2.0",
+      "enforcing_authority": "OWASP",
+      "effective_date": "2025-01-01",
+      "regulatory_source": "https://genai.owasp.org",
+      "tags": ["security", "code-review", "agentic", "owasp", "universal"],
+      "agt_compatible": true,
+      "rego_tests": 276
+    },
+    {
       "id": "comply54-uganda-dppa",
       "source_repo": "kingztech2019/agt-policies-nigeria",
       "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/uganda-dppa.yaml",
@@ -368,7 +385,8 @@
       "comply54-universal-pii-leakage",
       "comply54-universal-tool-permissions",
       "comply54-universal-human-approval",
-      "comply54-universal-model-routing"
+      "comply54-universal-model-routing",
+      "comply54-universal-code-review-agent"
     ]
   }
 }
