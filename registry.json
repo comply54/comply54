@@ -217,13 +217,13 @@
       "jurisdiction": "universal",
       "regulation": "OWASP Agentic AI Top 10 — ASI01/ASI02/ASI09",
       "short_name": "Code Review Agent Controls",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "enforcing_authority": "OWASP",
       "effective_date": "2025-01-01",
       "regulatory_source": "https://genai.owasp.org",
       "tags": ["security", "code-review", "agentic", "owasp", "universal"],
       "agt_compatible": true,
-      "rego_tests": 167
+      "rego_tests": 276
     },
     {
       "id": "comply54-uganda-dppa",

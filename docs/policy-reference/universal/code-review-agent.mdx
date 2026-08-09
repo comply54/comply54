@@ -10,7 +10,7 @@ description: Governance pack for autonomous AI agents that review source code, p
 | **Pack ID** | `universal/code-review-agent` |
 | **Standards** | OWASP LLM08 Excessive Agency · OWASP Agentic AI ASI01/ASI02/ASI09 · NIST AI RMF GOVERN 1.3 · ISO/IEC 42001:2023 §6.1.2 |
 | **Jurisdiction** | Universal |
-| **Version** | 1.1.0 |
+| **Version** | 1.2.0 |
 
 ## What comply54 enforces
 
@@ -54,10 +54,12 @@ This pack is **fail-closed**. If a deployer forgets to configure an allowlist or
 | Developer notification without human approval | `escalate` | E3 — human gate |
 | Security probe targeting production environment | `escalate` | E4 — production guard |
 | Compliance assessment with >50% requirements not implemented | `escalate` | E5 — assessment gate |
+| PR diff contains injection artifact patterns | `escalate` | E6 — ingest integrity |
 | All VCS-posting actions (always recorded) | `audit` | A1 |
 | Authorized security probe executions | `audit` | A2 |
 | Dismissed findings (with reason) | `audit` | A3 |
 | Approved developer notifications | `audit` | A4 |
+| All authorized PR ingestion actions | `audit` | A5 |
 
 ## Usage
 

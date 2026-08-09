@@ -362,7 +362,7 @@ CODE_REVIEW_AGENT = PackSpec(
     authority="OWASP",
     rego_path=_PACKS_DIR / "universal" / "code_review_agent.rego",
     query_prefix="data.agt_policies_agent.code_review_agent",
-    version="1.1.0",
+    version="1.2.0",  # comprehensive injection artifact expansion + E6 ingest escalation + A5 ingest audit
     tags=["owasp", "safety", "agentic", "code-review", "human-in-the-loop", "security-probe"],
     sources=[
         RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM08:2025 — Excessive Agency", authority="OWASP", year=2025, url=_OWASP_URL),
