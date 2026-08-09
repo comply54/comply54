@@ -1,0 +1,276 @@
+---
+title: AI Individual Risk Assessment
+description: Governance pack for AI systems that generate risk narratives, scores, and recommendations about named individuals — field agents, employees, customers, or borrowers — and persist those outputs to permanent records affecting employment, credit, insurance, or access decisions.
+---
+
+## Overview
+
+| Field | Value |
+|-------|-------|
+| **Pack ID** | `universal/individual-risk-assessment` |
+| **Standards** | NDPA 2023 §16/§33/§34/§36 · Nigeria Labour Act §11 · POPIA §71 · Kenya DPA §39 · NIST AI RMF · ISO/IEC 42001:2023 · OWASP ASI03 |
+| **Jurisdiction** | Universal (primary: Nigeria) |
+| **Version** | 1.0.0 |
+
+## What comply54 enforces
+
+AI systems generating risk narratives about individuals — field agent assessments, employee performance risk, borrower scoring — produce outputs that can directly affect someone's livelihood. These systems operate without the individual's knowledge at assessment time, with no natural feedback loop to correct errors, and with permanent consequences when the outputs are written to records.
+
+This pack places four mandatory checkpoints between the AI's decision and its effect:
+
+1. **Lawful basis gate** — a declared processing basis must exist before any action runs
+2. **Pre-authorization gate** — a named supervisor must authorize the assessment before the AI generates it
+3. **Output integrity** — the narrative must not contain absolute condemnation, protected-characteristic reasoning, or permanent temporal negatives
+4. **Human-in-the-loop** — high-risk labels require human review before they reach permanent records or leave the originating system
+
+### Security posture: fail-closed by default
+
+This pack is **fail-closed**. Missing a lawful basis, omitting supervisor authorization, or failing to provide a worker identifier all result in `deny`, not `allow`. Three config flags control fail-closed behavior explicitly:
+
+- `require_lawful_basis` (default `true`) — all primary actions need `context.lawful_basis` declared; disabling this violates NDPA 2023 §16
+- `require_pre_authorization` (default `true`) — generation needs `context.human_approved=true`
+- `deny_unlisted_export_destinations` (default `true`) — no export allowlist configured → all exports denied
+
+### Covered actions
+
+| Action | Description |
+|--------|-------------|
+| `generate_risk_narrative` | AI generates a risk label, narrative, and recommendations for a named individual |
+| `persist_risk_label` | Writes the AI-generated label and narrative to a permanent record |
+| `persist_risk_assessment` | Alias for systems that write the full assessment object |
+| `export_risk_record` | Sends the assessment outside the originating system |
+| `display_risk_narrative` | Renders the narrative to a viewer (always audited, never blocked) |
+
+### Controls
+
+| Scenario | Decision | Rule |
+|----------|----------|------|
+| No lawful basis declared (generation, persistence, or export) | `deny` | D1 — lawful basis gate |
+| AI generates narrative without supervisor pre-authorization | `deny` | D2 — pre-authorization gate |
+| High-risk label being persisted without human review | `deny` | D3 — high-risk label gate |
+| Narrative contains absolute character condemnation or protected-characteristic reasoning | `deny` | D4 — prohibited narrative patterns |
+| No worker identifier provided | `deny` | D5 — missing worker ID |
+| Model confidence below threshold (default 0.60) | `deny` | D6 — confidence gate |
+| High-risk record exported without authorization | `deny` | D7 — high-risk export gate |
+| High-risk persistence with no named supervisor in `context.supervisor_id` | `escalate` | E1 — supervisor identification |
+| Export destination not in `context.export_allowlist` | `escalate` | E2 — export destination gate |
+| No export allowlist configured (fail-closed) | `escalate` | E2 — fail-closed |
+| No data sources declared for generation | `escalate` | E3 — data sources absent |
+| High-risk persistence without `context.subject_notified=true` | `escalate` | E4 — subject notification |
+| All authorized generation actions | `audit` | A1 |
+| All authorized persistence actions | `audit` | A2 |
+| All authorized export actions | `audit` | A3 |
+| All narrative display events (always, regardless of other rules) | `audit` | A4 |
+
+## Usage
+
+```python
+from comply54.core.engine import Comply54Engine
+from comply54.core.packs import INDIVIDUAL_RISK_ASSESSMENT
+
+engine = Comply54Engine(packs=[INDIVIDUAL_RISK_ASSESSMENT])
+
+# Generate a risk narrative — supervisor pre-authorization required
+result = engine.check(
+    action="generate_risk_narrative",
+    params={
+        "worker_id": "agent-00123",
+        "assessment_type": "field_agent_risk",
+        "data_sources": ["performance_history", "disciplinary_records", "attendance"],
+    },
+    context={
+        "human_approved": True,
+        "lawful_basis": "legitimate_interests",
+        "supervisor_id": "mgr-456",
+    },
+)
+print(result.overall)   # "audit"
+
+# Persist a low-risk label — confidence gate and audit apply
+result = engine.check(
+    action="persist_risk_label",
+    params={
+        "worker_id": "agent-00123",
+        "risk_label": "low",
+        "narrative": "Based on 12 months of performance records, the agent meets all targets consistently.",
+        "confidence": 0.85,
+        "recommendations": ["Continue standard monitoring cycle."],
+    },
+    context={
+        "human_approved": True,
+        "lawful_basis": "legitimate_interests",
+        "supervisor_id": "mgr-456",
+        "subject_notified": True,
+    },
+)
+print(result.overall)   # "audit"
+```
+
+## High-risk label workflow
+
+A high-risk label has the highest consequences in this system. It requires human approval at every stage.
+
+```python
+# HIGH risk persistence without human_approved → deny (D3)
+result = engine.check(
+    action="persist_risk_label",
+    params={"worker_id": "agent-00789", "risk_label": "high", "confidence": 0.91},
+    context={"lawful_basis": "legitimate_interests"},
+)
+print(result.overall)   # "deny"
+
+# HIGH risk with human_approved but no supervisor_id → escalate (E1)
+result = engine.check(
+    action="persist_risk_label",
+    params={"worker_id": "agent-00789", "risk_label": "high", "confidence": 0.91,
+            "recommendations": ["Suspend field operations pending review."]},
+    context={"human_approved": True, "lawful_basis": "legitimate_interests",
+             "subject_notified": True},
+)
+print(result.overall)   # "escalate"
+
+# HIGH risk correctly authorized → audit
+result = engine.check(
+    action="persist_risk_label",
+    params={"worker_id": "agent-00789", "risk_label": "high", "confidence": 0.91,
+            "recommendations": ["Suspend field operations pending review."]},
+    context={"human_approved": True, "lawful_basis": "legitimate_interests",
+             "supervisor_id": "mgr-101", "subject_notified": True},
+)
+print(result.overall)   # "audit"
+```
+
+## Narrative integrity (D4)
+
+The pack blocks narratives containing three categories of prohibited patterns before they can be written to permanent records:
+
+**1. Absolute character condemnation** — sweeping negative character claims that cannot be derived from performance data and expose the organization to defamation liability and NDPA §36 claims. Examples: `"is a fraudster"`, `"is fundamentally dishonest"`, `"has no integrity"`.
+
+**2. Protected-characteristic reasoning** — any phrase linking a risk label to religion, ethnicity, tribe, national origin, marital status, gender, or age. Under NDPA §36 and the Nigeria Labour Act §11, using these as risk factors is discriminatory regardless of framing. Examples: `"due to his tribe"`, `"because of her religion"`, `"due to their ethnicity"`.
+
+**3. Absolute temporal negatives** — permanent predictions applied to conduct from limited data, violating NDPA §22 proportionality. Examples: `"will never be honest"`, `"can never be trusted"`, `"will always defraud"`.
+
+```python
+# Absolute character condemnation → deny (D4)
+result = engine.check(
+    action="persist_risk_label",
+    params={"worker_id": "agent-00123", "risk_label": "high",
+            "narrative": "Assessment indicates the agent is fundamentally dishonest.",
+            "confidence": 0.90},
+    context={"human_approved": True, "lawful_basis": "legitimate_interests",
+             "supervisor_id": "mgr-456", "subject_notified": True},
+)
+print(result.overall)   # "deny"
+
+# Protected-characteristic reasoning → deny (D4)
+result = engine.check(
+    action="persist_risk_label",
+    params={"worker_id": "agent-00123", "risk_label": "moderate",
+            "narrative": "Risk elevated due to his ethnicity and associated patterns.",
+            "confidence": 0.78},
+    context={"human_approved": True, "lawful_basis": "legitimate_interests",
+             "supervisor_id": "mgr-456"},
+)
+print(result.overall)   # "deny"
+```
+
+## Export controls
+
+Risk records leaving the originating system require explicit destination authorization. The export allowlist works like the code review agent's approved-repo list — silence is not consent.
+
+```python
+# No export allowlist configured → escalate (E2 fail-closed)
+result = engine.check(
+    action="export_risk_record",
+    params={"worker_id": "agent-00123", "risk_label": "low", "destination": "hr-system"},
+    context={"human_approved": True, "lawful_basis": "legitimate_interests",
+             "supervisor_id": "mgr-456"},
+)
+print(result.overall)   # "escalate"
+
+# Allowlist configured, destination present → audit
+result = engine.check(
+    action="export_risk_record",
+    params={"worker_id": "agent-00123", "risk_label": "low", "destination": "hr-system"},
+    context={"human_approved": True, "lawful_basis": "legitimate_interests",
+             "supervisor_id": "mgr-456",
+             "export_allowlist": {"hr-system", "dashboard-api"}},
+)
+print(result.overall)   # "audit"
+
+# HIGH risk export without authorization → deny (D7)
+result = engine.check(
+    action="export_risk_record",
+    params={"worker_id": "agent-00123", "risk_label": "high", "destination": "hr-system"},
+    context={"lawful_basis": "legitimate_interests",
+             "export_allowlist": {"hr-system"}},
+)
+print(result.overall)   # "deny"
+```
+
+## Display audit (A4)
+
+Every view of a risk narrative is an access event and is always logged — regardless of whether other rules deny or escalate the same request. This produces a complete read-access trail across the lifetime of the record.
+
+```python
+# Display is always audited, even when other rules fire
+result = engine.check(
+    action="display_risk_narrative",
+    params={"worker_id": "agent-00123", "risk_label": "high"},
+    context={"supervisor_id": "mgr-456"},
+)
+print(result.overall)   # "audit"
+# The audit trail records: worker_id, risk_label, supervisor_id (viewer), timestamp
+```
+
+## Configuration reference
+
+Override any setting via `data.config.individual_risk_assessment.*`:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `min_confidence` | `float` | `0.60` | Minimum confidence to persist a risk label. Missing confidence treated as 0.0. |
+| `require_pre_authorization` | `bool` | `true` | Generation requires `context.human_approved=true` before the AI runs. |
+| `require_lawful_basis` | `bool` | `true` | All primary actions need a declared `context.lawful_basis`. Disabling this violates NDPA §16. |
+| `require_supervisor_id_for_high` | `bool` | `true` | Persisting a HIGH label requires a named supervisor in `context.supervisor_id`. |
+| `require_subject_notification` | `bool` | `true` | Persisting a HIGH label requires `context.subject_notified=true`. |
+| `deny_unlisted_export_destinations` | `bool` | `true` | Deny all exports when no `context.export_allowlist` is configured. |
+
+## Input schema
+
+```json
+{
+  "action": "generate_risk_narrative",
+  "params": {
+    "worker_id": "agent-00123",
+    "assessment_type": "field_agent_risk",
+    "risk_label": "high",
+    "narrative": "Based on 18 months of data, the agent's transaction discrepancies exceed threshold.",
+    "confidence": 0.88,
+    "data_sources": ["performance_history", "disciplinary_records", "transaction_logs"],
+    "recommendations": ["Suspend field operations pending supervisor review."],
+    "destination": "hr-system"
+  },
+  "context": {
+    "human_approved": true,
+    "lawful_basis": "legitimate_interests",
+    "supervisor_id": "mgr-456",
+    "subject_notified": true,
+    "export_allowlist": ["hr-system", "compliance-dashboard"]
+  }
+}
+```
+
+## Framework alignment
+
+| Framework | Section |
+|-----------|---------|
+| Nigeria Data Protection Act 2023 | §16 Lawful basis, §22 Proportionality, §25 Cross-border transfers, §30 Accountability, §33 Automated individual decisions, §34 Data subject rights, §36 Non-discrimination |
+| Nigeria Labour Act Cap L1 LFN 2004 | §11 Wrongful dismissal protection |
+| POPIA (South Africa) | §71 Automated decision-making |
+| Kenya DPA 2019 | §39 Automated processing |
+| NIST AI RMF 1.0 | GOVERN 1.3, MANAGE 2.2, MEASURE 2.5 |
+| ISO/IEC 42001:2023 | §6.1.2 AI risk assessment, §8.4 Accountability |
+| OWASP Top 10 for Agentic AI | ASI03 Insufficient Authorization Controls |
+| EU AI Act 2024 | Art. 10 Data accuracy, Art. 14 Human oversight (reference only — applies to EU-deployed systems) |
+| GDPR 2016/679 | Art. 6 Lawful basis, Art. 22 Automated decisions (reference only — applies to EU data subjects) |

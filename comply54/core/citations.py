@@ -377,6 +377,71 @@ RULE_CITATIONS: dict[str, list[RegulatorySource]] = {
         RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM08:2025 — Excessive Agency (Bulk Operations)", authority="OWASP", year=2025, url=_OWASP_URL),
     ],
 
+    # ── universal/individual-risk-assessment ──────────────────────────────────
+    "universal/individual-risk-assessment.ira_no_lawful_basis": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§16 — Lawful Basis for Processing Personal Data", authority="NDPC", year=2023),
+        RegulatorySource(document="GDPR 2016/679", section="Art. 6 — Lawfulness of Processing", authority="European Data Protection Board", year=2016),
+    ],
+    "universal/individual-risk-assessment.ira_no_pre_authorization": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§33 — Automated Individual Decision-Making", authority="NDPC", year=2023),
+        RegulatorySource(document="EU AI Act 2024", section="Art. 14 — Human Oversight of High-Risk AI Systems", authority="European Commission", year=2024),
+    ],
+    "universal/individual-risk-assessment.ira_high_risk_no_review": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§33 — Automated Individual Decision-Making", authority="NDPC", year=2023),
+        RegulatorySource(document="GDPR 2016/679", section="Art. 22 — Automated Individual Decision-Making and Profiling", authority="European Data Protection Board", year=2016),
+        RegulatorySource(document="Protection of Personal Information Act 4 of 2013 (POPIA)", section="§71 — Automated Decision-Making", authority="Information Regulator ZA", year=2013),
+    ],
+    "universal/individual-risk-assessment.ira_prohibited_narrative": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§36 — Non-Discrimination Obligation", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§22 — Data Minimisation and Proportionality", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Labour Act Cap L1 LFN 2004", section="§11 — Wrongful Dismissal Protection", authority="Federal Ministry of Labour", year=2004),
+    ],
+    "universal/individual-risk-assessment.ira_missing_worker_id": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§30 — Controller Accountability Obligations", authority="NDPC", year=2023),
+        RegulatorySource(document="ISO/IEC 42001:2023", section="§8.4 — AI System Accountability", authority="ISO/IEC", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_low_confidence": [
+        RegulatorySource(document="EU AI Act 2024", section="Art. 10 — Data Governance and Management Practices (Accuracy)", authority="European Commission", year=2024),
+        RegulatorySource(document="NIST AI RMF 1.0", section="MEASURE 2.5 — AI Output Traceability and Reliability", authority="NIST", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_high_risk_export": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§25 — Cross-Border and External Transfer Restrictions", authority="NDPC", year=2023),
+        RegulatorySource(document="Protection of Personal Information Act 4 of 2013 (POPIA)", section="§71 — Automated Decision-Making", authority="Information Regulator ZA", year=2013),
+    ],
+    "universal/individual-risk-assessment.ira_high_risk_review_gate": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§33 — Automated Individual Decision-Making (Named Reviewer Required)", authority="NDPC", year=2023),
+        RegulatorySource(document="GDPR 2016/679", section="Art. 22 — Right to Human Review of Automated Decisions", authority="European Data Protection Board", year=2016),
+    ],
+    "universal/individual-risk-assessment.ira_export_no_allowlist": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§25 — Cross-Border Transfer Restrictions", authority="NDPC", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_export_unlisted_destination": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§25 — Cross-Border Transfer Restrictions", authority="NDPC", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_no_data_sources": [
+        RegulatorySource(document="NIST AI RMF 1.0", section="MEASURE 2.5 — AI Output Traceability to Input Data", authority="NIST", year=2023),
+        RegulatorySource(document="ISO/IEC 42001:2023", section="§8.4 — AI System Accountability and Traceability", authority="ISO/IEC", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_subject_not_notified": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§34 — Data Subject Rights (Right to Be Informed)", authority="NDPC", year=2023),
+        RegulatorySource(document="GDPR 2016/679", section="Art. 22(3) — Right to Human Review and to Contest Decision", authority="European Data Protection Board", year=2016),
+    ],
+    "universal/individual-risk-assessment.ira_generation_audit": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§30 — Controller Accountability Obligations", authority="NDPC", year=2023),
+        RegulatorySource(document="ISO/IEC 42001:2023", section="§8.4 — AI System Accountability", authority="ISO/IEC", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_persistence_audit": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§30 — Controller Accountability Obligations", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§33 — Automated Individual Decision-Making", authority="NDPC", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_export_audit": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§25 — Cross-Border Transfer Audit Trail", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§30 — Controller Accountability Obligations", authority="NDPC", year=2023),
+    ],
+    "universal/individual-risk-assessment.ira_display_audit": [
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§30 — Controller Accountability Obligations", authority="NDPC", year=2023),
+    ],
+
     # ── universal/model-routing ───────────────────────────────────────────────
     "universal/model-routing.model_routing_biometric": [
         RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM09:2025 — Misinformation", authority="OWASP", year=2025, url=_OWASP_URL),

@@ -1,8 +1,8 @@
 {
   "$schema": "https://comply54.io/schema/registry.schema.json",
-  "version": "1.4.0",
-  "last_updated": "2026-06-19",
-  "total_packs": 20,
+  "version": "1.5.0",
+  "last_updated": "2026-08-09",
+  "total_packs": 21,
   "packs": [
     {
       "id": "comply54-nigeria-ndpa",
@@ -226,6 +226,23 @@
       "rego_tests": 276
     },
     {
+      "id": "comply54-universal-individual-risk-assessment",
+      "source_repo": "comply54/comply54",
+      "source_yaml": null,
+      "source_rego": "https://raw.githubusercontent.com/comply54/comply54/main/comply54/packs/universal/individual_risk_assessment.rego",
+      "path": "comply54/packs/universal/individual_risk_assessment.rego",
+      "jurisdiction": "universal",
+      "regulation": "NDPA 2023 §16/§33/§34/§36 · Nigeria Labour Act §11 · POPIA §71 · NIST AI RMF · ISO/IEC 42001:2023 · OWASP ASI03",
+      "short_name": "AI Individual Risk Assessment",
+      "version": "1.0.0",
+      "enforcing_authority": "NDPC / OWASP",
+      "effective_date": "2023-06-14",
+      "regulatory_source": "https://ndpc.gov.ng",
+      "tags": ["security", "individual-risk", "automated-decisions", "human-in-the-loop", "ndpa", "agentic", "universal"],
+      "agt_compatible": true,
+      "rego_tests": 113
+    },
+    {
       "id": "comply54-uganda-dppa",
       "source_repo": "kingztech2019/agt-policies-nigeria",
       "source_yaml": "https://raw.githubusercontent.com/kingztech2019/agt-policies-nigeria/main/policies/uganda-dppa.yaml",
@@ -386,7 +403,8 @@
       "comply54-universal-tool-permissions",
       "comply54-universal-human-approval",
       "comply54-universal-model-routing",
-      "comply54-universal-code-review-agent"
+      "comply54-universal-code-review-agent",
+      "comply54-universal-individual-risk-assessment"
     ]
   }
 }
