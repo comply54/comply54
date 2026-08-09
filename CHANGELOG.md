@@ -9,6 +9,35 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+**AI Individual Risk Assessment governance pack (`universal/individual-risk-assessment` v1.0.0)**
+
+New universal pack governing AI systems that generate risk narratives, scores, and recommendations about named individuals — field agents, employees, customers, or borrowers — and persist those outputs to permanent records that affect employment, credit, insurance, or access decisions. Primary regulatory driver is NDPA 2023 §33 (automated individual decisions). Pack is **fail-closed by default**: missing lawful basis, missing supervisor authorization, or missing worker identifier all result in `deny`.
+
+Covered actions: `generate_risk_narrative`, `persist_risk_label`, `persist_risk_assessment`, `export_risk_record`, `display_risk_narrative`.
+
+#### Four mandatory governance checkpoints
+
+1. **Lawful basis gate (D1)** — NDPA §16 requires a declared lawful basis before any processing that produces an automated individual decision. Missing basis is a regulatory violation, not a configuration omission.
+2. **Pre-authorization gate (D2)** — a named supervisor must explicitly authorize the AI assessment before it runs; silent generation with no human sign-off is blocked.
+3. **Output integrity (D4)** — the generated narrative is checked against a prohibited pattern set covering: absolute character condemnation (`"is a fraudster"`, `"has no integrity"`), protected-characteristic reasoning (`"due to his tribe"`, `"because of her religion"`), and absolute temporal negatives (`"will never be honest"`, `"can never be trusted"`). Pattern matching is case-insensitive.
+4. **High-risk human-in-the-loop (D3, D7, E1, E4)** — a "high" risk label cannot be written to a permanent record or exported without `context.human_approved=true`. A named supervisor ID is additionally required for persistence. The assessed individual must also be notified (`context.subject_notified=true`).
+
+#### Additional controls
+
+- **D5** — missing `worker_id` blocks generation; an assessment with no subject identifier has no valid audit trail
+- **D6** — confidence below `min_confidence` (default 0.60) blocks persistence; missing confidence defaults to 0.0
+- **E2** — export destination not in `context.export_allowlist` escalates; unconfigured allowlist escalates by default (fail-closed)
+- **E3** — no declared `data_sources` escalates generation; AI output with no verifiable input basis requires human confirmation
+- **A4** — every `display_risk_narrative` action always produces an audit record, regardless of whether other rules deny or escalate
+
+#### Test coverage
+
+113 tests across 14 test classes added in `tests/test_individual_risk_assessment.py`. Covers all 7 deny rules, all 4 escalate rules, all 4 audit rules, false-positive safety, and high-risk/low-risk branching. Total test suite: 689 (+113).
+
+---
+
 ### Changed
 
 **AI Code Review Agent (`universal/code-review-agent` v1.2.0) — comprehensive injection defense**

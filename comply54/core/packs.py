@@ -374,6 +374,33 @@ CODE_REVIEW_AGENT = PackSpec(
     ],
 )
 
+INDIVIDUAL_RISK_ASSESSMENT = PackSpec(
+    id="universal/individual-risk-assessment",
+    regulation="NDPA 2023 §16/§33/§36 · GDPR Art. 6/Art. 22 · EU AI Act Art. 14 · POPIA §71 — AI Individual Risk Assessment Governance",
+    jurisdiction="universal",
+    authority="NDPC / OWASP / NIST",
+    rego_path=_PACKS_DIR / "universal" / "individual_risk_assessment.rego",
+    query_prefix="data.agt_policies_agent.individual_risk_assessment",
+    version="1.0.0",
+    tags=["ndpa", "gdpr", "eu-ai-act", "human-in-the-loop", "automated-decisions", "individual-rights", "employment"],
+    sources=[
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§16 — Lawful Basis for Processing", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§33 — Automated Individual Decision-Making", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§34 — Data Subject Rights", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Data Protection Act 2023", section="§36 — Non-Discrimination Obligation", authority="NDPC", year=2023),
+        RegulatorySource(document="Nigeria Labour Act Cap L1 LFN 2004", section="§11 — Wrongful Dismissal Protection", authority="Federal Ministry of Labour", year=2004),
+        RegulatorySource(document="EU AI Act 2024", section="Art. 14 — Human Oversight of High-Risk AI Systems", authority="European Commission", year=2024),
+        RegulatorySource(document="EU AI Act 2024", section="Art. 10 — Data Governance and Management Practices", authority="European Commission", year=2024),
+        RegulatorySource(document="GDPR 2016/679", section="Art. 22 — Automated Individual Decision-Making", authority="European Data Protection Board", year=2016),
+        RegulatorySource(document="Protection of Personal Information Act 4 of 2013 (POPIA)", section="§71 — Automated Decision-Making", authority="Information Regulator ZA", year=2013),
+        RegulatorySource(document="NIST AI RMF 1.0", section="GOVERN 1.3 — Human Oversight of AI Systems", authority="NIST", year=2023),
+        RegulatorySource(document="NIST AI RMF 1.0", section="MEASURE 2.5 — AI Output Traceability", authority="NIST", year=2023),
+        RegulatorySource(document="ISO/IEC 42001:2023", section="§6.1.2 — AI Risk Assessment", authority="ISO/IEC", year=2023),
+        RegulatorySource(document="ISO/IEC 42001:2023", section="§8.4 — AI System Accountability", authority="ISO/IEC", year=2023),
+        RegulatorySource(document="OWASP Top 10 for Agentic AI", section="ASI03 — Insufficient Authorization Controls", authority="OWASP", year=2025, url=_OWASP_URL),
+    ],
+)
+
 # ── Registry lookup ────────────────────────────────────────────────────────────
 
 PACK_REGISTRY: dict[str, PackSpec] = {
@@ -385,6 +412,7 @@ PACK_REGISTRY: dict[str, PackSpec] = {
         EGYPT_PDPL,
         PII_LEAKAGE, PROMPT_INJECTION, TOOL_PERMISSIONS, HUMAN_APPROVAL, MODEL_ROUTING,
         CODE_REVIEW_AGENT,
+        INDIVIDUAL_RISK_ASSESSMENT,
     ]
 }
 
@@ -409,6 +437,7 @@ UNIVERSAL_PACKS: list[str] = [
     "universal/human-approval",
     "universal/model-routing",
     "universal/code-review-agent",
+    "universal/individual-risk-assessment",
 ]
 
 
