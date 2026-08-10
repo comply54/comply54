@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.6.0] — 2026-08-10
+
 ### Added
 
 **AI Individual Risk Assessment governance pack (`universal/individual-risk-assessment` v1.0.0)**
