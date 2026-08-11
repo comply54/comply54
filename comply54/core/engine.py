@@ -172,7 +172,7 @@ class Comply54Engine:
             result = self._evaluate_individually(input_json)
             if self._signer is not None:
                 pv = {p.id: p.version for p in self._packs if any(d.pack == p.id for d in result.decisions)}
-                token = self._signer.sign(result, input.action, input.params, input.output, input.context, pack_versions=pv)
+                token = self._signer.sign(result, input.action, input.params, input.output, input.context, pack_versions=pv, decided_by="opa_native")
                 result = result.model_copy(update={"receipt_token": token})
             return result
 

@@ -239,7 +239,8 @@ class TestVerifyReceiptRoundTrip:
         assert deny_payload.issuer == "comply54"
 
     def test_comply54_version_is_present(self, deny_payload):
-        assert deny_payload.comply54_version == "0.4.1"
+        from comply54._version import __version__
+        assert deny_payload.comply54_version == __version__
 
     def test_packs_evaluated_is_non_empty(self, deny_payload):
         assert len(deny_payload.packs_evaluated) > 0
@@ -478,3 +479,171 @@ class TestBackwardsCompatibility:
         assert result.blocked is True
         assert result.primary_violation is not None
         assert result.receipt_token is None  # no signing_key
+
+
+# ─── decided_by + agent_id (v0.6.0) ──────────────────────────────────────────
+
+
+class TestDecidedByAndAgentId:
+    """
+    decided_by records how the decision was reached (opa_native, cached,
+    delegated, human_approved).  agent_id is the hex public key of the signer.
+    Both are covered by the Ed25519 signature — cannot be altered post-signing.
+    """
+
+    @pytest.fixture(scope="class")
+    def native_result(self, private_pem):
+        c = NigeriaFintechCompliance(signing_key=private_pem)
+        return c.check(
+            action="transfer_funds",
+            params={"amount": 500_000, "currency": "NGN"},
+            context={"sanctions_screened": True, "kyc_tier": 3},
+        )
+
+    @pytest.fixture(scope="class")
+    def native_payload(self, native_result, public_pem):
+        return verify_receipt(native_result.receipt_token, public_pem)
+
+    # ── decided_by defaults ───────────────────────────────────────────────
+
+    def test_decided_by_is_opa_native_by_default(self, native_payload):
+        assert native_payload.decided_by == "opa_native"
+
+    def test_decided_by_is_present_on_deny_receipt(self, private_pem, public_pem):
+        c = NigeriaFintechCompliance(signing_key=private_pem)
+        result = c.check(
+            action="transfer_funds",
+            params={"amount": 5_000_000, "currency": "NGN"},
+            context={"sanctions_screened": False},
+        )
+        payload = verify_receipt(result.receipt_token, public_pem)
+        assert payload.decided_by == "opa_native"
+
+    # ── custom decided_by values ──────────────────────────────────────────
+
+    def test_decided_by_cached(self, private_pem, public_pem):
+        import jwt as _jwt
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        key = load_pem_private_key(private_pem, password=None)
+        claims = {
+            "iss": "comply54",
+            "iat": 1700000000,
+            "jti": "test-cached-jti",
+            "c54_decision": "allow",
+            "c54_pack": None,
+            "c54_regulation": None,
+            "c54_rule": None,
+            "c54_messages": [],
+            "c54_input_digest": digest_input("ping", {}),
+            "c54_version": "0.6.0",
+            "c54_packs_evaluated": ["nigeria/ndpa"],
+            "c54_pack_versions": {},
+            "c54_decided_by": "cached",
+            "c54_agent_id": "aabbcc",
+        }
+        token = _jwt.encode(claims, key, algorithm="EdDSA")
+        payload = verify_receipt(token, public_pem)
+        assert payload.decided_by == "cached"
+
+    def test_decided_by_delegated(self, private_pem, public_pem):
+        import jwt as _jwt
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        key = load_pem_private_key(private_pem, password=None)
+        claims = {
+            "iss": "comply54",
+            "iat": 1700000000,
+            "jti": "test-delegated-jti",
+            "c54_decision": "allow",
+            "c54_pack": None,
+            "c54_regulation": None,
+            "c54_rule": None,
+            "c54_messages": [],
+            "c54_input_digest": digest_input("ping", {}),
+            "c54_version": "0.6.0",
+            "c54_packs_evaluated": ["nigeria/ndpa"],
+            "c54_pack_versions": {},
+            "c54_decided_by": "delegated",
+            "c54_agent_id": None,
+        }
+        token = _jwt.encode(claims, key, algorithm="EdDSA")
+        payload = verify_receipt(token, public_pem)
+        assert payload.decided_by == "delegated"
+
+    # ── agent_id ──────────────────────────────────────────────────────────
+
+    def test_agent_id_is_64_char_hex(self, native_payload):
+        assert native_payload.agent_id is not None
+        assert len(native_payload.agent_id) == 64
+        assert all(c in "0123456789abcdef" for c in native_payload.agent_id)
+
+    def test_agent_id_is_consistent_for_same_key(self, private_pem, public_pem):
+        c1 = NigeriaFintechCompliance(signing_key=private_pem)
+        c2 = NigeriaFintechCompliance(signing_key=private_pem)
+        r1 = c1.check("transfer_funds", {"amount": 500_000, "currency": "NGN"}, context={"sanctions_screened": True})
+        r2 = c2.check("transfer_funds", {"amount": 500_000, "currency": "NGN"}, context={"sanctions_screened": True})
+        p1 = verify_receipt(r1.receipt_token, public_pem)
+        p2 = verify_receipt(r2.receipt_token, public_pem)
+        assert p1.agent_id == p2.agent_id
+
+    def test_agent_id_differs_for_different_keys(self, public_pem):
+        priv1, pub1 = ReceiptSigner.generate_keypair()
+        priv2, pub2 = ReceiptSigner.generate_keypair()
+        c1 = NigeriaFintechCompliance(signing_key=priv1)
+        c2 = NigeriaFintechCompliance(signing_key=priv2)
+        r1 = c1.check("transfer_funds", {"amount": 500_000, "currency": "NGN"}, context={"sanctions_screened": True})
+        r2 = c2.check("transfer_funds", {"amount": 500_000, "currency": "NGN"}, context={"sanctions_screened": True})
+        p1 = verify_receipt(r1.receipt_token, pub1)
+        p2 = verify_receipt(r2.receipt_token, pub2)
+        assert p1.agent_id != p2.agent_id
+
+    def test_tampered_decided_by_fails_verification(self, native_result, public_pem):
+        """Altering decided_by after signing must invalidate the signature."""
+        header, payload_b64, sig = native_result.receipt_token.split(".")
+        import base64
+        padded = payload_b64 + "=" * (-len(payload_b64) % 4)
+        claims = json.loads(base64.urlsafe_b64decode(padded))
+        claims["c54_decided_by"] = "human_approved"  # tamper
+        tampered_payload = base64.urlsafe_b64encode(
+            json.dumps(claims, separators=(",", ":")).encode()
+        ).rstrip(b"=").decode()
+        tampered_token = f"{header}.{tampered_payload}.{sig}"
+        with pytest.raises(InvalidReceiptError):
+            verify_receipt(tampered_token, public_pem)
+
+    # ── backwards compatibility ───────────────────────────────────────────
+
+    def test_old_receipt_without_decided_by_defaults_to_opa_native(self, private_pem, public_pem):
+        import jwt as _jwt
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        key = load_pem_private_key(private_pem, password=None)
+        legacy_claims = {
+            "iss": "comply54",
+            "iat": 1700000000,
+            "jti": "legacy-no-decided-by",
+            "c54_decision": "allow",
+            "c54_pack": None,
+            "c54_regulation": None,
+            "c54_rule": None,
+            "c54_messages": [],
+            "c54_input_digest": digest_input("ping", {}),
+            "c54_version": "0.5.0",
+            "c54_packs_evaluated": ["nigeria/ndpa"],
+            "c54_pack_versions": {},
+            # intentionally omitting c54_decided_by and c54_agent_id
+        }
+        token = _jwt.encode(legacy_claims, key, algorithm="EdDSA")
+        payload = verify_receipt(token, public_pem)
+        assert payload.decided_by == "opa_native"
+        assert payload.agent_id is None
+
+    # ── engine sets decided_by opa_native ─────────────────────────────────
+
+    def test_engine_sets_opa_native(self, private_pem, public_pem):
+        engine = Comply54Engine(packs=[CBN, NDPA, NFIU_AML], signing_key=private_pem)
+        result = engine.check(
+            action="transfer_funds",
+            params={"amount": 500_000, "currency": "NGN"},
+            context={"sanctions_screened": True},
+        )
+        payload = verify_receipt(result.receipt_token, public_pem)
+        assert payload.decided_by == "opa_native"
