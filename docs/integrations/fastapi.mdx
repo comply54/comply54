@@ -1,0 +1,41 @@
+# FastAPI Compliance Middleware Adapter
+
+The `Comply54Middleware` provides a drop-in, zero-latency guardrail layer for your FastAPI applications. It automatically intercepts incoming requests destined for your AI components, evaluates them against your compliance rules, and drops non-compliant traffic before it reaches your core application logic.
+
+---
+
+## Installation
+
+Ensure you are working within your active project virtual environment, then install the package along with its FastAPI dependencies:
+
+```bash
+pip install comply54[fastapi]
+
+from fastapi import FastAPI, Request
+from comply54.adapters.fastapi.middleware import Comply54Middleware
+
+app = FastAPI(title="Secure AI Service")
+
+# Register the compliance middleware layer
+app.add_middleware(
+    Comply54Middleware,
+    api_key="your-comply54-api-key",
+    policy_id="default-compliance-policy",
+    enforce=True  # Set to False for 'Log-Only' evaluation mode
+)
+
+@app.post("/api/v1/chat")
+async def chat_endpoint(request: Request):
+    # This endpoint is automatically protected by the middleware layer above
+    payload = await request.json()
+    return {"status": "success", "message": "Prompt processed safely."}
+
+
+from fastapi.testclient import TestClient
+
+def test_compliance_middleware_blocks_bad_payloads():
+    client = TestClient(app)
+    response = client.post("/api/v1/chat", json={"malicious_key": "drop database"})
+    
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Access denied due to compliance policy violation."
