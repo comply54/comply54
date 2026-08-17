@@ -31,7 +31,7 @@ const PACKS = [
 ];
 
 const REGULATIONS = [
-  "Insurance Act 2003 (Cap I17 LFN 2004)",
+  "Nigerian Insurance Industry Reform Act 2025",
   "NAICOM Operational Guidelines 2021",
   "NAICOM Market Conduct Guidelines 2023",
   "Nigeria Data Protection Act 2023",

@@ -148,4 +148,7 @@ def verify_receipt(
         comply54_version=claims["c54_version"],
         packs_evaluated=claims.get("c54_packs_evaluated", []),
         pack_versions=claims.get("c54_pack_versions", {}),
+        # v0.6.0+: backwards-compat defaults for receipts produced before these fields existed
+        decided_by=claims.get("c54_decided_by", "opa_native"),
+        agent_id=claims.get("c54_agent_id"),
     )

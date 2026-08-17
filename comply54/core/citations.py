@@ -229,7 +229,7 @@ RULE_CITATIONS: dict[str, list[RegulatorySource]] = {
         RegulatorySource(document="NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section="Guideline 15 — Automated Denial Prohibition", authority="NAICOM", year=2021),
     ],
     "nigeria/naicom.discrimination": [
-        RegulatorySource(document="Insurance Act 2003 (Cap I17 LFN 2004)", section="§67 — Anti-Discrimination in Underwriting", authority="NAICOM", year=2003),
+        RegulatorySource(document="Nigerian Insurance Industry Reform Act 2025", section="§210 — Market Conduct", authority="NAICOM", year=2025),
         RegulatorySource(document="NAICOM Market Conduct and Business Practice Guidelines 2023", section="Rule 6 — Prohibited Pricing Factors", authority="NAICOM", year=2023),
     ],
     "nigeria/naicom.life_underwriting_cap": [
@@ -245,7 +245,7 @@ RULE_CITATIONS: dict[str, list[RegulatorySource]] = {
         RegulatorySource(document="NAICOM Market Conduct and Business Practice Guidelines 2023", section="Rule 11 — Fraud Investigation Escalation", authority="NAICOM", year=2023),
     ],
     "nigeria/naicom.policy_modification": [
-        RegulatorySource(document="Insurance Act 2003 (Cap I17 LFN 2004)", section="§50 — Policy Alteration Notification", authority="NAICOM", year=2003),
+        RegulatorySource(document="Nigerian Insurance Industry Reform Act 2025", section="§210 — Licensed Operations", authority="NAICOM", year=2025),
     ],
     "nigeria/naicom.aml_threshold": [
         RegulatorySource(document="Money Laundering (Prevention and Prohibition) Act 2022", section="§10 — CTR Threshold", authority="NFIU", year=2022),
@@ -256,10 +256,10 @@ RULE_CITATIONS: dict[str, list[RegulatorySource]] = {
     ],
     "nigeria/naicom.claims_decision": [
         RegulatorySource(document="NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section="Guideline 12 — Claims Decision Records", authority="NAICOM", year=2021),
-        RegulatorySource(document="Insurance Act 2003 (Cap I17 LFN 2004)", section="§70 — Claims Settlement Standards", authority="NAICOM", year=2003),
+        RegulatorySource(document="Nigerian Insurance Industry Reform Act 2025", section="§210 — Claims Settlement Standards", authority="NAICOM", year=2025),
     ],
     "nigeria/naicom.claims_denial_log": [
-        RegulatorySource(document="Insurance Act 2003 (Cap I17 LFN 2004)", section="§70 — Claims Settlement Standards", authority="NAICOM", year=2003),
+        RegulatorySource(document="Nigerian Insurance Industry Reform Act 2025", section="§210 — Claims Settlement Standards", authority="NAICOM", year=2025),
         RegulatorySource(document="NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section="Guideline 15 — Denial Records", authority="NAICOM", year=2021),
     ],
     "nigeria/naicom.underwriting_decision": [
