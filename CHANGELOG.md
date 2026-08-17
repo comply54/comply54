@@ -11,7 +11,13 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [0.7.0] — 2026-08-11
+## [0.7.0] — 2026-08-17
+
+### Changed
+
+- **NAICOM pack citation update** — all `Insurance Act 2003 (Cap I17 LFN 2004)` citations replaced with `Nigerian Insurance Industry Reform Act 2025` (NIIRA 2025), which repealed the Insurance Act in August 2025. Affected citations: `NAICOM_CITATIONS` base array, and per-rule citations for `naicom_discrimination`, `naicom_policy_modification`, `naicom_claims_decision`, `naicom_claims_denial_log`, and `naicom_audit`. Rule logic and thresholds are unchanged; only the regulatory reference metadata is updated.
+- **`NigeriaInsuranceCompliance.regulations`** — sector class `regulations` list updated: `"Insurance Act 2003 (Cap I17 LFN 2004)"` → `"Nigerian Insurance Industry Reform Act 2025"`.
+- **`evaluateNAICOM` base regulation field** — enforcement record `regulation` now reads `"NIIRA 2025 / NAICOM Guidelines"` instead of `"Insurance Act 2003 / NAICOM Guidelines"`.
 
 ### Added
 
