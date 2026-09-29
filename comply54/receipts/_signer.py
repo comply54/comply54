@@ -35,6 +35,16 @@ try:
 except ImportError:  # pragma: no cover
     _SIGNING_AVAILABLE = False
 
+DecidedBy = str
+"""
+How the compliance decision was reached. Valid values:
+
+- ``"opa_native"``    — live in-process Rego evaluation (default, strongest claim)
+- ``"cached"``        — reused from a prior evaluation; weaker provenance
+- ``"delegated"``     — another agent or orchestration layer made the determination
+- ``"human_approved"``— an escalation was reviewed and approved by a human
+"""
+
 
 _SIGNING_INSTALL_MSG = (
     "Signed receipts require PyJWT and cryptography. "
@@ -101,6 +111,11 @@ class ReceiptSigner:
                 f"{type(key).__name__}"
             )
         self._private_key: Ed25519PrivateKey = key
+        # Derive the agent_id once at construction: hex-encoded public key.
+        # Included automatically in every receipt — identifies which key signed
+        # the decision without requiring a separate key lookup at verification time.
+        pub_bytes = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        self._agent_id: str = pub_bytes.hex()
 
     def sign(
         self,
@@ -110,6 +125,7 @@ class ReceiptSigner:
         output: str = "",
         context: dict | None = None,
         pack_versions: dict | None = None,
+        decided_by: DecidedBy = "opa_native",
     ) -> str:
         """
         Sign a ``ComplianceResult`` and return a compact JWT receipt token.
@@ -126,6 +142,10 @@ class ReceiptSigner:
                            ``{"nigeria/cbn": "1.0.0", "nigeria/nfiu-aml": "1.1.0"}``.
                            Embedded as ``c54_pack_versions`` in the JWT so auditors
                            can confirm which version of each regulation was in force.
+            decided_by:    How the decision was reached. One of ``"opa_native"``
+                           (live Rego evaluation, default), ``"cached"``,
+                           ``"delegated"``, or ``"human_approved"``. Covered by the
+                           signature — cannot be upgraded after signing.
 
         Returns:
             Compact JWT string (three base64url-encoded segments).
@@ -146,6 +166,8 @@ class ReceiptSigner:
             "c54_version": __version__,
             "c54_packs_evaluated": [d.pack for d in result.decisions],
             "c54_pack_versions": pack_versions or {},
+            "c54_decided_by": decided_by,
+            "c54_agent_id": self._agent_id,
         }
 
         return _jwt.encode(claims, self._private_key, algorithm="EdDSA")

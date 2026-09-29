@@ -135,7 +135,7 @@ NHA = PackSpec(
 
 NAICOM = PackSpec(
     id="nigeria/naicom",
-    regulation="Insurance Act 2003 / NAICOM Operational Guidelines 2021 / Market Conduct Guidelines 2023",
+    regulation="NIIRA 2025 / NAICOM Operational Guidelines 2021 / Market Conduct Guidelines 2023",
     jurisdiction="NG",
     authority="NAICOM",
     rego_path=_PACKS_DIR / "nigeria" / "naicom.rego",
@@ -143,8 +143,7 @@ NAICOM = PackSpec(
     version="1.1.0",  # state_of_origin added to prohibited_characteristics (NIIRA 2025 Part V)
     tags=["insurance", "claims", "underwriting", "anti-discrimination"],
     sources=[
-        RegulatorySource(document="Insurance Act 2003 (Cap I17 LFN 2004)", section="§50", authority="NAICOM", year=2003),
-        RegulatorySource(document="Insurance Act 2003 (Cap I17 LFN 2004)", section="§67", authority="NAICOM", year=2003),
+        RegulatorySource(document="Nigerian Insurance Industry Reform Act 2025", section="§210 — Claims Settlement", authority="NAICOM", year=2025),
         RegulatorySource(document="NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section="Guideline 12", authority="NAICOM", year=2021),
         RegulatorySource(document="NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section="Guideline 15", authority="NAICOM", year=2021),
         RegulatorySource(document="NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section="Guideline 18", authority="NAICOM", year=2021),

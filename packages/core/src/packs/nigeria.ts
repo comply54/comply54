@@ -44,8 +44,7 @@ const NHA_CITATIONS: RegulatorySource[] = [
 ];
 
 const NAICOM_CITATIONS: RegulatorySource[] = [
-  { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§50", authority: "NAICOM", year: 2003 },
-  { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§67", authority: "NAICOM", year: 2003 },
+  { document: "Nigerian Insurance Industry Reform Act 2025", section: "§210 — Claims Settlement", authority: "NAICOM", year: 2025 },
   { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 12", authority: "NAICOM", year: 2021 },
   { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 15", authority: "NAICOM", year: 2021 },
   { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 18", authority: "NAICOM", year: 2021 },
@@ -160,7 +159,7 @@ const NAICOM_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
     { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 15", authority: "NAICOM", year: 2021 },
   ],
   naicom_discrimination: [
-    { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§67", authority: "NAICOM", year: 2003 },
+    { document: "Nigerian Insurance Industry Reform Act 2025", section: "§210 — Market Conduct", authority: "NAICOM", year: 2025 },
     { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 6", authority: "NAICOM", year: 2023 },
   ],
   naicom_life_underwriting_cap: [
@@ -180,14 +179,14 @@ const NAICOM_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
     { document: "NAICOM Market Conduct and Business Practice Guidelines 2023", section: "Rule 11", authority: "NAICOM", year: 2023 },
   ],
   naicom_policy_modification: [
-    { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§50", authority: "NAICOM", year: 2003 },
+    { document: "Nigerian Insurance Industry Reform Act 2025", section: "§210 — Licensed Operations", authority: "NAICOM", year: 2025 },
   ],
   naicom_sub_cap_denial: [
     { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 15", authority: "NAICOM", year: 2021 },
   ],
   naicom_audit: [
     { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 12", authority: "NAICOM", year: 2021 },
-    { document: "Insurance Act 2003 (Cap I17 LFN 2004)", section: "§70", authority: "NAICOM", year: 2003 },
+    { document: "Nigerian Insurance Industry Reform Act 2025", section: "§210 — Supervision & Records", authority: "NAICOM", year: 2025 },
   ],
   naicom_audit_underwriting: [
     { document: "NAICOM Operational Guidelines for the Conduct of Insurance Business 2021", section: "Guideline 18", authority: "NAICOM", year: 2021 },
@@ -653,7 +652,7 @@ export const evaluateNHA: PackEvaluatorFn = (input: Input): PolicyDecision => {
   return { ...base, action: "allow", messages: [] };
 };
 
-// ── NAICOM — Insurance Act 2003 / NAICOM Guidelines 2021/2023 ─────────────────
+// ── NAICOM — NIIRA 2025 / NAICOM Operational Guidelines 2021 / Market Conduct Guidelines 2023 ──
 
 const AUTO_DENIAL_CAP = 500_000;
 const SENIOR_REVIEW_THRESHOLD = 2_000_000;
@@ -685,7 +684,7 @@ const PROHIBITED_CHARACTERISTICS = new Set([
 export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision => {
   const base: Omit<PolicyDecision, "action" | "messages" | "ruleTriggered"> = {
     pack: "nigeria/naicom",
-    regulation: "Insurance Act 2003 / NAICOM Guidelines",
+    regulation: "NIIRA 2025 / NAICOM Guidelines",
     jurisdiction: "NG",
     auditId: makeAuditId(),
     evaluatedAt: nowIso(),
@@ -717,7 +716,7 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
       return {
         ...base,
         action: "deny",
-        messages: [`Insurance Act s.67 / NAICOM Rule 6: Underwriting or quote uses prohibited discriminatory characteristic '${field}' — remove this field`],
+        messages: [`NIIRA 2025 / NAICOM Rule 6: Underwriting or quote uses prohibited discriminatory characteristic '${field}' — remove this field`],
         ruleTriggered: "naicom_discrimination",
         citations: NAICOM_RULE_CITATIONS["naicom_discrimination"] ?? NAICOM_CITATIONS,
       };

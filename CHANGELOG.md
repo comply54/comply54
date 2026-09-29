@@ -11,6 +11,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.7.0] — 2026-08-17
+
+### Changed
+
+- **NAICOM pack citation update** — all `Insurance Act 2003 (Cap I17 LFN 2004)` citations replaced with `Nigerian Insurance Industry Reform Act 2025` (NIIRA 2025), which repealed the Insurance Act in August 2025. Affected citations: `NAICOM_CITATIONS` base array, and per-rule citations for `naicom_discrimination`, `naicom_policy_modification`, `naicom_claims_decision`, `naicom_claims_denial_log`, and `naicom_audit`. Rule logic and thresholds are unchanged; only the regulatory reference metadata is updated.
+- **`NigeriaInsuranceCompliance.regulations`** — sector class `regulations` list updated: `"Insurance Act 2003 (Cap I17 LFN 2004)"` → `"Nigerian Insurance Industry Reform Act 2025"`.
+- **`evaluateNAICOM` base regulation field** — enforcement record `regulation` now reads `"NIIRA 2025 / NAICOM Guidelines"` instead of `"Insurance Act 2003 / NAICOM Guidelines"`.
+
+### Added
+
+- **`decided_by` claim in signed receipts** — every `ReceiptSigner.sign()` call now embeds a `c54_decided_by` JWT claim recording how the compliance decision was reached: `"opa_native"` (live in-process Rego evaluation, default), `"cached"`, `"delegated"`, or `"human_approved"`. The claim is covered by the Ed25519 signature and cannot be altered post-signing. Callers using cached or delegated decision paths must pass the correct value explicitly. `Comply54Engine` passes `"opa_native"` automatically.
+- **`agent_id` claim in signed receipts** — `ReceiptSigner` now derives the hex-encoded Ed25519 raw public key at construction time and embeds it as `c54_agent_id` in every receipt. Allows audit log correlation by signing identity without a separate key lookup. Both fields are exposed on `ReceiptPayload.decided_by` and `ReceiptPayload.agent_id`.
+- **`DecidedBy` type alias** exported from `comply54.receipts` for use in type hints.
+- **Backwards compatibility** — old receipts (pre-v0.6.0) lacking `c54_decided_by` / `c54_agent_id` still verify cleanly; `decided_by` defaults to `"opa_native"`, `agent_id` defaults to `None`.
+- **New `TestDecidedByAndAgentId` test class** (10 tests) covering: default value, custom values (cached/delegated), agent_id length and cross-key consistency, tamper detection for `decided_by`, and backwards compat for old receipts without the new claims.
+
+---
+
 ## [0.6.0] — 2026-08-10
 
 ### Added

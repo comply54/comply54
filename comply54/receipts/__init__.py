@@ -12,6 +12,11 @@ A comply54 receipt is a compact Ed25519-signed JWT that proves:
      so the receipt can be tied to an exact call.
   4. **When it was issued** — UTC Unix timestamp (``iat`` claim).
   5. **Which comply54 version produced it** — for reproducibility audits.
+  6. **How the decision was reached** — ``decided_by`` field (``"opa_native"``,
+     ``"cached"``, ``"delegated"``, or ``"human_approved"``). Covered by the
+     signature — cannot be upgraded post-signing.
+  7. **Which key signed it** — ``agent_id``: hex-encoded Ed25519 public key of the
+     signer, embedded in the payload for offline audit log correlation.
 
 The receipt is fully self-contained and verifiable offline — no network call,
 no comply54 server, no database lookup.
@@ -43,10 +48,11 @@ Quick start::
 
 from ._digest import digest_input
 from ._models import ReceiptPayload
-from ._signer import ReceiptSigner
+from ._signer import DecidedBy, ReceiptSigner
 from ._verifier import InvalidReceiptError, verify_receipt
 
 __all__ = [
+    "DecidedBy",
     "InvalidReceiptError",
     "ReceiptPayload",
     "ReceiptSigner",

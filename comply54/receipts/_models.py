@@ -74,6 +74,28 @@ class ReceiptPayload:
     before comply54 v0.4.1.
     """
 
+    decided_by: str
+    """
+    How the compliance decision was reached. Covered by the Ed25519 signature —
+    cannot be upgraded after signing.
+
+    - ``"opa_native"``     — live in-process Rego evaluation (default, strongest claim)
+    - ``"cached"``         — reused from a prior evaluation
+    - ``"delegated"``      — another agent or orchestration layer made the call
+    - ``"human_approved"`` — escalation reviewed and approved by a human
+
+    Old receipts (before comply54 v0.6.0) will return ``"opa_native"`` as the
+    backwards-compatible default.
+    """
+
+    agent_id: str | None
+    """
+    Hex-encoded Ed25519 public key of the comply54 instance that signed this receipt.
+
+    Identifies *which* key produced the decision without requiring a separate key
+    lookup.  ``None`` for receipts produced before comply54 v0.6.0.
+    """
+
     def __str__(self) -> str:
         status = "✓ ALLOW" if self.decision == "allow" else f"✗ {self.decision.upper()}"
         pack_str = f" [{self.pack}]" if self.pack else ""
