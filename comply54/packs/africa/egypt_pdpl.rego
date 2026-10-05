@@ -65,20 +65,20 @@ bulk_export_actions := {
 
 # Art. 7: Block breach suppression — 72h PDPC + 3-day subject notification
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 7: Agent cannot suppress breach notifications — PDPC must be notified within 72 hours and data subjects within 3 working days"
 }
 
 # Art. 1/4: Block biometric data — triggers Art. 7 breach notification
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 1/4: Biometric sensitive data detected — must not be transmitted; breach triggers 72h PDPC notification (Art. 7)"
 }
 
 # Art. 1/7: Block Egypt National ID in output (14-digit format)
 # Format: [2|3][YYMMDD][Governorate 2d][Sequential 4d][Check 1d]
 deny contains msg if {
-	regex.match(`(?i)(egypt(ian)?\s+(national\s+)?(id|identity|card)|national\s+id\s+(no|number|#)|رقم\s+قومي)[\s:=]{0,5}[23][0-9]{13}`, input.output)
+	regex.match(`(egypt(ian)?\s+(national\s+)?(id|identity|card)|national\s+id\s+(no|number|#)|رقم\s+قومي)[\s:=]{0,5}[23][0-9]{13}`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 1/7: Egyptian National ID (14-digit) detected in agent output — blocked; triggers 72h PDPC breach notification"
 }
 
@@ -107,7 +107,7 @@ deny contains msg if {
 
 # Art. 26: Block agents advising unlicensed data processing
 deny contains msg if {
-	regex.match(`(?i)(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(licen(s|c)e|PDPC|permit|registr)|no\s+need\s+(to\s+)?(register|licen(s|c)e|notify\s+PDPC))`, input.output)
+	regex.match(`(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(licen(s|c)e|pdpc|permit|registr)|no\s+need\s+(to\s+)?(register|licen(s|c)e|notify\s+pdpc))`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 26: Agent cannot advise bypassing PDPC licensing — processing without registration is a criminal offence (up to EGP 2,000,000 + imprisonment)"
 }
 
@@ -125,31 +125,31 @@ deny contains msg if {
 
 # Art. 1/4: Health/medical sensitive data
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(assessment|report|status))`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(assessment|report|status))`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 1/4: Health/medical/genetic sensitive data detected — requires explicit consent or Art. 5 exception (PDPC)"
 }
 
 # Art. 1/4: Financial data — unique sensitive category in Egypt
 escalate contains msg if {
-	regex.match(`(?i)(account\s+(balance|statement|number)|credit\s+(score|report|history)|loan\s+(default|history|status)|salary\s+(slip|detail)|tax\s+(return|record)|financial\s+(statement|profile|data))`, input.output)
+	regex.match(`(account\s+(balance|statement|number)|credit\s+(score|report|history)|loan\s+(default|history|status)|salary\s+(slip|detail)|tax\s+(return|record)|financial\s+(statement|profile|data))`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 1/4: Financial data is a sensitive category under Egyptian law — requires explicit consent (unique provision: financial data = sensitive in Egypt)"
 }
 
 # Art. 1/4: Special category data (religious, political, criminal, racial)
 escalate contains msg if {
-	regex.match(`(?i)(religious\s+belief|political\s+(view|opinion)|criminal\s+(record|conviction|offence)|ethnic\s+origin|race|sexual\s+(orientation|life))`, input.output)
+	regex.match(`(religious\s+belief|political\s+(view|opinion)|criminal\s+(record|conviction|offence)|ethnic\s+origin|race|sexual\s+(orientation|life))`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 1/4: Special category personal data detected — requires explicit consent or Art. 5 exception (PDPC)"
 }
 
 # Art. 1/3: Children's data — classified as sensitive in Egypt (unique in Africa)
 escalate contains msg if {
-	regex.match(`(?i)(child(ren)?'?s?\s+(data|record|profile|information)|minor\s+(data|record|profile)|under(\s+|-)(18|sixteen|eighteen)|student\s+(record|data|profile)|guardian\s+consent)`, input.output)
+	regex.match(`(child(ren)?'?s?\s+(data|record|profile|information)|minor\s+(data|record|profile)|under(\s+|-)(18|sixteen|eighteen)|student\s+(record|data|profile)|guardian\s+consent)`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 1/3: Children's data is a sensitive category — requires parental/guardian consent (unique classification in African data protection law)"
 }
 
 # Art. 14: Cross-border language in output
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+egypt|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+egypt|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 14: Cross-border data transfer language detected — PDPC approval or documented Art. 15 derogation required"
 }
 
@@ -180,7 +180,7 @@ escalate contains msg if {
 
 # Art. 8: DPO — escalate if agent advises against DPO appointment
 escalate contains msg if {
-	regex.match(`(?i)(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer)`, input.output)
+	regex.match(`(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer)`, lower(input.output))
 	msg := "Egypt PDPL No. 151/2020 Art. 8: DPO appointment is mandatory for all data controllers — agent cannot advise against it"
 }
 
@@ -201,17 +201,17 @@ audit contains msg if {
 # ── Citation key sets ────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, lower(input.output))
 	key := "breach_suppression"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	key := "biometric_output"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(egypt(ian)?\s+(national\s+)?(id|identity|card)|national\s+id\s+(no|number|#)|رقم\s+قومي)[\s:=]{0,5}[23][0-9]{13}`, input.output)
+	regex.match(`(egypt(ian)?\s+(national\s+)?(id|identity|card)|national\s+id\s+(no|number|#)|رقم\s+قومي)[\s:=]{0,5}[23][0-9]{13}`, lower(input.output))
 	key := "national_id_output"
 }
 
@@ -231,7 +231,7 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(licen(s|c)e|PDPC|permit|registr)|no\s+need\s+(to\s+)?(register|licen(s|c)e|notify\s+PDPC))`, input.output)
+	regex.match(`(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(licen(s|c)e|pdpc|permit|registr)|no\s+need\s+(to\s+)?(register|licen(s|c)e|notify\s+pdpc))`, lower(input.output))
 	key := "no_lawful_basis"
 }
 
@@ -242,27 +242,27 @@ deny_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(assessment|report|status))`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(assessment|report|status))`, lower(input.output))
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(account\s+(balance|statement|number)|credit\s+(score|report|history)|loan\s+(default|history|status)|salary\s+(slip|detail)|tax\s+(return|record)|financial\s+(statement|profile|data))`, input.output)
+	regex.match(`(account\s+(balance|statement|number)|credit\s+(score|report|history)|loan\s+(default|history|status)|salary\s+(slip|detail)|tax\s+(return|record)|financial\s+(statement|profile|data))`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(religious\s+belief|political\s+(view|opinion)|criminal\s+(record|conviction|offence)|ethnic\s+origin|race|sexual\s+(orientation|life))`, input.output)
+	regex.match(`(religious\s+belief|political\s+(view|opinion)|criminal\s+(record|conviction|offence)|ethnic\s+origin|race|sexual\s+(orientation|life))`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(child(ren)?'?s?\s+(data|record|profile|information)|minor\s+(data|record|profile)|under(\s+|-)(18|sixteen|eighteen)|student\s+(record|data|profile)|guardian\s+consent)`, input.output)
+	regex.match(`(child(ren)?'?s?\s+(data|record|profile|information)|minor\s+(data|record|profile)|under(\s+|-)(18|sixteen|eighteen)|student\s+(record|data|profile)|guardian\s+consent)`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+egypt|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+egypt|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 
@@ -286,7 +286,7 @@ escalate_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer)`, input.output)
+	regex.match(`(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer)`, lower(input.output))
 	key := "dpo_bypass_signal"
 }
 

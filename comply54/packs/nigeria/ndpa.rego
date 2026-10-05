@@ -94,13 +94,13 @@ deny contains msg if {
 
 # NDPA Schedule 1: Block biometric data transmission
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	msg := "NDPA Schedule 1: Biometric data detected — must not be transmitted by AI agents without documented lawful basis"
 }
 
 # NDPA s.22(5): Block breach suppression
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	msg := "NDPA s.22(5): Agent cannot suppress breach notifications — 72-hour NDPC reporting obligation applies"
 }
 
@@ -116,13 +116,13 @@ escalate contains msg if {
 
 # NDPA s.25: Detected cross-border language in output (defence-in-depth)
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+nigeria|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+nigeria|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	msg := "NDPA s.25: Cross-border data transfer language detected in output — requires NDPC adequacy verification"
 }
 
 # NDPA Schedule 1: Health/medical data requires approval before processing
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|mental\s+health|disability|prescription)`, lower(input.output))
 	msg := "NDPA Schedule 1: Health/medical data detected — sensitive personal data requires explicit lawful basis"
 }
 
@@ -182,12 +182,12 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	key := "biometric_output"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	key := "breach_suppression"
 }
 
@@ -199,12 +199,12 @@ escalate_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+nigeria|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+nigeria|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|mental\s+health|disability|prescription)`, lower(input.output))
 	key := "health_data_output"
 }
 

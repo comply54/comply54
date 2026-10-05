@@ -55,13 +55,13 @@ bulk_export_actions := {
 
 # s.31: Block breach suppression — DPC and data subjects must be notified promptly
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, lower(input.output))
 	msg := "Ghana DPA Act 843 s.31: Agent cannot suppress breach notifications — DPC and affected data subjects must be notified promptly"
 }
 
 # s.37: Block biometric data transmission
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	msg := "Ghana DPA Act 843 s.37: Biometric data detected — must not be transmitted without explicit consent and DPC notification"
 }
 
@@ -91,7 +91,7 @@ deny contains msg if {
 # NIA Act 707: Block Ghana Card national ID in output
 # Format: GHA-XXXXXXXXX-X (GHA prefix + 9 digits + 1 check digit)
 deny contains msg if {
-	regex.match(`(?i)(ghana\s+(card|id|national\s+id)|GHA-[0-9]{9}-[0-9]|GHA[0-9]{10})`, input.output)
+	regex.match(`(ghana\s+(card|id|national\s+id)|gha-[0-9]{9}-[0-9]|gha[0-9]{10})`, lower(input.output))
 	msg := "Ghana DPA Act 843 / NIA Act 707: Ghana Card national ID detected in agent output — blocked to prevent identity data exposure"
 }
 
@@ -109,19 +109,19 @@ deny contains msg if {
 
 # s.37: Health/medical special personal data
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, lower(input.output))
 	msg := "Ghana DPA Act 843 s.37: Health/medical special personal data detected — requires explicit consent or documented lawful basis"
 }
 
 # s.37: Special category data (ethnic, religious, political, trade union, criminal)
 escalate contains msg if {
-	regex.match(`(?i)(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+(life|orientation)|criminal\s+(offence|conviction|record)|court\s+proceedings)`, input.output)
+	regex.match(`(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+(life|orientation)|criminal\s+(offence|conviction|record)|court\s+proceedings)`, lower(input.output))
 	msg := "Ghana DPA Act 843 s.37: Special personal data detected — requires explicit consent and restricted processing"
 }
 
 # s.18(2): Cross-border language in agent output
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ghana|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ghana|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	msg := "Ghana DPA Act 843 s.18(2): Cross-border data transfer language detected — destination country adequacy must be verified with DPC"
 }
 
@@ -167,12 +167,12 @@ audit contains msg if {
 # ── Citation key sets ────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, lower(input.output))
 	key := "breach_suppression"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	key := "biometric_output"
 }
 
@@ -192,7 +192,7 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(ghana\s+(card|id|national\s+id)|GHA-[0-9]{9}-[0-9]|GHA[0-9]{10})`, input.output)
+	regex.match(`(ghana\s+(card|id|national\s+id)|gha-[0-9]{9}-[0-9]|gha[0-9]{10})`, lower(input.output))
 	key := "national_id_output"
 }
 
@@ -203,17 +203,17 @@ deny_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, lower(input.output))
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+(life|orientation)|criminal\s+(offence|conviction|record)|court\s+proceedings)`, input.output)
+	regex.match(`(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+(life|orientation)|criminal\s+(offence|conviction|record)|court\s+proceedings)`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ghana|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ghana|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 

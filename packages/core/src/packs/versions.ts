@@ -12,29 +12,29 @@
  */
 export const PACK_VERSIONS: Record<string, string> = {
   // Nigeria
-  "nigeria/ndpa": "1.0.0",
-  "nigeria/cbn": "1.0.0",
-  "nigeria/bvn-nin": "1.0.0",
-  "nigeria/nfiu-aml": "1.1.0", // sanctions_screening_required added (MLPPA 2022 s.6)
+  "nigeria/ndpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "nigeria/cbn": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "nigeria/bvn-nin": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "nigeria/nfiu-aml": "1.2.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
   "nigeria/nha": "1.1.0",
   "nigeria/naicom": "1.1.0", // state_of_origin added to prohibited_characteristics (NIIRA 2025 Part V)
 
   // East Africa
-  "kenya/kdpa": "1.0.0",
-  "mauritius/dpa": "1.0.0",
-  "tanzania/pdpa": "1.0.0",
-  "uganda/dppa": "1.0.0",
-  "rwanda/dpa": "1.0.0",
-  "ethiopia/pdp": "1.0.0",
+  "kenya/kdpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "mauritius/dpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "tanzania/pdpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "uganda/dppa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "rwanda/dpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "ethiopia/pdp": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
 
   // Southern / West / North Africa
-  "south-africa/popia": "1.0.0",
-  "ghana/dpa": "1.0.0",
-  "egypt/pdpl": "1.0.0",
+  "south-africa/popia": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "ghana/dpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "egypt/pdpl": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
 
   // Universal
   "universal/pii-leakage": "1.0.0",
-  "universal/prompt-injection": "2.0.0", // comprehensive rewrite: 6 categories, 5 surfaces, encoding detection, config factory
+  "universal/prompt-injection": "2.1.0", // whitespace-normalised matching; separators work under regopy
   "universal/tool-permissions": "1.0.0",
   "universal/human-approval": "1.0.0",
   "universal/model-routing": "1.0.0",

@@ -14,6 +14,7 @@ Strategy: two-pass evaluation
 from __future__ import annotations
 
 import json
+import re
 import threading
 
 from regopy import Interpreter
@@ -36,7 +37,9 @@ def _python_to_rego(value: object) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, str):
-        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        # Same normalisation as evaluation input, so a deployer pattern
+        # containing a line break still matches normalised input text.
+        escaped = _normalise_text(value).replace("\\", "\\\\").replace('"', '\\"')
         return f'"{escaped}"'
     if isinstance(value, (set, frozenset)):
         if not value:
@@ -83,6 +86,81 @@ def _get_interpreter(packs: list[PackSpec]) -> Interpreter:
         if key not in _interp_cache:
             _interp_cache[key] = _build_interpreter(packs)
         return _interp_cache[key]
+
+
+# regopy (rego-cpp) does not decode escape sequences in string literals, and its
+# output parser crashes on raw control characters. Input text is therefore
+# normalised before it is embedded in a query:
+#   - \t \n \f \r (exactly the characters RE2's \s matches) become a space, so
+#     every \s pattern behaves as it does under OPA. Consequence: `.` can span a
+#     former line break under regopy, which can only add matches, never remove
+#     them.
+#   - every other C0 control character becomes DEL (U+007F): a single byte that,
+#     like the control character, is not whitespace, word or digit to RE2.
+#   - lone surrogates (not encodable as UTF-8) become U+FFFD.
+_RE2_WHITESPACE = "\t\n\f\r"
+_CONTROL_MAP = {
+    code: (" " if chr(code) in _RE2_WHITESPACE else "\x7f")
+    for code in range(0x20)
+}
+_LONE_SURROGATE = re.compile("[\ud800-\udfff]")
+
+# regopy's regex engine is byte-oriented: `.`, `[^x]`, `\S`, `\W` and `\D` each
+# consume one byte, so a multi-byte UTF-8 character inside a wildcard span
+# breaks the match (OPA/RE2 in UTF-8 mode consumes one character). Every
+# non-ASCII character behaves exactly like DEL for all of those constructs in
+# RE2 (not \s, \w or \d; matches `.`, \S, \W, \D and negated classes), so the
+# agent output that regex rules scan has each non-ASCII character replaced by
+# DEL, except characters that the loaded packs or config mention literally
+# (e.g. ₦, Arabic letters), which must stay matchable.
+_FOLD_PLACEHOLDER = "\x7f"
+
+
+def _non_ascii_chars(sources: list[str]) -> frozenset[str]:
+    """Non-ASCII characters appearing in Rego sources, with their case variants."""
+    chars = {ch for src in sources for ch in src if ord(ch) > 127}
+    variants = {v for ch in chars for v in (ch.lower(), ch.upper()) if len(v) == 1}
+    return frozenset(chars | variants)
+
+
+def _fold_non_ascii(text: str, keep: frozenset[str]) -> str:
+    return "".join(
+        ch if ord(ch) < 128 or ch in keep else _FOLD_PLACEHOLDER for ch in text
+    )
+
+
+def _normalise_text(text: str) -> str:
+    return _LONE_SURROGATE.sub("�", text.translate(_CONTROL_MAP))
+
+
+def _normalise_value(value: object) -> object:
+    if isinstance(value, str):
+        return _normalise_text(value)
+    if isinstance(value, dict):
+        return {
+            (_normalise_text(k) if isinstance(k, str) else k): _normalise_value(v)
+            for k, v in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_normalise_value(v) for v in value]
+    return value
+
+
+def _to_rego_input_json(value: object) -> str:
+    """Serialize evaluation input for embedding in a regopy query.
+
+    Non-ASCII is emitted as raw UTF-8 (``ensure_ascii=False``): with the
+    default, ``₦`` would reach rules as the six characters ``\\u20a6`` and
+    Arabic or Amharic text would be unmatchable. See ``_CONTROL_MAP`` for how
+    control characters are handled.
+
+    Known residual limitation: ``"`` and ``\\`` must still be escaped in JSON,
+    and regopy keeps the escape. regopy stores the same characters in pack
+    and config literals the same way, so equality, ``contains`` and regex
+    checks stay consistent; only length-based checks (``count``) see one
+    extra character per quote or backslash.
+    """
+    return json.dumps(_normalise_value(value), ensure_ascii=False)
 
 
 def _query(interp: Interpreter, input_json: str, query_body: str) -> dict:
@@ -136,6 +214,10 @@ class Comply54Engine:
         if signing_key is not None:
             from ..receipts._signer import ReceiptSigner
             self._signer = ReceiptSigner(signing_key)
+        self._keep_chars = _non_ascii_chars(
+            [p.rego_source for p in packs]
+            + [src for _, src in _build_config_modules(self._config)]
+        )
 
     def evaluate(self, input: EvaluationInput | dict) -> ComplianceResult:
         """
@@ -150,7 +232,10 @@ class Comply54Engine:
         if isinstance(input, dict):
             input = EvaluationInput(**input)
 
-        input_json = json.dumps(input.to_rego_input())
+        rego_input = input.to_rego_input()
+        if isinstance(rego_input.get("output"), str):
+            rego_input["output"] = _fold_non_ascii(rego_input["output"], self._keep_chars)
+        input_json = _to_rego_input_json(rego_input)
 
         if self._config:
             # Config makes the interpreter unique — skip shared cache
@@ -231,11 +316,20 @@ class Comply54Engine:
 
             q_d = f"d := {pack.query_prefix}.decision"
             b = _query(interp, input_json, q_d)
-            action: Action = b.get("d", "allow")
 
             messages: list[str] = []
             rule_keys: list[str] = []
-            if action != "allow":
+            if "d" not in b:
+                # A pack that yields no decision is broken for this input.
+                # Fail closed: never let an evaluation failure read as "allow".
+                action: Action = "escalate"
+                messages = [(
+                    f"comply54: policy pack {pack.id} produced no decision for this "
+                    "input; failing closed for human review"
+                )]
+            else:
+                action = b["d"]
+            if action != "allow" and "d" in b:
                 q_m = f"msgs := {pack.query_prefix}.{action}; cites := {pack.query_prefix}.{action}_citations"
                 bm = _query(interp, input_json, q_m)
                 messages = list(bm.get("msgs", []) or [])

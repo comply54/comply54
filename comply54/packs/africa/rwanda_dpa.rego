@@ -62,13 +62,13 @@ automated_decision_actions := {
 
 # Art. 43: Block breach suppression — 48-hour NCSA notification (strictest in Africa)
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, lower(input.output))
 	msg := "Rwanda Law 058/2021 Art. 43: Agent cannot suppress breach notifications — NCSA must be notified within 48 hours (strictest timeline in Africa)"
 }
 
 # Art. 3(2)/10: Block biometric data transmission
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	msg := "Rwanda Law 058/2021 Art. 3(2)/10: Biometric data detected — must not be transmitted without documented lawful basis and NCSA notification"
 }
 
@@ -97,7 +97,7 @@ deny contains msg if {
 
 # NIDA: Block Rwanda National ID in output (16-digit format)
 deny contains msg if {
-	regex.match(`(?i)(rwanda\s+(national\s+)?id|nida\s+(id|number|no)|rwandan\s+id)[\s:=]{0,5}[0-9]{16}`, input.output)
+	regex.match(`(rwanda\s+(national\s+)?id|nida\s+(id|number|no)|rwandan\s+id)[\s:=]{0,5}[0-9]{16}`, lower(input.output))
 	msg := "Rwanda Law 058/2021 Art. 43: Rwanda National ID (NIDA 16-digit) detected in agent output — blocked to prevent identity data breach"
 }
 
@@ -115,13 +115,13 @@ deny contains msg if {
 
 # Art. 3(2)/10: Health/medical sensitive data
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, lower(input.output))
 	msg := "Rwanda Law 058/2021 Art. 3(2)/10: Health/medical sensitive data detected — requires explicit consent or documented lawful basis"
 }
 
 # Art. 3(2)/10: Special category data
 escalate contains msg if {
-	regex.match(`(?i)(race|ethnic\s+origin|social\s+origin|political\s+opinion|religious\s+belief|philosophical\s+belief|sexual\s+(life|orientation)|family\s+(detail|data)|criminal\s+(record|conviction))`, input.output)
+	regex.match(`(race|ethnic\s+origin|social\s+origin|political\s+opinion|religious\s+belief|philosophical\s+belief|sexual\s+(life|orientation)|family\s+(detail|data)|criminal\s+(record|conviction))`, lower(input.output))
 	msg := "Rwanda Law 058/2021 Art. 3(2)/10: Special category personal data detected — requires specific processing grounds (Art. 10)"
 }
 
@@ -133,7 +133,7 @@ escalate contains msg if {
 
 # Art. 48: Cross-border language in output
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+rwanda|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+rwanda|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	msg := "Rwanda Law 058/2021 Art. 48: Cross-border data transfer language detected — adequacy and contractual safeguards (Art. 49) required"
 }
 
@@ -179,12 +179,12 @@ audit contains msg if {
 # ── Citation key sets ────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`, lower(input.output))
 	key := "breach_suppression"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	key := "biometric_output"
 }
 
@@ -204,7 +204,7 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(rwanda\s+(national\s+)?id|nida\s+(id|number|no)|rwandan\s+id)[\s:=]{0,5}[0-9]{16}`, input.output)
+	regex.match(`(rwanda\s+(national\s+)?id|nida\s+(id|number|no)|rwandan\s+id)[\s:=]{0,5}[0-9]{16}`, lower(input.output))
 	key := "national_id_output"
 }
 
@@ -215,12 +215,12 @@ deny_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data)`, lower(input.output))
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(race|ethnic\s+origin|social\s+origin|political\s+opinion|religious\s+belief|philosophical\s+belief|sexual\s+(life|orientation)|family\s+(detail|data)|criminal\s+(record|conviction))`, input.output)
+	regex.match(`(race|ethnic\s+origin|social\s+origin|political\s+opinion|religious\s+belief|philosophical\s+belief|sexual\s+(life|orientation)|family\s+(detail|data)|criminal\s+(record|conviction))`, lower(input.output))
 	key := "special_category_output"
 }
 
@@ -230,7 +230,7 @@ escalate_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+rwanda|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+rwanda|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 

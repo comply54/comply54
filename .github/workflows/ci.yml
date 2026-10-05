@@ -103,6 +103,38 @@ jobs:
             echo "No _test.rego files found — skipping OPA test runner"
           fi
 
+  # ── 3b. regopy ↔ OPA parity ─────────────────────────────────────────────────
+  # The Python engine (regopy) diverges from OPA on (?i), escape sequences,
+  # multi-byte characters and control characters. This job holds every output
+  # regex in the bundled packs to OPA's answers.
+  parity:
+    name: regopy ↔ OPA parity
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install comply54 + dev deps
+        run: pip install -e ".[dev]"
+
+      - name: Install OPA (pinned)
+        run: |
+          curl -sSL -o /usr/local/bin/opa \
+            https://openpolicyagent.org/downloads/v1.21.0/opa_linux_amd64_static
+          chmod +x /usr/local/bin/opa
+          opa version
+
+      - name: Run parity test
+        env:
+          COMPLY54_REQUIRE_OPA: "1"
+        run: pytest tests/test_opa_parity.py -q -rs
+
   # ── 4. Lint ──────────────────────────────────────────────────────────────────
   lint:
     name: Lint

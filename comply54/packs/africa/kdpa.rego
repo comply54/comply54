@@ -52,7 +52,7 @@ bulk_export_actions := {
 
 # Kenya DPA s.41: Block breach suppression
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	msg := "Kenya DPA s.41: Agent cannot suppress breach notifications — 72-hour ODPC reporting obligation applies"
 }
 
@@ -81,19 +81,19 @@ deny contains msg if {
 
 # Kenya DPA s.26: Block processing explicitly stated without consent
 deny contains msg if {
-	regex.match(`(?i)(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, input.output)
+	regex.match(`(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, lower(input.output))
 	msg := "Kenya DPA s.26: Data processing without consent is prohibited — valid consent or documented legal basis required"
 }
 
 # Kenya DPA s.25: Block biometric data transmission
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	msg := "Kenya DPA s.25: Biometric data detected — must not be transmitted without documented lawful basis"
 }
 
 # Kenya DPA: Block National ID in output
 deny contains msg if {
-	regex.match(`(?i)(national\s+id|id\s+number|identity\s+card)[\s:=]{0,5}[0-9]{6,8}`, input.output)
+	regex.match(`(national\s+id|id\s+number|identity\s+card)[\s:=]{0,5}[0-9]{6,8}`, lower(input.output))
 	msg := "Kenya DPA: National ID number detected in agent output — blocked to prevent identity exposure"
 }
 
@@ -111,19 +111,19 @@ deny contains msg if {
 
 # Kenya DPA s.25: Health/medical data requires approval
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription)`, lower(input.output))
 	msg := "Kenya DPA s.25: Health/medical sensitive personal data detected — requires explicit consent or documented legal basis"
 }
 
 # Kenya DPA s.25: Special category data requires approval
 escalate contains msg if {
-	regex.match(`(?i)(ethnic\s+origin|race|religion|political\s+opinion|sexual\s+orientation|trade\s+union|criminal\s+conviction)`, input.output)
+	regex.match(`(ethnic\s+origin|race|religion|political\s+opinion|sexual\s+orientation|trade\s+union|criminal\s+conviction)`, lower(input.output))
 	msg := "Kenya DPA s.25: Special category personal data detected — explicit consent or Schedule 3 condition required"
 }
 
 # Kenya DPA s.49: Cross-border language in output
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+kenya|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+kenya|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	msg := "Kenya DPA s.49: Cross-border data transfer language detected — requires ODPC adequacy verification"
 }
 
@@ -171,7 +171,7 @@ audit contains msg if {
 # ── Citation key sets ────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	key := "breach_suppression"
 }
 
@@ -191,17 +191,17 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, input.output)
+	regex.match(`(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, lower(input.output))
 	key := "no_consent_processing"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	key := "biometric_output"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(national\s+id|id\s+number|identity\s+card)[\s:=]{0,5}[0-9]{6,8}`, input.output)
+	regex.match(`(national\s+id|id\s+number|identity\s+card)[\s:=]{0,5}[0-9]{6,8}`, lower(input.output))
 	key := "national_id_output"
 }
 
@@ -212,17 +212,17 @@ deny_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription)`, lower(input.output))
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(ethnic\s+origin|race|religion|political\s+opinion|sexual\s+orientation|trade\s+union|criminal\s+conviction)`, input.output)
+	regex.match(`(ethnic\s+origin|race|religion|political\s+opinion|sexual\s+orientation|trade\s+union|criminal\s+conviction)`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+kenya|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+kenya|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 

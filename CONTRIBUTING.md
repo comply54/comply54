@@ -167,6 +167,24 @@ decision := "allow"   if { count(deny) == 0; count(escalate) == 0; count(audit) 
 - Define thresholds as named constants at the top (`max_transfer_amount := 5_000_000`)
 - Group related action names into named sets (`transfer_actions := {"transfer_funds", "send_money"}`)
 
+**Engine compatibility rules (enforced by CI):**
+
+comply54 evaluates packs with `regopy`, Microsoft's C++ implementation of Rego (rego-cpp), not with OPA. It diverges from OPA in ways that make a rule silently never fire, so packs must be written in the subset both engines agree on:
+
+- **No `(?i)`.** regopy returns undefined for any regex using the inline case-insensitive flag. Write the pattern in lowercase and match `lower(input.output)`:
+  ```rego
+  regex.match(`(medical\s+record|hiv)`, lower(input.output))
+  ```
+- **No uppercase literals in those patterns.** They can never match lowercased text. Use `[a-z]` rather than `[A-Z]`.
+- **No escape sequences in double-quoted strings.** regopy never decodes `\n`, `\t`, `\"` or `\\`, so `"a\nb"` is four characters there and three in OPA. Write separators with a plain space (the engine and `prompt_injection.rego` normalise whitespace) and put regexes in raw backtick strings.
+- **Literal non-ASCII characters are fine** (for example `₦` or Arabic text). The engine detects them in pack source and keeps them matchable.
+
+`tests/test_regopy_compat.py` checks every rule above and proves each output regex fires on generated text in several cases. The `regopy ↔ OPA parity` CI job compares every output regex against real OPA. Run it locally with an `opa` binary on your `PATH`:
+
+```bash
+pytest tests/test_regopy_compat.py tests/test_opa_parity.py
+```
+
 ### Step 2 — Add a PackSpec entry
 
 Open `comply54/core/packs.py` and add a `PackSpec`:

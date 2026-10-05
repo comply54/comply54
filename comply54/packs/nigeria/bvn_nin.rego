@@ -69,25 +69,25 @@ bulk_export_actions := {
 
 # Block BVN value in agent output (label + digits pattern)
 deny contains msg if {
-	regex.match(`(?i)(bvn\s+is|bvn:\s*|bvn\s*=|your\s+bvn|the\s+bvn)[\s:]*[0-9]{10,11}`, input.output)
+	regex.match(`(bvn\s+is|bvn:\s*|bvn\s*=|your\s+bvn|the\s+bvn)[\s:]*[0-9]{10,11}`, lower(input.output))
 	msg := "BVN Protection: BVN value detected in agent output — blocked (NDPA Schedule 1 biometric data)"
 }
 
 # Block contextual BVN pattern in output
 deny contains msg if {
-	regex.match(`(?i)(bvn|bank\s+verification).{0,20}\b[0-9]{11}\b`, input.output)
+	regex.match(`(bvn|bank\s+verification).{0,20}\b[0-9]{11}\b`, lower(input.output))
 	msg := "BVN Protection: BVN pattern detected in agent output — blocked to prevent credential exposure"
 }
 
 # Block NIN value in agent output
 deny contains msg if {
-	regex.match(`(?i)(nin\s+is|nin:\s*|nin\s*=|your\s+nin|the\s+nin)[\s:]*[0-9]{10,11}`, input.output)
+	regex.match(`(nin\s+is|nin:\s*|nin\s*=|your\s+nin|the\s+nin)[\s:]*[0-9]{10,11}`, lower(input.output))
 	msg := "NIN Protection: NIN value detected in agent output — blocked (NDPA Schedule 1 biometric data)"
 }
 
 # Block virtual NIN (vNIN) in output
 deny contains msg if {
-	regex.match(`(?i)(vnin|virtual\s+nin)[\s:=]+[A-Z0-9]{16}`, input.output)
+	regex.match(`(vnin|virtual\s+nin)[\s:=]+[a-z0-9]{16}`, lower(input.output))
 	msg := "NIN Protection: Virtual NIN (vNIN) detected in agent output — blocked"
 }
 
@@ -106,7 +106,7 @@ deny contains msg if {
 
 # Block BVN disclosure over conversational channels (social engineering)
 deny contains msg if {
-	regex.match(`(?i)(customer\s+(wants|needs|asked|requested).{0,30}(bvn|nin)|confirm.{0,20}(bvn|nin).{0,20}(over|via|through)\s+(chat|call|whatsapp|email|sms))`, input.output)
+	regex.match(`(customer\s+(wants|needs|asked|requested).{0,30}(bvn|nin)|confirm.{0,20}(bvn|nin).{0,20}(over|via|through)\s+(chat|call|whatsapp|email|sms))`, lower(input.output))
 	msg := "BVN/NIN Social Engineering: Attempt to disclose BVN/NIN through conversational channel — blocked"
 }
 
@@ -210,22 +210,22 @@ audit contains msg if {
 # ── Citation key sets ─────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(bvn\s+is|bvn:\s*|bvn\s*=|your\s+bvn|the\s+bvn)[\s:]*[0-9]{10,11}`, input.output)
+	regex.match(`(bvn\s+is|bvn:\s*|bvn\s*=|your\s+bvn|the\s+bvn)[\s:]*[0-9]{10,11}`, lower(input.output))
 	key := "bvn_label_pattern"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(bvn|bank\s+verification).{0,20}\b[0-9]{11}\b`, input.output)
+	regex.match(`(bvn|bank\s+verification).{0,20}\b[0-9]{11}\b`, lower(input.output))
 	key := "bvn_contextual_pattern"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(nin\s+is|nin:\s*|nin\s*=|your\s+nin|the\s+nin)[\s:]*[0-9]{10,11}`, input.output)
+	regex.match(`(nin\s+is|nin:\s*|nin\s*=|your\s+nin|the\s+nin)[\s:]*[0-9]{10,11}`, lower(input.output))
 	key := "nin_label_pattern"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(vnin|virtual\s+nin)[\s:=]+[A-Z0-9]{16}`, input.output)
+	regex.match(`(vnin|virtual\s+nin)[\s:=]+[a-z0-9]{16}`, lower(input.output))
 	key := "vnin_pattern"
 }
 
@@ -241,7 +241,7 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(customer\s+(wants|needs|asked|requested).{0,30}(bvn|nin)|confirm.{0,20}(bvn|nin).{0,20}(over|via|through)\s+(chat|call|whatsapp|email|sms))`, input.output)
+	regex.match(`(customer\s+(wants|needs|asked|requested).{0,30}(bvn|nin)|confirm.{0,20}(bvn|nin).{0,20}(over|via|through)\s+(chat|call|whatsapp|email|sms))`, lower(input.output))
 	key := "bvn_social_engineering"
 }
 

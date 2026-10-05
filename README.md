@@ -217,7 +217,7 @@ from comply54.sectors import (
 
 ## Policy Packs
 
-All packs use in-process Rego evaluation via `regopy` — no OPA binary required.
+All packs use in-process Rego evaluation via `regopy`, so no OPA binary is required. `regopy` is Microsoft's C++ Rego implementation (rego-cpp), not OPA; comply54 compensates for the differences and CI checks every output regex against real OPA. See [Engine compatibility](https://comply54.io/docs/installation#engine-compatibility).
 
 ### Universal Agent Safety Controls
 

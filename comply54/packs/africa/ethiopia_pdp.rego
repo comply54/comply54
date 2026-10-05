@@ -55,13 +55,13 @@ bulk_export_actions := {
 
 # Art. 43: Block breach suppression — ECA must be notified within 72 hours
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	msg := "Ethiopia PDPP 1321/2024 Art. 43: Agent cannot suppress breach notifications — ECA must be notified within 72 hours of awareness"
 }
 
 # Art. 9: Block biometric data transmission
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	msg := "Ethiopia PDPP 1321/2024 Art. 9: Biometric data detected — must not be transmitted without documented lawful basis and ECA notification"
 }
 
@@ -90,14 +90,14 @@ deny contains msg if {
 
 # Proclamation 958/2016: Block unauthorised access signals
 deny contains msg if {
-	regex.match(`(?i)(unauthori[sz]ed\s+(access|login|entry)|bypass(ing)?\s+(auth|security|login)|circumvent(ing)?\s+(access|control))`, input.output)
+	regex.match(`(unauthori[sz]ed\s+(access|login|entry)|bypass(ing)?\s+(auth|security|login)|circumvent(ing)?\s+(access|control))`, lower(input.output))
 	msg := "Ethiopia Proclamation 958/2016: Unauthorised system access signal detected — blocked. This constitutes a criminal offence."
 }
 
 # Art. 43: Block Fayda/national ID in output (identity data breach)
 # Fayda falls under Art. 2 "identifier" definition in Proclamation 1321/2024
 deny contains msg if {
-	regex.match(`(?i)(fayda\s+(id|number|no)|ethiopia\s+(national\s+)?id|mosip\s+id)[\s:=]{0,5}[0-9]{10,16}`, input.output)
+	regex.match(`(fayda\s+(id|number|no)|ethiopia\s+(national\s+)?id|mosip\s+id)[\s:=]{0,5}[0-9]{10,16}`, lower(input.output))
 	msg := "Ethiopia PDPP 1321/2024 Art. 43: Fayda/National ID number detected in agent output — blocked to prevent identity data breach"
 }
 
@@ -115,19 +115,19 @@ deny contains msg if {
 
 # Art. 9: Health/genetic sensitive data
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription)`, lower(input.output))
 	msg := "Ethiopia PDPP 1321/2024 Art. 9: Health/genetic sensitive data detected — requires explicit consent or documented lawful condition"
 }
 
 # Art. 9: Special category data (ethnic, religious, political, trade union)
 escalate contains msg if {
-	regex.match(`(?i)(ethnic\s+origin|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, input.output)
+	regex.match(`(ethnic\s+origin|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, lower(input.output))
 	msg := "Ethiopia PDPP 1321/2024 Art. 9: Special category personal data detected — requires explicit consent or lawful processing condition"
 }
 
 # Art. 18: Cross-border language in agent output
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ethiopia|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ethiopia|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	msg := "Ethiopia PDPP 1321/2024 Art. 18: Cross-border data transfer language detected — requires ECA adequacy verification"
 }
 
@@ -173,12 +173,12 @@ audit contains msg if {
 # ── Citation key sets ────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	key := "breach_suppression"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	key := "biometric_output"
 }
 
@@ -198,12 +198,12 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(unauthori[sz]ed\s+(access|login|entry)|bypass(ing)?\s+(auth|security|login)|circumvent(ing)?\s+(access|control))`, input.output)
+	regex.match(`(unauthori[sz]ed\s+(access|login|entry)|bypass(ing)?\s+(auth|security|login)|circumvent(ing)?\s+(access|control))`, lower(input.output))
 	key := "unauthorised_access_signal"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fayda\s+(id|number|no)|ethiopia\s+(national\s+)?id|mosip\s+id)[\s:=]{0,5}[0-9]{10,16}`, input.output)
+	regex.match(`(fayda\s+(id|number|no)|ethiopia\s+(national\s+)?id|mosip\s+id)[\s:=]{0,5}[0-9]{10,16}`, lower(input.output))
 	key := "national_id_output"
 }
 
@@ -214,17 +214,17 @@ deny_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription)`, lower(input.output))
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(ethnic\s+origin|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, input.output)
+	regex.match(`(ethnic\s+origin|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ethiopia|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+ethiopia|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 

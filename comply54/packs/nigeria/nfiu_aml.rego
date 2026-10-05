@@ -64,19 +64,19 @@ deny contains msg if {
 
 # MLPPA s.14: Structuring (smurfing) — explicit split pattern in output
 deny contains msg if {
-	regex.match(`(?i)(split(ting)?|break(ing)?\s+(up|down)|divide|multiple\s+(transfers|payments|transactions)).{0,60}(avoid|under|below).{0,30}(threshold|limit|reporting|₦5|5\s*million)`, input.output)
+	regex.match(`(split(ting)?|break(ing)?\s+(up|down)|divide|multiple\s+(transfers|payments|transactions)).{0,60}(avoid|under|below).{0,30}(threshold|limit|reporting|₦5|5\s*million)`, lower(input.output))
 	msg := "NFIU Structuring (MLPPA s.14): Transaction splitting to avoid CTR threshold detected — constitutes structuring, a criminal offence"
 }
 
 # CBN AML/CFT Framework: KYC bypass attempt
 deny contains msg if {
-	regex.match(`(?i)(skip\s+(kyc|verification|identity\s+check)|proceed\s+without\s+(verification|kyc)|waive\s+(kyc|due\s+diligence)|bypass\s+(kyc|customer\s+verification))`, input.output)
+	regex.match(`(skip\s+(kyc|verification|identity\s+check)|proceed\s+without\s+(verification|kyc)|waive\s+(kyc|due\s+diligence)|bypass\s+(kyc|customer\s+verification))`, lower(input.output))
 	msg := "NFIU / CBN AML: KYC bypass blocked — proceeding without customer verification violates MLPPA and CBN AML/CFT Framework"
 }
 
 # CBN AML/CFT Framework: transaction for unverified customer
 deny contains msg if {
-	regex.match(`(?i)(unverified\s+customer|customer\s+not\s+verified|no\s+kyc|kyc\s+(pending|incomplete|failed)).{0,40}(proceed|transfer|payment|transaction)`, input.output)
+	regex.match(`(unverified\s+customer|customer\s+not\s+verified|no\s+kyc|kyc\s+(pending|incomplete|failed)).{0,40}(proceed|transfer|payment|transaction)`, lower(input.output))
 	msg := "NFIU / CBN AML: Transaction for unverified customer blocked — KYC must be completed before processing"
 }
 
@@ -95,25 +95,25 @@ escalate contains msg if {
 
 # NFIU STR: round-trip / layering pattern in output
 escalate contains msg if {
-	regex.match(`(?i)(transfer.{0,30}back|send.{0,20}return|round.?trip|circular.{0,20}transfer|layering)`, input.output)
+	regex.match(`(transfer.{0,30}back|send.{0,20}return|round.?trip|circular.{0,20}transfer|layering)`, lower(input.output))
 	msg := "NFIU STR Indicator: Round-trip or layering transaction pattern detected — requires human review for STR assessment"
 }
 
 # NFIU STR: unverified or unknown counterparty
 escalate contains msg if {
-	regex.match(`(?i)(unknown\s+(account|beneficiary|recipient)|unverified\s+(account|party)|no\s+(kyc|verification)\s+on\s+(file|record))`, input.output)
+	regex.match(`(unknown\s+(account|beneficiary|recipient)|unverified\s+(account|party)|no\s+(kyc|verification)\s+on\s+(file|record))`, lower(input.output))
 	msg := "NFIU STR Indicator: Transfer to unverified or unknown counterparty — requires human review before execution"
 }
 
 # NFIU STR: cash-equivalent or crypto conversion
 escalate contains msg if {
-	regex.match(`(?i)(gift\s+card|crypto|bitcoin|usdt|stable.?coin|mobile\s+money\s+to\s+cash|convert.{0,20}to\s+cash)`, input.output)
+	regex.match(`(gift\s+card|crypto|bitcoin|usdt|stable.?coin|mobile\s+money\s+to\s+cash|convert.{0,20}to\s+cash)`, lower(input.output))
 	msg := "NFIU STR Indicator: Cash-equivalent or crypto conversion — common money laundering typology, requires human review"
 }
 
 # NFIU STR / FATF Rec. 12: Politically Exposed Person transaction
 escalate contains msg if {
-	regex.match(`(?i)(PEP|politically\s+exposed|government\s+official|public\s+servant|elected\s+official|minister|senator|governor).{0,40}(transfer|payment|account|transaction)`, input.output)
+	regex.match(`(pep|politically\s+exposed|government\s+official|public\s+servant|elected\s+official|minister|senator|governor).{0,40}(transfer|payment|account|transaction)`, lower(input.output))
 	msg := "NFIU STR / FATF Rec. 12: Politically Exposed Person (PEP) transaction detected — enhanced due diligence required"
 }
 
@@ -159,17 +159,17 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(split(ting)?|break(ing)?\s+(up|down)|divide|multiple\s+(transfers|payments|transactions)).{0,60}(avoid|under|below).{0,30}(threshold|limit|reporting|₦5|5\s*million)`, input.output)
+	regex.match(`(split(ting)?|break(ing)?\s+(up|down)|divide|multiple\s+(transfers|payments|transactions)).{0,60}(avoid|under|below).{0,30}(threshold|limit|reporting|₦5|5\s*million)`, lower(input.output))
 	key := "structuring_pattern"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(skip\s+(kyc|verification|identity\s+check)|proceed\s+without\s+(verification|kyc)|waive\s+(kyc|due\s+diligence)|bypass\s+(kyc|customer\s+verification))`, input.output)
+	regex.match(`(skip\s+(kyc|verification|identity\s+check)|proceed\s+without\s+(verification|kyc)|waive\s+(kyc|due\s+diligence)|bypass\s+(kyc|customer\s+verification))`, lower(input.output))
 	key := "kyc_bypass"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(unverified\s+customer|customer\s+not\s+verified|no\s+kyc|kyc\s+(pending|incomplete|failed)).{0,40}(proceed|transfer|payment|transaction)`, input.output)
+	regex.match(`(unverified\s+customer|customer\s+not\s+verified|no\s+kyc|kyc\s+(pending|incomplete|failed)).{0,40}(proceed|transfer|payment|transaction)`, lower(input.output))
 	key := "unverified_customer"
 }
 
@@ -181,22 +181,22 @@ escalate_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(transfer.{0,30}back|send.{0,20}return|round.?trip|circular.{0,20}transfer|layering)`, input.output)
+	regex.match(`(transfer.{0,30}back|send.{0,20}return|round.?trip|circular.{0,20}transfer|layering)`, lower(input.output))
 	key := "str_roundtrip"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(unknown\s+(account|beneficiary|recipient)|unverified\s+(account|party)|no\s+(kyc|verification)\s+on\s+(file|record))`, input.output)
+	regex.match(`(unknown\s+(account|beneficiary|recipient)|unverified\s+(account|party)|no\s+(kyc|verification)\s+on\s+(file|record))`, lower(input.output))
 	key := "str_unknown_counterparty"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(gift\s+card|crypto|bitcoin|usdt|stable.?coin|mobile\s+money\s+to\s+cash|convert.{0,20}to\s+cash)`, input.output)
+	regex.match(`(gift\s+card|crypto|bitcoin|usdt|stable.?coin|mobile\s+money\s+to\s+cash|convert.{0,20}to\s+cash)`, lower(input.output))
 	key := "str_crypto"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(PEP|politically\s+exposed|government\s+official|public\s+servant|elected\s+official|minister|senator|governor).{0,40}(transfer|payment|account|transaction)`, input.output)
+	regex.match(`(pep|politically\s+exposed|government\s+official|public\s+servant|elected\s+official|minister|senator|governor).{0,40}(transfer|payment|account|transaction)`, lower(input.output))
 	key := "pep_transaction"
 }
 
