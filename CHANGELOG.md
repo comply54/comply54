@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.7.1] - 2026-10-05
+
 ### Fixed
 
 **170 regex rules across 13 packs never fired in the Python SDK (security fix)**
