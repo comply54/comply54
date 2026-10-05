@@ -86,8 +86,8 @@ automated_decision_actions := {
 # Exceptions: encrypted, risk resolved, disproportionate effort.
 deny contains msg if {
 	regex.match(
-		`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`,
-		input.output,
+		`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (Breach Notification): Agent cannot suppress breach notifications — Commissioner must be notified within 72 hours; data subjects notified without undue delay where high risk"
 }
@@ -96,8 +96,8 @@ deny contains msg if {
 # Genetic or biometric data that uniquely identifies a person is a special category.
 deny contains msg if {
 	regex.match(
-		`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`,
-		input.output,
+		`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (Special Categories): Biometric data detected — uniquely identifying biometrics are a special category; must not be transmitted without documented lawful basis and safeguards"
 }
@@ -107,8 +107,8 @@ deny contains msg if {
 # Penalty: MUR 200,000 or 5 years imprisonment.
 deny contains msg if {
 	regex.match(
-		`(?i)(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(register|registration|Commissioner|permit)|no\s+need\s+(to\s+)?(register|notify\s+(the\s+)?Commissioner))`,
-		input.output,
+		`(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(register|registration|commissioner|permit)|no\s+need\s+(to\s+)?(register|notify\s+(the\s+)?commissioner))`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (Registration): Agent cannot advise bypassing Commissioner registration — all controllers and processors must register (penalty: MUR 200,000 or 5 years imprisonment)"
 }
@@ -118,8 +118,8 @@ deny contains msg if {
 # Exposure triggers 72-hour Commissioner breach notification obligation.
 deny contains msg if {
 	regex.match(
-		`(?i)(mauritius\s+(national\s+)?(id|identity|nic|card)|national\s+(identity\s+)?card\s+(no|number|#)|NIC\s+(no|number|#))[\s:=]{0,5}[A-Z][0-9]{6,7}`,
-		input.output,
+		`(mauritius\s+(national\s+)?(id|identity|nic|card)|national\s+(identity\s+)?card\s+(no|number|#)|nic\s+(no|number|#))[\s:=]{0,5}[a-z][0-9]{6,7}`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (Breach Notification / Security): Mauritius National ID Card (NIC) detected in agent output — blocked; triggers Commissioner breach notification within 72 hours"
 }
@@ -163,8 +163,8 @@ deny contains msg if {
 # DPA 2017 (Special Categories): Health/medical/genetic/mental health data
 escalate contains msg if {
 	regex.match(
-		`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(report|assessment))`,
-		input.output,
+		`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(report|assessment))`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (Special Categories): Health/genetic/mental health data detected — requires lawful basis + legitimate controller activities + appropriate safeguards filed with Commissioner"
 }
@@ -173,8 +173,8 @@ escalate contains msg if {
 # sexual orientation/practices/preferences, criminal proceedings
 escalate contains msg if {
 	regex.match(
-		`(?i)(racial\s+origin|ethnic\s+origin|political\s+opinion|political\s+adherence|religious\s+belief|philosophical\s+belief|trade\s+union|sexual\s+(orientation|practice|preference)|criminal\s+(proceeding|offence|conviction|record))`,
-		input.output,
+		`(racial\s+origin|ethnic\s+origin|political\s+opinion|political\s+adherence|religious\s+belief|philosophical\s+belief|trade\s+union|sexual\s+(orientation|practice|preference)|criminal\s+(proceeding|offence|conviction|record))`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (Special Categories): Special category personal data detected — requires lawful basis + controller's legitimate activities + appropriate safeguards"
 }
@@ -182,8 +182,8 @@ escalate contains msg if {
 # DPA 2017 (DPO): Mandatory for ALL controllers/processors — escalate if advised against.
 escalate contains msg if {
 	regex.match(
-		`(?i)(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer|dpo\s+(is\s+)?(optional|not\s+required))`,
-		input.output,
+		`(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer|dpo\s+(is\s+)?(optional|not\s+required))`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (DPO): DPO appointment is mandatory for ALL controllers and processors — no size threshold in Mauritius (stricter than EU GDPR); escalate for compliance review"
 }
@@ -191,8 +191,8 @@ escalate contains msg if {
 # DPA 2017 (Transfer): Cross-border language in agent output
 escalate contains msg if {
 	regex.match(
-		`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+mauritius|cross.?border|international\s+transfer|offshore|foreign\s+server)`,
-		input.output,
+		`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+mauritius|cross.?border|international\s+transfer|offshore|foreign\s+server)`,
+		lower(input.output),
 	)
 	msg := "Mauritius DPA 2017 (Transfer): Cross-border data transfer language detected — proof of appropriate safeguards must be filed with the Commissioner before data leaves Mauritius"
 }
@@ -254,32 +254,32 @@ audit contains msg if {
 
 deny_citations contains key if {
 	regex.match(
-		`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`,
-		input.output,
+		`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+(report|notification))`,
+		lower(input.output),
 	)
 	key := "breach_suppression"
 }
 
 deny_citations contains key if {
 	regex.match(
-		`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`,
-		input.output,
+		`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`,
+		lower(input.output),
 	)
 	key := "biometric_output"
 }
 
 deny_citations contains key if {
 	regex.match(
-		`(?i)(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(register|registration|Commissioner|permit)|no\s+need\s+(to\s+)?(register|notify\s+(the\s+)?Commissioner))`,
-		input.output,
+		`(process(ing)?\s+(without|skip|bypass|ignore).{0,30}(register|registration|commissioner|permit)|no\s+need\s+(to\s+)?(register|notify\s+(the\s+)?commissioner))`,
+		lower(input.output),
 	)
 	key := "no_lawful_basis"
 }
 
 deny_citations contains key if {
 	regex.match(
-		`(?i)(mauritius\s+(national\s+)?(id|identity|nic|card)|national\s+(identity\s+)?card\s+(no|number|#)|NIC\s+(no|number|#))[\s:=]{0,5}[A-Z][0-9]{6,7}`,
-		input.output,
+		`(mauritius\s+(national\s+)?(id|identity|nic|card)|national\s+(identity\s+)?card\s+(no|number|#)|nic\s+(no|number|#))[\s:=]{0,5}[a-z][0-9]{6,7}`,
+		lower(input.output),
 	)
 	key := "national_id_output"
 }
@@ -307,32 +307,32 @@ deny_citations contains key if {
 
 escalate_citations contains key if {
 	regex.match(
-		`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(report|assessment))`,
-		input.output,
+		`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription|clinical\s+data|psychological\s+(report|assessment))`,
+		lower(input.output),
 	)
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
 	regex.match(
-		`(?i)(racial\s+origin|ethnic\s+origin|political\s+opinion|political\s+adherence|religious\s+belief|philosophical\s+belief|trade\s+union|sexual\s+(orientation|practice|preference)|criminal\s+(proceeding|offence|conviction|record))`,
-		input.output,
+		`(racial\s+origin|ethnic\s+origin|political\s+opinion|political\s+adherence|religious\s+belief|philosophical\s+belief|trade\s+union|sexual\s+(orientation|practice|preference)|criminal\s+(proceeding|offence|conviction|record))`,
+		lower(input.output),
 	)
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
 	regex.match(
-		`(?i)(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer|dpo\s+(is\s+)?(optional|not\s+required))`,
-		input.output,
+		`(no\s+need\s+(for\s+)?(a\s+)?dpo|skip(ping)?\s+(the\s+)?dpo|don'?t\s+need\s+(a\s+)?data\s+protection\s+officer|dpo\s+(is\s+)?(optional|not\s+required))`,
+		lower(input.output),
 	)
 	key := "dpo_bypass_signal"
 }
 
 escalate_citations contains key if {
 	regex.match(
-		`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+mauritius|cross.?border|international\s+transfer|offshore|foreign\s+server)`,
-		input.output,
+		`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+mauritius|cross.?border|international\s+transfer|offshore|foreign\s+server)`,
+		lower(input.output),
 	)
 	key := "cross_border_output_pattern"
 }

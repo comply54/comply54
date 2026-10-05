@@ -59,6 +59,7 @@ NDPA = PackSpec(
     authority="NDPC",
     rego_path=_PACKS_DIR / "nigeria" / "ndpa.rego",
     query_prefix="data.agt_policies_nigeria.ndpa",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "cross-border", "pii", "residency"],
     sources=[
         RegulatorySource(document="Nigeria Data Protection Act 2023", section="§24", authority="NDPC", year=2023),
@@ -74,6 +75,7 @@ CBN = PackSpec(
     authority="CBN",
     rego_path=_PACKS_DIR / "nigeria" / "cbn.rego",
     query_prefix="data.agt_policies_nigeria.cbn",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["fintech", "aml", "transaction-limits", "kyc"],
     sources=[
         RegulatorySource(document="CBN Circular FPR/DIR/GEN/CIR/07/003", section="§3.1", authority="CBN", year=2013),
@@ -90,6 +92,7 @@ BVN_NIN = PackSpec(
     authority="CBN/NIBSS/NIMC",
     rego_path=_PACKS_DIR / "nigeria" / "bvn_nin.rego",
     query_prefix="data.agt_policies_nigeria.bvn_nin",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["identity", "biometric", "pii"],
     sources=[
         RegulatorySource(document="CBN Regulatory Framework for BVN Operations 2014", section="§6", authority="CBN", year=2014),
@@ -105,7 +108,7 @@ NFIU_AML = PackSpec(
     authority="NFIU",
     rego_path=_PACKS_DIR / "nigeria" / "nfiu_aml.rego",
     query_prefix="data.agt_policies_nigeria.nfiu",
-    version="1.1.0",  # sanctions_screening_required rule added (fail-closed, MLPPA 2022 s.6)
+    version="1.2.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["aml", "cft", "str", "fintech"],
     sources=[
         RegulatorySource(document="Money Laundering (Prevention and Prohibition) Act 2022", section="§10", authority="NFIU", year=2022),
@@ -161,6 +164,7 @@ KDPA = PackSpec(
     authority="ODPC",
     rego_path=_PACKS_DIR / "africa" / "kdpa.rego",
     query_prefix="data.agt_policies_africa.kdpa",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "cross-border", "pii"],
     sources=[
         RegulatorySource(document="Kenya Data Protection Act 2019 (Act No. 24 of 2019)", section="§25", authority="ODPC", year=2019),
@@ -175,6 +179,7 @@ MAURITIUS_DPA = PackSpec(
     authority="DPC Mauritius",
     rego_path=_PACKS_DIR / "africa" / "mauritius_dpa.rego",
     query_prefix="data.agt_policies_africa.mauritius_dpa",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "pii"],
     sources=[
         RegulatorySource(document="Data Protection Act 2017 (Act 20 of 2017)", section="§46", authority="DPC Mauritius", year=2017),
@@ -188,6 +193,7 @@ TANZANIA_PDPA = PackSpec(
     authority="PDPC Tanzania",
     rego_path=_PACKS_DIR / "africa" / "tanzania_pdpa.rego",
     query_prefix="data.agt_policies_africa.tanzania_pdpa",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "pii"],
     sources=[
         RegulatorySource(document="Personal Data Protection Act No. 11 of 2022", section="§32", authority="PDPC Tanzania", year=2022),
@@ -201,6 +207,7 @@ UGANDA_DPPA = PackSpec(
     authority="PDPO Uganda",
     rego_path=_PACKS_DIR / "africa" / "uganda_dppa.rego",
     query_prefix="data.agt_policies_africa.uganda_dppa",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "pii"],
     sources=[
         RegulatorySource(document="Data Protection and Privacy Act 2019 (Act 9 of 2019)", section="§26", authority="PDPO Uganda", year=2019),
@@ -214,6 +221,7 @@ RWANDA_DPA = PackSpec(
     authority="RISA",
     rego_path=_PACKS_DIR / "africa" / "rwanda_dpa.rego",
     query_prefix="data.agt_policies_africa.rwanda_dpa",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "pii"],
     sources=[
         RegulatorySource(document="Law No. 058/2021 of 13/10/2021 on Protection of Personal Data and Privacy", section="Art. 8", authority="RISA", year=2021),
@@ -228,6 +236,7 @@ ETHIOPIA_PDP = PackSpec(
     authority="ECA",
     rego_path=_PACKS_DIR / "africa" / "ethiopia_pdp.rego",
     query_prefix="data.agt_policies_africa.ethiopia_pdp",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "pii"],
     sources=[
         RegulatorySource(document="Personal Data Protection Proclamation No. 1321/2024", section="Art. 22", authority="ECA", year=2024),
@@ -243,6 +252,7 @@ POPIA = PackSpec(
     authority="ICLR / Information Regulator",
     rego_path=_PACKS_DIR / "africa" / "popia.rego",
     query_prefix="data.agt_policies_africa.popia",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "cross-border", "pii", "special-category"],
     sources=[
         RegulatorySource(document="Protection of Personal Information Act 4 of 2013 (POPIA)", section="§11", authority="Information Regulator ZA", year=2013),
@@ -259,6 +269,7 @@ GHANA_DPA = PackSpec(
     authority="DPC Ghana",
     rego_path=_PACKS_DIR / "africa" / "ghana_dpa.rego",
     query_prefix="data.agt_policies_africa.ghana_dpa",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "pii"],
     sources=[
         RegulatorySource(document="Ghana Data Protection Act 2012 (Act 843)", section="§17", authority="DPC Ghana", year=2012),
@@ -275,6 +286,7 @@ EGYPT_PDPL = PackSpec(
     authority="PDPRL Egypt",
     rego_path=_PACKS_DIR / "africa" / "egypt_pdpl.rego",
     query_prefix="data.agt_policies_africa.egypt_pdpl",
+    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
     tags=["data-protection", "pii"],
     sources=[
         RegulatorySource(document="Personal Data Protection Law No. 151 of 2020", section="Art. 3", authority="PDPRL Egypt", year=2020),
@@ -306,6 +318,7 @@ PROMPT_INJECTION = PackSpec(
     authority="OWASP",
     rego_path=_PACKS_DIR / "universal" / "prompt_injection.rego",
     query_prefix="data.agt_policies_agent.prompt_injection",
+    version="2.1.0",  # whitespace-normalised matching; separators work under regopy
     tags=["owasp", "security", "safety", "agentic", "indirect-injection", "mcp", "encoding"],
     sources=[
         RegulatorySource(document="OWASP Top 10 for LLM Applications 2025", section="LLM01:2025 — Prompt Injection", authority="OWASP", year=2025, url=_OWASP_URL),

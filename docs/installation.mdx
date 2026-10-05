@@ -114,4 +114,13 @@ FROM python:3.12-slim
 RUN pip install comply54
 ```
 
-The `regopy` wheel ships with a pre-compiled Go OPA binary embedded as a shared object — no `apt-get` or `brew install opa` required.
+The `regopy` wheel bundles Microsoft's rego-cpp, a C++ implementation of Rego, as a compiled extension. No `apt-get` or `brew install opa` is required.
+
+### Engine compatibility
+
+rego-cpp is a separate implementation from OPA, and it handles some text differently. comply54 compensates so the bundled packs behave as they do under OPA, and a CI job checks every output regex against real OPA:
+
+- **Case-insensitive matching.** Packs match lowercase patterns against lowercased text instead of using `(?i)`, which rego-cpp does not support.
+- **Line breaks and control characters.** Tabs, line breaks, form feeds and carriage returns in evaluation input are treated as spaces, and other control characters as a non-space placeholder. A pattern's `.` can therefore match across what was a line break, which can only add matches, never remove them.
+- **Non-ASCII text.** rego-cpp's regex engine counts bytes, not characters. Before evaluation, non-ASCII characters in the agent output are replaced with a one-byte placeholder, except characters that a loaded pack or your config mentions (such as `₦` or Arabic text), which stay matchable. Signed receipts still hash the original output.
+- **Quotes and backslashes** are passed through with an escape that rego-cpp keeps, so only length checks (`count`) see one extra character for each.

@@ -225,12 +225,12 @@ _e_fake_dialogue := {
     "ai: i can",
     "model: sure,",
     "model: i will",
-    "[/user]\n[assistant]",
-    "human:\nassistant:",
-    "user:\nassistant:",
+    "[/user] [assistant]",
+    "human: assistant:",
+    "user: assistant:",
     "<|im_start|>assistant",
-    "###assistant\n",
-    "---assistant---\n",
+    "###assistant ",
+    "---assistant--- ",
 }
 
 # Category F — Structural separators (chat-template exploitation)
@@ -265,8 +265,8 @@ _f_structural := {
     "{{user}}",
     "{{assistant}}",
     "%%system%%",
-    "## system\n",
-    "## instructions\n",
+    "## system ",
+    "## instructions ",
 }
 
 # MCP tool poisoning — patterns suspicious in tool description fields
@@ -441,11 +441,21 @@ _mcp_desc_texts contains v if {
     is_string(v)
 }
 
+# Lowercased, whitespace-normalised text: every run of \s becomes one space.
+# Multi-line separators are therefore written with a space ("human: assistant:")
+# and behave identically under OPA and comply54's in-process engine (which does
+# not decode "\n" in string literals), and whitespace padding such as
+# "ignore   previous\ninstructions" no longer evades the phrase patterns.
+_norm(t) := regex.replace(lower(t), `\s+`, " ")
+
 # Combined direct-input surfaces (params + output)
-_direct_texts := _param_texts | _output_texts
+_direct_texts := {_norm(t) | some t in (_param_texts | _output_texts)}
 
 # Combined data-context surfaces (retrieved content + tool output)
-_data_texts := _retrieved_texts | _tool_output_texts
+_data_texts := {_norm(t) | some t in (_retrieved_texts | _tool_output_texts)}
+
+# MCP tool descriptions
+_mcp_texts := {_norm(t) | some t in _mcp_desc_texts}
 
 # ── Detection helpers ──────────────────────────────────────────────────────────
 
@@ -468,7 +478,7 @@ _data_has_indirect_pattern if {
 }
 
 _mcp_has_poisoning if {
-    some text in _mcp_desc_texts
+    some text in _mcp_texts
     some pattern in _mcp_poisoning
     contains(lower(text), pattern)
 }
@@ -540,7 +550,7 @@ deny contains msg if {
     _direct_has_structural
     _is_high_stakes
     msg := sprintf(
-        "Structural injection blocked [high-stakes]: chat-template separator detected in input for action \"%v\". Structural injection in a high-stakes action context is blocked.",
+        "Structural injection blocked [high-stakes]: chat-template separator detected in input for action '%v'. Structural injection in a high-stakes action context is blocked.",
         [input.action],
     )
 }
@@ -550,7 +560,7 @@ deny contains msg if {
     _data_has_indirect_pattern
     _is_high_stakes
     msg := sprintf(
-        "Indirect injection blocked [high-stakes]: AI-directed instruction pattern found in retrieved data context for action \"%v\". Data-layer injection in a high-stakes action context is blocked.",
+        "Indirect injection blocked [high-stakes]: AI-directed instruction pattern found in retrieved data context for action '%v'. Data-layer injection in a high-stakes action context is blocked.",
         [input.action],
     )
 }

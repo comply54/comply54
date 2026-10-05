@@ -43,13 +43,13 @@ bulk_export_actions := {
 
 # PDPA s.28: Block breach suppression
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	msg := "Tanzania PDPA s.28: Agent cannot suppress breach notifications — 72-hour PDPC reporting obligation applies"
 }
 
 # PDPA s.17: Block biometric data transmission
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	msg := "Tanzania PDPA s.17: Biometric data detected — must not be transmitted without documented lawful basis"
 }
 
@@ -78,13 +78,13 @@ deny contains msg if {
 
 # PDPA s.8: Block processing without consent
 deny contains msg if {
-	regex.match(`(?i)(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, input.output)
+	regex.match(`(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, lower(input.output))
 	msg := "Tanzania PDPA s.8: Data processing without lawful basis is prohibited — valid consent or documented legal basis required"
 }
 
 # PDPA: Block NIDA national ID in output
 deny contains msg if {
-	regex.match(`(?i)(nida\s+(number|no|#)|national\s+id|tanzania\s+id)[\s:=]{0,5}[0-9]{20}`, input.output)
+	regex.match(`(nida\s+(number|no|#)|national\s+id|tanzania\s+id)[\s:=]{0,5}[0-9]{20}`, lower(input.output))
 	msg := "Tanzania PDPA: NIDA national ID number detected in agent output — blocked to prevent identity exposure"
 }
 
@@ -102,19 +102,19 @@ deny contains msg if {
 
 # PDPA s.17: Health/medical data
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription)`, lower(input.output))
 	msg := "Tanzania PDPA s.17: Health/medical special category data detected — requires explicit consent or documented legal basis"
 }
 
 # PDPA s.17: Special category data
 escalate contains msg if {
-	regex.match(`(?i)(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, input.output)
+	regex.match(`(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, lower(input.output))
 	msg := "Tanzania PDPA s.17: Special category personal data detected — explicit consent or lawful processing condition required"
 }
 
 # PDPA s.13: Cross-border language in output
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+tanzania|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+tanzania|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	msg := "Tanzania PDPA s.13: Cross-border data transfer language detected — requires PDPC adequacy verification"
 }
 
@@ -160,12 +160,12 @@ audit contains msg if {
 # ── Citation key sets ────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	key := "breach_suppression"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data))`, lower(input.output))
 	key := "biometric_output"
 }
 
@@ -185,12 +185,12 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, input.output)
+	regex.match(`(process(ing)?|shar(ing)?|us(ing)?).{0,30}(without\s+consent|no\s+consent|bypass.{0,10}consent)`, lower(input.output))
 	key := "no_consent_processing"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(nida\s+(number|no|#)|national\s+id|tanzania\s+id)[\s:=]{0,5}[0-9]{20}`, input.output)
+	regex.match(`(nida\s+(number|no|#)|national\s+id|tanzania\s+id)[\s:=]{0,5}[0-9]{20}`, lower(input.output))
 	key := "national_id_output"
 }
 
@@ -201,17 +201,17 @@ deny_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|genetic\s+(data|test)|mental\s+health|disability|prescription)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|genetic\s+(data|test)|mental\s+health|disability|prescription)`, lower(input.output))
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, input.output)
+	regex.match(`(ethnic\s+origin|race|tribe|political\s+opinion|religious\s+belief|trade\s+union|sexual\s+orientation|criminal\s+conviction)`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+tanzania|cross.?border|international\s+transfer|offshore)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?).{0,60}(outside\s+tanzania|cross.?border|international\s+transfer|offshore)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 

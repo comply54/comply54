@@ -51,13 +51,13 @@ cross_border_actions := {
 
 # POPIA s.26(1)(f): Biometric personal information in output
 deny contains msg if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data|record))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data|record))`, lower(input.output))
 	msg := "POPIA s.26(1)(f): Biometric personal information detected in agent output — requires documented POPIA s.27 exception"
 }
 
 # POPIA s.26(1)(h): Children's personal information
 deny contains msg if {
-	regex.match(`(?i)(minor|child\s+(data|record|profile|account)|under\s+(18|sixteen|fourteen)|children'?s\s+(data|information|personal\s+info))`, input.output)
+	regex.match(`(minor|child\s+(data|record|profile|account)|under\s+(18|sixteen|fourteen)|children'?s\s+(data|information|personal\s+info))`, lower(input.output))
 	msg := "POPIA s.26(1)(h): Children's personal information must not be processed by AI agents without a separate consent framework"
 }
 
@@ -69,13 +69,13 @@ deny contains msg if {
 
 # POPIA s.19: SA ID Number with contextual label
 deny contains msg if {
-	regex.match(`(?i)(id\s+number|identity\s+number|sa\s+id|south\s+african\s+id)[\s:=]+[0-9]{13}`, input.output)
+	regex.match(`(id\s+number|identity\s+number|sa\s+id|south\s+african\s+id)[\s:=]+[0-9]{13}`, lower(input.output))
 	msg := "POPIA s.19: SA ID Number value detected in agent response — blocked"
 }
 
 # POPIA s.22: Breach notification suppression
 deny contains msg if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident|leak)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident|leak)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	msg := "POPIA s.22: Agent cannot suppress or delay breach notification — Information Regulator must be notified without unreasonable delay"
 }
 
@@ -93,7 +93,7 @@ deny contains msg if {
 
 # POPIA s.11: Purpose limitation — processing beyond original consent
 deny contains msg if {
-	regex.match(`(?i)(process(ing)?.{0,40}(beyond|outside|new\s+purpose|repurpose|use\s+for\s+something\s+else)|(data|information).{0,30}(without\s+(consent|permission|authorisation)))`, input.output)
+	regex.match(`(process(ing)?.{0,40}(beyond|outside|new\s+purpose|repurpose|use\s+for\s+something\s+else)|(data|information).{0,30}(without\s+(consent|permission|authorisation)))`, lower(input.output))
 	msg := "POPIA s.11: Purpose limitation — agent cannot process personal information for a purpose beyond the original consent"
 }
 
@@ -107,25 +107,25 @@ escalate contains msg if {
 
 # POPIA s.72: Cross-border transfer language in output
 escalate contains msg if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?|upload(ing)?).{0,60}(outside\s+south\s+africa|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?|upload(ing)?).{0,60}(outside\s+south\s+africa|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	msg := "POPIA s.72: Cross-border data transfer language detected — requires Information Officer approval"
 }
 
 # POPIA s.26(1)(e): Health / medical special personal information
 escalate contains msg if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|mental\s+health|disability|chronic\s+illness|prescription|clinical)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|mental\s+health|disability|chronic\s+illness|prescription|clinical)`, lower(input.output))
 	msg := "POPIA s.26(1)(e): Health/medical special personal information detected — requires explicit lawful basis under POPIA s.27"
 }
 
 # POPIA s.26(1)(b): Race / ethnic origin special personal information
 escalate contains msg if {
-	regex.match(`(?i)(race|ethnic\s+origin|racial\s+(group|classification)|coloured|population\s+group)`, input.output)
+	regex.match(`(race|ethnic\s+origin|racial\s+(group|classification)|coloured|population\s+group)`, lower(input.output))
 	msg := "POPIA s.26(1)(b): Race/ethnic origin special personal information — requires lawful basis and heightened controls"
 }
 
 # POPIA s.26(1)(g): Criminal history special personal information
 escalate contains msg if {
-	regex.match(`(?i)(criminal\s+(record|history|conviction|background)|prior\s+(offence|offense|conviction)|police\s+clearance)`, input.output)
+	regex.match(`(criminal\s+(record|history|conviction|background)|prior\s+(offence|offense|conviction)|police\s+clearance)`, lower(input.output))
 	msg := "POPIA s.26(1)(g): Criminal history special personal information — requires explicit lawful processing basis"
 }
 
@@ -144,12 +144,12 @@ audit contains msg if {
 # ── Citation key sets ────────────────────────────────────────────
 
 deny_citations contains key if {
-	regex.match(`(?i)(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data|record))`, input.output)
+	regex.match(`(fingerprint|facial\s+recognition|retina|iris\s+scan|voice\s+print|biometric\s+(template|hash|data|record))`, lower(input.output))
 	key := "biometric_output"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(minor|child\s+(data|record|profile|account)|under\s+(18|sixteen|fourteen)|children'?s\s+(data|information|personal\s+info))`, input.output)
+	regex.match(`(minor|child\s+(data|record|profile|account)|under\s+(18|sixteen|fourteen)|children'?s\s+(data|information|personal\s+info))`, lower(input.output))
 	key := "children_data_output"
 }
 
@@ -159,12 +159,12 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(id\s+number|identity\s+number|sa\s+id|south\s+african\s+id)[\s:=]+[0-9]{13}`, input.output)
+	regex.match(`(id\s+number|identity\s+number|sa\s+id|south\s+african\s+id)[\s:=]+[0-9]{13}`, lower(input.output))
 	key := "sa_id_output"
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident|leak)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, input.output)
+	regex.match(`(don'?t\s+(report|notify|disclose)|hide\s+(the\s+)?(breach|incident|leak)|suppress\s+(alert|notification)|delay\s+(breach|incident)\s+report)`, lower(input.output))
 	key := "breach_suppression"
 }
 
@@ -177,7 +177,7 @@ deny_citations contains key if {
 }
 
 deny_citations contains key if {
-	regex.match(`(?i)(process(ing)?.{0,40}(beyond|outside|new\s+purpose|repurpose|use\s+for\s+something\s+else)|(data|information).{0,30}(without\s+(consent|permission|authorisation)))`, input.output)
+	regex.match(`(process(ing)?.{0,40}(beyond|outside|new\s+purpose|repurpose|use\s+for\s+something\s+else)|(data|information).{0,30}(without\s+(consent|permission|authorisation)))`, lower(input.output))
 	key := "no_consent_processing"
 }
 
@@ -187,22 +187,22 @@ escalate_citations contains key if {
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(send(ing)?|transfer(ring)?|export(ing)?|upload(ing)?).{0,60}(outside\s+south\s+africa|cross.?border|international\s+transfer|offshore|foreign\s+server)`, input.output)
+	regex.match(`(send(ing)?|transfer(ring)?|export(ing)?|upload(ing)?).{0,60}(outside\s+south\s+africa|cross.?border|international\s+transfer|offshore|foreign\s+server)`, lower(input.output))
 	key := "cross_border_output_pattern"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(medical\s+record|health\s+(condition|status|data)|HIV|mental\s+health|disability|chronic\s+illness|prescription|clinical)`, input.output)
+	regex.match(`(medical\s+record|health\s+(condition|status|data)|hiv|mental\s+health|disability|chronic\s+illness|prescription|clinical)`, lower(input.output))
 	key := "health_data_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(race|ethnic\s+origin|racial\s+(group|classification)|coloured|population\s+group)`, input.output)
+	regex.match(`(race|ethnic\s+origin|racial\s+(group|classification)|coloured|population\s+group)`, lower(input.output))
 	key := "special_category_output"
 }
 
 escalate_citations contains key if {
-	regex.match(`(?i)(criminal\s+(record|history|conviction|background)|prior\s+(offence|offense|conviction)|police\s+clearance)`, input.output)
+	regex.match(`(criminal\s+(record|history|conviction|background)|prior\s+(offence|offense|conviction)|police\s+clearance)`, lower(input.output))
 	key := "special_category_output"
 }
 

@@ -11,6 +11,62 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.7.1] - 2026-10-05
+
+### Fixed
+
+**170 regex rules across 13 packs never fired in the Python SDK (security fix)**
+
+comply54 evaluates Rego in-process with `regopy`, Microsoft's C++ implementation of Rego (rego-cpp), not OPA. regopy returns undefined for any regex using the `(?i)` case-insensitive flag, so every rule written that way silently never matched. The existing test suite passed throughout because none of these rules were covered.
+
+Affected packs: `nigeria/ndpa`, `nigeria/cbn`, `nigeria/bvn-nin`, `nigeria/nfiu-aml`, `kenya/kdpa`, `mauritius/dpa`, `tanzania/pdpa`, `uganda/dppa`, `rwanda/dpa`, `ethiopia/pdp`, `south-africa/popia`, `ghana/dpa`, `egypt/pdpl`. Examples that were allowed on 0.6.0 and are now caught:
+
+| Output | Pack | 0.6.0 | Now |
+|---|---|---|---|
+| `Transferring ₦15,000,000 now` | CBN | allow | deny |
+| `Here is the medical record` | NDPA | allow | escalate |
+| `رقم قومي: 29001011234567` | Egypt PDPL | allow | deny |
+| `NIC no: A1234567` | Mauritius DPA | allow | deny |
+| `Approve the Senator account transfer today` | NFIU AML | allow | escalate |
+
+All 170 patterns are rewritten in lowercase and matched against `lower(input.output)`. The rewrite produces identical results under OPA (verified across 551,896 evaluations), so agt-policies-nigeria and other OPA users see no change.
+
+**Evaluation input was mangled before rules saw it**
+
+regopy does not decode escape sequences, and its regex engine counts bytes rather than characters. As a result `₦`, Arabic, Amharic and accented text reached rules as escape text, line breaks reached them as a literal backslash and `n`, and a non-ASCII character inside a wildcard span broke the match. `Comply54Engine` now normalises input before evaluation:
+
+- non-ASCII is sent unescaped;
+- tab, line feed, form feed and carriage return become a space (exactly the characters RE2's `\s` matches);
+- other control characters become DEL, and lone surrogates become U+FFFD;
+- in the agent output, non-ASCII characters not mentioned by any loaded pack or config are replaced with a one-byte placeholder, which RE2 treats identically for every construct the packs use.
+
+Signed receipts still hash the original, unnormalised input.
+
+**Prompt injection: separators and whitespace evasion**
+
+`universal/prompt-injection` relied on `"\n"` in string literals, which regopy never decodes. Text is now lowercased and whitespace-normalised once per surface, and multi-line separators are written with a space (`"human: assistant:"`). This also stops whitespace-padding evasion: `ignore   previous\ninstructions` is now blocked.
+
+**Fail-closed when a pack yields no decision**
+
+If a pack ever produced no decision, the engine's fallback path treated it as `allow`. It now escalates with an explicit `failing closed` message. No bundled pack is affected today; all 22 return a decision on malformed input.
+
+**Deployer config strings** containing line breaks are normalised the same way as input, so custom patterns still match.
+
+### Added
+
+- `tests/test_regopy_compat.py`: static guards (no `(?i)`, no escape sequences, no uppercase literals in lowercase patterns, every raw-string regex evaluable) plus a test that generates matching text in lower, UPPER and Title case for all 170 output regexes and requires each to match through the engine's input path.
+- `tests/test_opa_parity.py` and a new `regopy ↔ OPA parity` CI job (OPA pinned to v1.21.0) holding every output regex to OPA's answers.
+- `tests/test_pack_versions.py`: Python and TypeScript pack versions must match.
+- CONTRIBUTING.md: engine compatibility rules for pack authors.
+
+### Changed
+
+- Pack versions (Python `packs.py` and TypeScript `versions.ts`): `nigeria/ndpa`, `nigeria/cbn`, `nigeria/bvn-nin`, `kenya/kdpa`, `mauritius/dpa`, `tanzania/pdpa`, `uganda/dppa`, `rwanda/dpa`, `ethiopia/pdp`, `south-africa/popia`, `ghana/dpa` and `egypt/pdpl` to 1.1.0; `nigeria/nfiu-aml` to 1.2.0; `universal/prompt-injection` to 2.1.0.
+- `universal/prompt-injection` was 1.0.0 in Python but 2.0.0 in TypeScript, so receipts from the two SDKs disagreed. Both are now 2.1.0.
+- docs/installation.mdx: corrected the claim that regopy embeds a Go OPA binary, and added an Engine compatibility section.
+
+---
+
 ## [0.7.0] — 2026-08-17
 
 ### Changed
