@@ -38,3 +38,6 @@ coverage.xml
 # Distribution (Python package)
 comply54.egg-info/
 Comply54_PRD_v1.0.pdf
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
