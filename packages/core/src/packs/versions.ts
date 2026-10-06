@@ -12,12 +12,12 @@
  */
 export const PACK_VERSIONS: Record<string, string> = {
   // Nigeria
-  "nigeria/ndpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+  "nigeria/ndpa": "1.2.0", // s.30 special-category + s.25 lawful-basis rules fire on declared context, not action name
   "nigeria/cbn": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
   "nigeria/bvn-nin": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
-  "nigeria/nfiu-aml": "1.2.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)
-  "nigeria/nha": "1.1.0",
-  "nigeria/naicom": "1.1.0", // state_of_origin added to prohibited_characteristics (NIIRA 2025 Part V)
+  "nigeria/nfiu-aml": "1.3.0", // declared-absent sanctions/AML screening denies regardless of action name
+  "nigeria/nha": "1.2.0", // record-access and health-sharing action vocabularies broadened
+  "nigeria/naicom": "1.2.0", // claim action vocabulary broadened; claim value read under several field names
 
   // East Africa
   "kenya/kdpa": "1.1.0", // regex rules fire under regopy (lowercase rewrite of (?i) patterns)

@@ -41,6 +41,19 @@ transfer_actions := {
 
 # ── Deny rules ────────────────────────────────────────────────────
 
+# MLPPA 2022 s.3: a declared-absent control is evidence, not silence. Checked
+# without an action filter so a payment tool named outside transfer_actions
+# cannot skip screening entirely.
+deny contains msg if {
+	input.context.sanctions_screened == false
+	msg := "MLPPA 2022 s.3 / NFIU AML Guidelines: Payment processed without sanctions screening or AML checks — both are mandatory before execution"
+}
+
+deny contains msg if {
+	input.context.aml_check_performed == false
+	msg := "MLPPA 2022 s.3 / NFIU AML Guidelines: Payment processed without sanctions screening or AML checks — both are mandatory before execution"
+}
+
 # MLPPA 2022 s.6 / NFIU AML/CFT Guidelines 2022 §3.2:
 # Every payment must be screened against sanctions lists before execution.
 # The agent must confirm screening was performed (context.sanctions_screened == true).

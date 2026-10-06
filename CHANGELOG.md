@@ -11,6 +11,52 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.8.0] - 2026-10-06
+
+### Fixed
+
+**Rules keyed on action names silently failed open (security fix)**
+
+Packs matched the incoming action against closed sets of exact strings. An action
+outside the set fell through to `allow`, with nothing in the result to say no rule
+had run. A caller whose tool was named `approve_insurance_claim` rather than
+`approve_claim`, or who sent `amount` where the rule read `claim_amount`, received
+a clean pass. This is the same failure shape as the regopy `(?i)` bug in 0.7.1:
+rules that never fire, with a green test suite, because nothing covered them.
+
+The starkest case was `nigeria/nfiu-aml`, whose entire AML and sanctions rule set
+was gated on the single action name `transfer_funds` in the TypeScript SDK. Any
+payment tool named anything else bypassed sanctions screening.
+
+Rules that govern a data category or a declared control now key on what the
+request declares rather than on what the tool is called:
+
+- **`nigeria/ndpa` 1.2.0** — new `ndpa_special_category_no_consent` (NDPA s.30)
+  denies processing of health, biometric or genetic data without declared consent,
+  under any action name. Signals accepted: `special_category`, `contains_phi`,
+  `hiv_status`, and `data_category` in {health, medical, biometric, genetic,
+  sexual_orientation, religion}. New `ndpa_no_lawful_basis` (NDPA s.25) denies a
+  declared-null or empty `lawful_basis` with no consent. Consent is honoured under
+  `consent_documented`, `consent_provided`, `consent_given` and `consent_obtained`,
+  since accepting one spelling only would be the same fail-open inverted.
+- **`nigeria/nfiu-aml` 1.3.0** — new `nfiu_screening_skipped` denies when
+  `sanctions_screened` or `aml_check_performed` is explicitly `false`, regardless
+  of action name. The TypeScript payment action set now matches the Rego one.
+- **`nigeria/naicom` 1.2.0** — claim action vocabulary broadened
+  (`approve_insurance_claim`, `authorize_claim`, `approve_payout`, `disburse_claim`,
+  `confirm_claim`, `finalize_claim`). Claim value is read from `claim_amount`,
+  `amount`, `payout_amount`, `settlement_amount` or `claim_value`; reading one
+  spelling gave an undefined comparison that cleared every ceiling.
+- **`nigeria/nha` 1.2.0** — record-access and health-sharing action vocabularies
+  broadened, bringing the TypeScript SDK in line with the Python one, which had
+  already added `query_health_records`.
+
+26 tests added in `tests/test_action_vocabulary_fail_open.py`, mirrored in
+`packages/core/src/action-vocabulary.test.ts` so the two SDKs cannot drift on this.
+Totals: Python 748, TypeScript 62.
+
+---
+
 ## [0.7.1] - 2026-10-05
 
 ### Fixed

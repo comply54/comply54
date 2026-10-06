@@ -72,6 +72,27 @@ fraud_score_threshold := 0.65
 claim_actions := {
 	"approve_claim", "settle_claim",
 	"process_claim_payment", "close_claim",
+	"approve_insurance_claim", "authorize_claim", "approve_payout",
+	"disburse_claim", "confirm_claim", "finalize_claim",
+}
+
+# Claim value under any of the names a deployment may send. Reading a single
+# spelling is a quiet fail-open: a caller sending `amount` where the rule reads
+# `claim_amount` gets an undefined comparison and clears every ceiling.
+default claim_value := 0
+
+claim_value := v if {
+	v := input.params.claim_amount
+	v != null
+} else := v if {
+	v := input.params.amount
+	v != null
+} else := v if {
+	v := input.params.payout_amount
+	v != null
+} else := v if {
+	v := input.params.settlement_amount
+	v != null
 }
 
 claim_denial_actions := {
@@ -106,11 +127,11 @@ prohibited_characteristics := {
 # NAICOM Guideline 15: AI cannot autonomously deny a claim of ₦500,000 or more
 deny contains msg if {
 	input.action in claim_denial_actions
-	input.params.claim_amount >= auto_denial_cap
+	claim_value >= auto_denial_cap
 	not input.context.human_adjuster_assigned == true
 	msg := sprintf(
 		"NAICOM Guideline 15: AI cannot autonomously deny a claim of ₦%v — a human adjuster must be assigned (human_adjuster_assigned: true)",
-		[input.params.claim_amount],
+		[claim_value],
 	)
 }
 
@@ -143,11 +164,11 @@ deny contains msg if {
 # NAICOM Guideline 12: Claims above ₦2M must go to senior adjuster
 escalate contains msg if {
 	input.action in claim_actions
-	input.params.claim_amount > senior_review_threshold
+	claim_value > senior_review_threshold
 	not input.context.senior_approval == true
 	msg := sprintf(
 		"NAICOM Guideline 12: Claim of ₦%v exceeds ₦2,000,000 — requires senior adjuster review and approval before settlement",
-		[input.params.claim_amount],
+		[claim_value],
 	)
 }
 
@@ -176,20 +197,20 @@ escalate contains msg if {
 # NFIU AML: Large premiums/claims above ₦5M trigger AML reporting duty
 escalate contains msg if {
 	input.action in claim_actions
-	input.params.claim_amount > aml_reporting_threshold
+	claim_value > aml_reporting_threshold
 	msg := sprintf(
 		"NFIU AML Guidelines: Claim of ₦%v exceeds ₦5,000,000 AML reporting threshold — file Suspicious Transaction Report if warranted",
-		[input.params.claim_amount],
+		[claim_value],
 	)
 }
 
 # NAICOM Guideline 15: Even claim amounts below auto_denial_cap should be escalated for first denial
 escalate contains msg if {
 	input.action in claim_denial_actions
-	input.params.claim_amount < auto_denial_cap
+	claim_value < auto_denial_cap
 	msg := sprintf(
 		"NAICOM Fair Claims Practice: Denial of claim (₦%v) escalated for human review — customer must be notified with specific grounds for denial",
-		[input.params.claim_amount],
+		[claim_value],
 	)
 }
 
@@ -226,7 +247,7 @@ audit contains msg if {
 
 deny_citations contains key if {
 	input.action in claim_denial_actions
-	input.params.claim_amount >= auto_denial_cap
+	claim_value >= auto_denial_cap
 	not input.context.human_adjuster_assigned == true
 	key := "auto_denial_cap"
 }
@@ -248,7 +269,7 @@ deny_citations contains key if {
 
 escalate_citations contains key if {
 	input.action in claim_actions
-	input.params.claim_amount > senior_review_threshold
+	claim_value > senior_review_threshold
 	not input.context.senior_approval == true
 	key := "senior_review"
 }
@@ -271,13 +292,13 @@ escalate_citations contains key if {
 
 escalate_citations contains key if {
 	input.action in claim_actions
-	input.params.claim_amount > aml_reporting_threshold
+	claim_value > aml_reporting_threshold
 	key := "aml_threshold"
 }
 
 escalate_citations contains key if {
 	input.action in claim_denial_actions
-	input.params.claim_amount < auto_denial_cap
+	claim_value < auto_denial_cap
 	key := "sub_cap_denial"
 }
 

@@ -51,7 +51,59 @@ bulk_export_actions := {
 	"dump_database", "full_table_export", "batch_download_pii",
 }
 
+# ── Special categories (NDPA s.30) ────────────────────────────────
+# Declared via context.data_category. Keyed on what the context declares
+# rather than on the action name: matching only a closed action vocabulary
+# fails open, so a tool named outside the list would process special-category
+# data unguarded.
+special_category_types := {
+	"health", "medical", "biometric", "genetic",
+	"sexual_orientation", "religion",
+}
+
+# True when the request declares special-category data by any accepted signal.
+declares_special_category if input.context.special_category == true
+
+declares_special_category if input.context.contains_phi == true
+
+declares_special_category if input.context.hiv_status == true
+
+declares_special_category if input.context.data_category in special_category_types
+
+# Deployments spell consent differently; accepting one spelling only would be
+# the same fail-open in another place.
+consent_declared if input.context.consent_documented == true
+
+consent_declared if input.context.consent_provided == true
+
+consent_declared if input.context.consent_given == true
+
+consent_declared if input.context.consent_obtained == true
+
 # ── Deny rules ────────────────────────────────────────────────────
+
+# NDPA s.30: special-category data requires the subject's explicit consent
+deny contains msg if {
+	declares_special_category
+	not consent_declared
+	msg := "NDPA s.30: Processing special-category personal data (health, biometric, genetic) requires the explicit consent of the data subject — none was declared"
+}
+
+# NDPA s.25: processing requires a lawful basis. An explicitly null basis with
+# no consent is a declared absence, not an omission. A reference to a missing
+# key is undefined in Rego, so these fire only when the caller actually sent
+# the field and left it empty.
+deny contains msg if {
+	input.context.lawful_basis == null
+	not consent_declared
+	msg := "NDPA s.25: Processing personal data requires a lawful basis — none was declared and no consent was obtained"
+}
+
+deny contains msg if {
+	input.context.lawful_basis == ""
+	not consent_declared
+	msg := "NDPA s.25: Processing personal data requires a lawful basis — none was declared and no consent was obtained"
+}
 
 # NDPA s.25: Block transfer to non-permitted region (structured check)
 deny contains msg if {

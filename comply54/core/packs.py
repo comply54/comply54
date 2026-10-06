@@ -59,7 +59,7 @@ NDPA = PackSpec(
     authority="NDPC",
     rego_path=_PACKS_DIR / "nigeria" / "ndpa.rego",
     query_prefix="data.agt_policies_nigeria.ndpa",
-    version="1.1.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+    version="1.2.0",  # s.30 special-category + s.25 lawful-basis rules fire on declared context, not action name
     tags=["data-protection", "cross-border", "pii", "residency"],
     sources=[
         RegulatorySource(document="Nigeria Data Protection Act 2023", section="§24", authority="NDPC", year=2023),
@@ -108,7 +108,7 @@ NFIU_AML = PackSpec(
     authority="NFIU",
     rego_path=_PACKS_DIR / "nigeria" / "nfiu_aml.rego",
     query_prefix="data.agt_policies_nigeria.nfiu",
-    version="1.2.0",  # regex rules fire under regopy (lowercase rewrite of (?i) patterns)
+    version="1.3.0",  # declared-absent sanctions/AML screening denies regardless of action name
     tags=["aml", "cft", "str", "fintech"],
     sources=[
         RegulatorySource(document="Money Laundering (Prevention and Prohibition) Act 2022", section="§10", authority="NFIU", year=2022),
@@ -119,7 +119,7 @@ NFIU_AML = PackSpec(
 
 NHA = PackSpec(
     id="nigeria/nha",
-    version="1.1.0",  # query_health_records added to record_access_actions (NHA s.26 / NDPA s.30)
+    version="1.2.0",  # record-access and health-sharing action vocabularies broadened
     regulation="Nigeria National Health Act 2014 / Medical & Dental Practitioners Act Cap M8",
     jurisdiction="NG",
     authority="FMOH / MDCN",
@@ -143,7 +143,7 @@ NAICOM = PackSpec(
     authority="NAICOM",
     rego_path=_PACKS_DIR / "nigeria" / "naicom.rego",
     query_prefix="data.agt_policies_nigeria.naicom",
-    version="1.1.0",  # state_of_origin added to prohibited_characteristics (NIIRA 2025 Part V)
+    version="1.2.0",  # claim action vocabulary broadened; claim value read under several field names
     tags=["insurance", "claims", "underwriting", "anti-discrimination"],
     sources=[
         RegulatorySource(document="Nigerian Insurance Industry Reform Act 2025", section="§210 — Claims Settlement", authority="NAICOM", year=2025),

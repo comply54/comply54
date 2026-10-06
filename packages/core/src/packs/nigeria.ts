@@ -74,6 +74,12 @@ const CBN_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
 };
 
 const NDPA_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  ndpa_special_category_no_consent: [
+    { document: "Nigeria Data Protection Act 2023", section: "§30 — Special Category Personal Data", authority: "NDPC", year: 2023 },
+  ],
+  ndpa_no_lawful_basis: [
+    { document: "Nigeria Data Protection Act 2023", section: "§25 — Lawful Basis of Processing", authority: "NDPC", year: 2023 },
+  ],
   ndpa_biometric_export: [
     { document: "Nigeria Data Protection Act 2023", section: "§25 — Biometric Cross-Border Ban", authority: "NDPC", year: 2023 },
   ],
@@ -194,6 +200,10 @@ const NAICOM_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
 };
 
 const NFIU_RULE_CITATIONS: Record<string, RegulatorySource[]> = {
+  nfiu_screening_skipped: [
+    { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§3 — Customer Due Diligence", authority: "NFIU", year: 2022 },
+    { document: "NFIU AML/CFT Compliance Framework 2022", section: "§4.1 — Sanctions Screening", authority: "NFIU", year: 2022 },
+  ],
   nfiu_sanctions: [
     { document: "Money Laundering (Prevention and Prohibition) Act 2022", section: "§10", authority: "NFIU", year: 2022 },
     { document: "Terrorism (Prevention and Prohibition) Act 2022", section: "§16", authority: "NFIU", year: 2022 },
@@ -305,6 +315,28 @@ export const evaluateCBN: PackEvaluatorFn = (input: Input): PolicyDecision => {
 
 const TRANSFER_ACTIONS = new Set(["send_to_external", "export_data", "store_data"]);
 
+/**
+ * Read a numeric field under any of the given names.
+ *
+ * Reading a single spelling is a quiet fail-open: a caller who sends `amount`
+ * where the rule reads `claim_amount` gets a threshold of zero and passes every
+ * ceiling, with nothing in the result to say the value was never seen.
+ */
+function firstNumber(source: Record<string, unknown>, names: string[]): number {
+  for (const n of names) {
+    const v = source[n];
+    if (v !== undefined && v !== null && v !== "" && Number.isFinite(Number(v))) {
+      return Number(v);
+    }
+  }
+  return 0;
+}
+
+/** NDPA s.30 special categories, as declared via `context.data_category`. */
+const SPECIAL_CATEGORY_TYPES = new Set([
+  "health", "medical", "biometric", "genetic", "sexual_orientation", "religion",
+]);
+
 export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
   const base: Omit<PolicyDecision, "action" | "messages" | "ruleTriggered"> = {
     pack: "nigeria/ndpa",
@@ -314,6 +346,57 @@ export const evaluateNDPA: PackEvaluatorFn = (input: Input): PolicyDecision => {
     evaluatedAt: nowIso(),
     citations: NDPA_CITATIONS,
   };
+
+  // Data-category rules below are keyed on what the context declares, not on the
+  // action name. Matching only a closed action vocabulary fails open: an agent
+  // whose tool is called `log_caller_health_data` rather than a name the pack
+  // happens to list would otherwise process special-category data unguarded.
+  const specialCategory =
+    Boolean(input.context["special_category"]) ||
+    Boolean(input.context["contains_phi"]) ||
+    Boolean(input.context["hiv_status"]) ||
+    SPECIAL_CATEGORY_TYPES.has(String(input.context["data_category"] ?? "").toLowerCase());
+
+  // Deployments spell consent differently; accepting only one spelling would be
+  // the same fail-open in another place.
+  const consentDeclared =
+    Boolean(input.context["consent_documented"]) ||
+    Boolean(input.context["consent_provided"]) ||
+    Boolean(input.context["consent_given"]) ||
+    Boolean(input.context["consent_obtained"]);
+
+  // NDPA s.30: special-category data needs the subject's explicit consent.
+  if (specialCategory && !consentDeclared) {
+    return {
+      ...base,
+      action: "deny",
+      messages: [
+        "NDPA s.30: Processing special-category personal data (health, biometric, genetic) requires the explicit consent of the data subject — none was declared",
+      ],
+      ruleTriggered: "ndpa_special_category_no_consent",
+      citations: NDPA_RULE_CITATIONS["ndpa_special_category_no_consent"] ?? NDPA_CITATIONS,
+    };
+  }
+
+  // NDPA s.25: processing needs a lawful basis. An explicitly null basis with no
+  // consent is a declared absence, not an omission, so it is denied rather than
+  // passed through.
+  const lawfulBasisDeclared =
+    input.context["lawful_basis"] !== undefined &&
+    input.context["lawful_basis"] !== null &&
+    String(input.context["lawful_basis"]).trim() !== "";
+
+  if ("lawful_basis" in input.context && !lawfulBasisDeclared && !consentDeclared) {
+    return {
+      ...base,
+      action: "deny",
+      messages: [
+        "NDPA s.25: Processing personal data requires a lawful basis — none was declared and no consent was obtained",
+      ],
+      ruleTriggered: "ndpa_no_lawful_basis",
+      citations: NDPA_RULE_CITATIONS["ndpa_no_lawful_basis"] ?? NDPA_CITATIONS,
+    };
+  }
 
   if (!TRANSFER_ACTIONS.has(input.action)) {
     return { ...base, action: "allow", messages: [] };
@@ -502,11 +585,15 @@ export const evaluateBvnNin: PackEvaluatorFn = (input: Input): PolicyDecision =>
 const RECORD_ACCESS_ACTIONS = new Set([
   "access_patient_records", "read_health_record", "get_patient_history",
   "fetch_lab_results", "retrieve_ehr", "query_medical_records",
+  "query_health_records", "read_patient_record", "get_health_record",
+  "view_patient_data", "lookup_patient_record",
 ]);
 
 const HEALTH_SHARING_ACTIONS = new Set([
   "share_health_data", "send_patient_report", "export_health_records",
   "forward_to_provider", "upload_clinical_data", "relay_health_info",
+  "send_hr_report", "disclose_health_data", "share_medical_record",
+  "transmit_patient_data", "log_caller_health_data", "record_health_disclosure",
 ]);
 
 const DIAGNOSIS_ACTIONS = new Set([
@@ -662,6 +749,8 @@ const FRAUD_SCORE_THRESHOLD = 0.65;
 
 const CLAIM_APPROVAL_ACTIONS = new Set([
   "approve_claim", "settle_claim", "process_claim_payment", "close_claim",
+  "approve_insurance_claim", "authorize_claim", "approve_payout", "disburse_claim",
+  "confirm_claim", "finalize_claim",
 ]);
 const CLAIM_DENIAL_ACTIONS = new Set([
   "deny_claim", "reject_claim", "decline_claim", "void_claim",
@@ -694,7 +783,9 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
   const humanAdjuster = Boolean(input.context["human_adjuster_assigned"]);
   const seniorApproval = Boolean(input.context["senior_approval"]);
   const humanUnderwriter = Boolean(input.context["human_underwriter"]);
-  const claimAmount = Number(input.params["claim_amount"] ?? 0);
+  const claimAmount = firstNumber(input.params, [
+    "claim_amount", "amount", "payout_amount", "settlement_amount", "claim_value",
+  ]);
   const policyType = String(input.params["policy_type"] ?? "").toLowerCase();
   const underwritingAmount = Number(input.params["underwriting_amount"] ?? 0);
   const fraudScore = Number(input.params["fraud_score"] ?? 0);
@@ -833,6 +924,17 @@ export const evaluateNAICOM: PackEvaluatorFn = (input: Input): PolicyDecision =>
 
 const CTR_THRESHOLD = 5_000_000;
 
+/**
+ * Payment actions the AML and sanctions rules govern. Previously this pack
+ * matched the single name `transfer_funds`, so a payment tool called anything
+ * else bypassed sanctions screening with no signal that it had.
+ */
+const PAYMENT_ACTIONS = new Set([
+  "transfer_funds", "process_corporate_payment", "send_payment", "make_payment",
+  "initiate_transfer", "process_payment", "execute_transfer", "disburse_funds",
+  "wire_transfer", "settle_payment",
+]);
+
 export const evaluateNfiu: PackEvaluatorFn = (input: Input): PolicyDecision => {
   const base: Omit<PolicyDecision, "action" | "messages" | "ruleTriggered"> = {
     pack: "nigeria/nfiu-aml",
@@ -843,11 +945,33 @@ export const evaluateNfiu: PackEvaluatorFn = (input: Input): PolicyDecision => {
     citations: NFIU_CITATIONS,
   };
 
-  if (input.action !== "transfer_funds") {
+  // A declared-absent control is evidence, not silence: if the caller states that
+  // sanctions screening or the AML check did not run, that is reportable whatever
+  // the action is named. Checked before the action filter so a payment tool that
+  // is not called `transfer_funds` cannot skip screening entirely.
+  const screeningSkipped =
+    input.context["sanctions_screened"] === false ||
+    input.context["aml_check_performed"] === false;
+
+  if (screeningSkipped) {
+    return {
+      ...base,
+      action: "deny",
+      messages: [
+        "MLPPA 2022 s.3 / NFIU AML Guidelines: Payment processed without sanctions screening or AML checks — both are mandatory before execution",
+      ],
+      ruleTriggered: "nfiu_screening_skipped",
+      citations: NFIU_RULE_CITATIONS["nfiu_screening_skipped"] ?? NFIU_CITATIONS,
+    };
+  }
+
+  if (!PAYMENT_ACTIONS.has(input.action)) {
     return { ...base, action: "allow", messages: [] };
   }
 
-  const amount = Number(input.params["amount"] ?? 0);
+  const amount = firstNumber(input.params, [
+    "amount", "transfer_amount", "payment_amount", "value",
+  ]);
   const dest = String(input.params["destination_country"] ?? "NG").toUpperCase();
   const structuring = Boolean(input.context["structuring_detected"]);
 

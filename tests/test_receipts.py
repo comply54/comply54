@@ -311,8 +311,8 @@ class TestVerifyReceiptRoundTrip:
         for pack_id, version in deny_payload.pack_versions.items():
             assert semver.match(version), f"{pack_id} has non-semver version: {version!r}"
 
-    def test_nfiu_aml_version_is_1_2_0(self, deny_payload):
-        assert deny_payload.pack_versions.get("nigeria/nfiu-aml") == "1.2.0"
+    def test_nfiu_aml_version_is_1_3_0(self, deny_payload):
+        assert deny_payload.pack_versions.get("nigeria/nfiu-aml") == "1.3.0"
 
     def test_pack_versions_empty_for_pre_0_4_1_receipts(self, private_pem, public_pem):
         """Old receipts without c54_pack_versions should still verify and return empty dict."""
