@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `notebooks/`: five runnable Jupyter quickstarts (Nigeria Fintech, Nigeria Healthcare, Nigeria Insurance, Kenya Fintech, Pan-African) demonstrating installation, sector-pack initialization, allow/audit/escalate/deny scenarios, and an illustrative (non-executed) LangGraph integration pattern, plus `notebooks/README.md` with Colab links. Contributed by @vtooooooo (#38).
+
 ---
 
 ## [0.8.0] - 2026-10-06

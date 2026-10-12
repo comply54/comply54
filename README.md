@@ -349,6 +349,8 @@ cd examples/nigeria_health_agent  && python agent.py
 cd examples/nigeria_insurance_agent && python agent.py
 ```
 
+For a quicker, no-setup walkthrough, see `notebooks/` — five runnable Jupyter quickstarts (Nigeria Fintech, Nigeria Healthcare, Nigeria Insurance, Kenya Fintech, Pan-African) that open directly in Google Colab; see `notebooks/README.md`.
+
 ---
 
 ## Adding a New Pack
